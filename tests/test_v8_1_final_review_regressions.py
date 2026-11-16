@@ -372,50 +372,112 @@ def test_authoritative_100_feature_schema_v8_2_contracts():
     actual_c_scalars = [f.name for f in BASELINE_V8_0_STOCK_CONTEXT_FEATURE_FIELDS[8:16]]
     assert actual_c_scalars == expected_c_scalars
 
-    # 4. Event Metadata: Actor (8), Type (8), Status (6), Age (E23=22), Active (E24=23)
-    # Actor embeddings E01-E08
-    for i in range(8):
+    # 4. Event Metadata: Authoritative 4/8/4 + 8 Layout:
+    # E01-E04: Actor / Institution Role Embedding (4D)
+    # E05-E12: Event Type Embedding (8D)
+    # E13-E16: Event Status Embedding (4D)
+    # E17: Evidence Traceability
+    # E18: Source Reliability Estimate
+    # E19: Source Independence
+    # E20: Novelty Input Estimate
+    # E21: Market Surprise
+    # E22: Quantified Magnitude
+    # E23: Event Age (Index 22)
+    # E24: Timestamp Reliability (Index 23)
+
+    # Actor embeddings E01-E04 (4D)
+    for i in range(4):
         f = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[i]
-        assert f.name == f"actor_embedding_{i+1:02d}"
+        assert f.name == f"actor_role_embedding_{i+1:02d}"
         assert f.unit == "embedding"
 
-    # Type embeddings E09-E16
+    # Type embeddings E05-E12 (8D)
     for i in range(8):
-        f = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[8 + i]
-        assert f.name == f"type_embedding_{i+1:02d}"
+        f = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[4 + i]
+        assert f.name == f"event_type_embedding_{i+1:02d}"
         assert f.unit == "embedding"
 
-    # Status embeddings E17-E22
-    for i in range(6):
-        f = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[16 + i]
-        assert f.name == f"status_embedding_{i+1:02d}"
+    # Status embeddings E13-E16 (4D)
+    for i in range(4):
+        f = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[12 + i]
+        assert f.name == f"event_status_embedding_{i+1:02d}"
         assert f.unit == "embedding"
+
+    # Scalar features E17-E22
+    assert BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[16].name == "evidence_traceability"
+    assert BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[17].name == "source_reliability_estimate"
+    assert BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[18].name == "source_independence"
+    assert BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[19].name == "novelty_input_estimate"
+    assert BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[20].name == "market_surprise"
+    assert BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[21].name == "quantified_magnitude"
 
     # E23 Event Age at index 22
     f_e23 = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[22]
     assert f_e23.feature_id == "EV_META_23"
-    assert f_e23.name == "event_age_fractional_days"
+    assert f_e23.name in ("event_age", "event_age_fractional_days")
     assert "E23" in f_e23.math_definition
     assert f_e23.unit == "days"
 
-    # E24 Active Event Flag at index 23
+    # E24 Timestamp Reliability at index 23
     f_e24 = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[23]
     assert f_e24.feature_id == "EV_META_24"
-    assert f_e24.name == "active_event_flag"
-    assert f_e24.unit == "binary"
+    assert f_e24.name == "timestamp_reliability"
+    assert f_e24.unit == "score"
 
-    # 5. Price P07 Close Location range [0, 1]
+    # 5. Technical T01-T16 strict sequence and T14 Bollinger Bandwidth verification
+    expected_tech_names = [
+        "rsi_14",
+        "rsi_7",
+        "kdj_k",
+        "kdj_d",
+        "kdj_j",
+        "macd_dif",
+        "macd_signal",
+        "macd_hist",
+        "close_ema20_ratio",
+        "close_ema60_ratio",
+        "ema20_ema60_ratio",
+        "atr14_close_ratio",
+        "bollinger_percent_b",
+        "bollinger_bandwidth",
+        "normalized_obv_change_5d",
+        "adx_14",
+    ]
+    actual_tech_names = [f.name for f in BASELINE_V8_0_TECHNICAL_FEATURE_FIELDS]
+    assert actual_tech_names == expected_tech_names
+    assert BASELINE_V8_0_TECHNICAL_FEATURE_FIELDS[13].name == "bollinger_bandwidth"
+    assert "cci" not in [name.lower() for name in actual_tech_names], "CCI must not be in Original V8 technical"
+
+    # 6. Institutional I01-I08 strict sequence and 20D Average Volume denominator verification
+    expected_inst_names = [
+        "foreign_net_buy_over_vol20d",
+        "trust_net_buy_over_vol20d",
+        "dealer_net_buy_over_vol20d",
+        "foreign_net_buy_5d",
+        "total_institutional_net_buy_5d",
+        "margin_balance_change",
+        "short_balance_change",
+        "short_margin_balance_ratio",
+    ]
+    actual_inst_names = [f.name for f in BASELINE_V8_0_INSTITUTIONAL_FEATURE_FIELDS]
+    assert actual_inst_names == expected_inst_names
+    # Verify denominator for I01-I03 is MA20 Volume
+    for idx in range(3):
+        f = BASELINE_V8_0_INSTITUTIONAL_FEATURE_FIELDS[idx]
+        assert "MA20(Volume)" in f.math_definition, f"{f.feature_id} must use MA20(Volume) denominator"
+
+    # 7. Price P07 Close Location range [0, 1]
     p07 = BASELINE_V8_0_PRICE_FEATURE_FIELDS[6]
     assert p07.feature_id == "PRC_07"
     assert p07.name == "close_location"
     assert p07.unit == "ratio_0_1"
     assert "(P_close,t - P_low,t) / (P_high,t - P_low,t" in p07.math_definition
 
-    # 6. Position State S04: time_since_last_successful_trade
+    # 8. Position State S04: time_since_last_successful_trade
     s04 = BASELINE_V8_0_POSITION_STATE_FEATURE_FIELDS[3]
     assert s04.name == "time_since_last_successful_trade"
 
-    # 7. Shorthand resolution verification across all groups
+    # 9. Shorthand resolution verification across all groups
     shorthand_tests = [
         ("P", 12),
         ("T", 16),
@@ -431,6 +493,75 @@ def test_authoritative_100_feature_schema_v8_2_contracts():
             code = f"{prefix}{idx:02d}"
             expected_idx = idx - 1
             assert get_feature_index(code) == expected_idx, f"Shorthand {code} must resolve to {expected_idx}"
+
+
+def test_strict_v8_2_semantic_contracts_and_schema_isolation():
+    """
+    Requirement 6: Strict Semantic Contract Tests & Schema Isolation
+    - Verify complete 100-dim definition for both Original and Candidate.
+    - Verify Event Metadata 4/8/4+8 dimension layout.
+    - Verify Technical T14 is Bollinger Bandwidth (no CCI in Original).
+    - Verify Institutional I01-I03 denominator is 20D Average Volume.
+    - Verify isolation: Event Age Index is 22 for Original (E23) and 12 for Candidate (EV_META_13).
+    - Ensure dynamic lookup never cross-contaminates between schema versions.
+    """
+    from stock_rl.config.schema import (
+        FeatureSchemaVersion,
+        BASELINE_V8_0_ALL_FEATURE_FIELDS,
+        ALL_FEATURE_FIELDS,
+        BASELINE_V8_0_TECHNICAL_FEATURE_FIELDS,
+        BASELINE_V8_0_INSTITUTIONAL_FEATURE_FIELDS,
+        BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS,
+        EVENT_METADATA_FEATURE_FIELDS,
+        ORIGINAL_V8_EVENT_AGE_METADATA_INDEX,
+        CANDIDATE_V8_1_EVENT_AGE_METADATA_INDEX,
+        get_event_age_index,
+        get_feature_index,
+    )
+
+    # 1. Complete 100-dimension definitions
+    assert len(BASELINE_V8_0_ALL_FEATURE_FIELDS) == 100
+    assert len(ALL_FEATURE_FIELDS) == 100
+
+    # 2. Event Metadata 4/8/4 + 8 partition test
+    actor_fields = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[0:4]
+    type_fields = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[4:12]
+    status_fields = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[12:16]
+    scalar_fields = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[16:24]
+    assert len(actor_fields) == 4
+    assert len(type_fields) == 8
+    assert len(status_fields) == 4
+    assert len(scalar_fields) == 8
+
+    # 3. Technical T14 is Bollinger Bandwidth
+    assert BASELINE_V8_0_TECHNICAL_FEATURE_FIELDS[13].name == "bollinger_bandwidth"
+    assert BASELINE_V8_0_TECHNICAL_FEATURE_FIELDS[13].feature_id == "TECH_14"
+
+    # 4. Institutional I01-I03 denominator is 20D Average Volume
+    for f in BASELINE_V8_0_INSTITUTIONAL_FEATURE_FIELDS[:3]:
+        assert "MA20(Volume)" in f.math_definition
+
+    # 5. Event Age isolation between schemas
+    assert ORIGINAL_V8_EVENT_AGE_METADATA_INDEX == 22
+    assert CANDIDATE_V8_1_EVENT_AGE_METADATA_INDEX == 12
+
+    orig_age_idx = get_event_age_index("v8.0-original")
+    cand_age_idx = get_event_age_index("v8.1-candidate")
+    assert orig_age_idx == 22
+    assert cand_age_idx == 12
+    assert orig_age_idx != cand_age_idx
+
+    # Dynamic lookup isolation:
+    # Querying Original schema
+    assert get_feature_index("event_age", schema_version="v8.0-original") == 22
+    assert get_feature_index("E23", schema_version="v8.0-original") == 22
+
+    # Querying Candidate schema
+    assert get_feature_index("EV_META_13", schema_version="v8.1-candidate") == 12
+    assert get_feature_index("event_age_fractional_days", schema_version="v8.1-candidate") == 12
+    assert EVENT_METADATA_FEATURE_FIELDS[12].feature_id == "EV_META_13"
+    assert BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[22].feature_id == "EV_META_23"
+
 
 
 

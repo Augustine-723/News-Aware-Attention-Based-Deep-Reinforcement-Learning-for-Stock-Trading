@@ -118,35 +118,48 @@ BASELINE_V8_0_PRICE_FEATURE_FIELDS: List[FeatureField] = [
 ]
 
 # Baseline Schema V8.0 Formal Specification: Technical (16 dims, T01-T16)
+# Authoritative V8 Specification: T01 RSI14, T02 RSI7, T03 KDJ K, T04 KDJ D, T05 KDJ J,
+# T06 MACD DIF, T07 MACD Signal, T08 MACD Histogram, T09 Close/EMA20-1, T10 Close/EMA60-1,
+# T11 EMA20/EMA60-1, T12 ATR14/Close, T13 Bollinger %B, T14 Bollinger Bandwidth,
+# T15 Normalized OBV Change 5D, T16 ADX14. (CCI-14 is excluded from Original V8).
 BASELINE_V8_0_TECHNICAL_FEATURE_FIELDS: List[FeatureField] = [
     FeatureField("TECH_01", "rsi_14", "(RSI_14 - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_02", "macd_line", "(EMA12 - EMA26) / P_close", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_03", "macd_signal", "EMA9(MACD) / P_close", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_04", "macd_hist", "(MACD - Signal) / P_close", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_05", "bb_upper_dist", "(BB_upper - P_close) / P_close", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_06", "bb_lower_dist", "(P_close - BB_lower) / P_close", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_07", "bb_width", "(BB_upper - BB_lower) / MA20", "ratio", "Technical Engine", "Daily 20:00", "Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_08", "atr_14_norm", "ATR_14 / P_close", "ratio", "Technical Engine", "Daily 20:00", "Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_09", "obv_slope", "10-day linear regression slope of OBV", "dimensionless", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_10", "kdj_k", "(K_9 - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_11", "kdj_d", "(D_9 - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_12", "kdj_j", "(3K - 2D - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_13", "mfi_14", "(MFI_14 - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_14", "cci_14", "(TP - MA14) / (0.015 * MD14) [Parameter Confirmation Needed]", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("TECH_15", "roc_10", "(P_close,t - P_close,t-10) / P_close,t-10", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_02", "rsi_7", "(RSI_7 - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_03", "kdj_k", "(K_9 - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_04", "kdj_d", "(D_9 - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_05", "kdj_j", "(3K - 2D - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_06", "macd_dif", "(EMA12 - EMA26) / P_close", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_07", "macd_signal", "EMA9(MACD_DIF) / P_close", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_08", "macd_hist", "(MACD_DIF - MACD_Signal) / P_close", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_09", "close_ema20_ratio", "P_close / EMA20 - 1", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_10", "close_ema60_ratio", "P_close / EMA60 - 1", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_11", "ema20_ema60_ratio", "EMA20 / EMA60 - 1", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_12", "atr14_close_ratio", "ATR_14 / P_close", "ratio", "Technical Engine", "Daily 20:00", "Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_13", "bollinger_percent_b", "(P_close - BB_lower) / (BB_upper - BB_lower + 1e-7)", "ratio", "Technical Engine", "Daily 20:00", "Neutral (0.5)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_14", "bollinger_bandwidth", "(BB_upper - BB_lower) / MA20", "ratio", "Technical Engine", "Daily 20:00", "Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_15", "normalized_obv_change_5d", "(OBV_t - OBV_{t-5}) / (5 * MA20(Volume))", "dimensionless", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("TECH_16", "adx_14", "ADX_14 / 100.0", "ratio", "Technical Engine", "Daily 20:00", "Neutral (0.2)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
 ]
 
 # Baseline Schema V8.0 Formal Specification: Institutional (8 dims, I01-I08)
+# Authoritative V8 Specification:
+# I01: Foreign Net Buy / Average Volume 20D (denominator is MA20 Volume)
+# I02: Investment Trust Net Buy / Average Volume 20D (denominator is MA20 Volume)
+# I03: Dealer Net Buy / Average Volume 20D (denominator is MA20 Volume)
+# I04: Foreign Net Buy 5D (accumulated 5D normalized by 5D average volume)
+# I05: Total Institutional Net Buy 5D (accumulated 5D normalized by 5D average volume)
+# I06: Margin Balance Change (normalized by MA20 Volume)
+# I07: Short Balance Change (normalized by MA20 Volume)
+# I08: Short / Margin Balance Ratio
 BASELINE_V8_0_INSTITUTIONAL_FEATURE_FIELDS: List[FeatureField] = [
-    FeatureField("INST_01", "foreign_net_ratio", "Foreign Net Buy Shares / Shares Outstanding", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("INST_02", "trust_net_ratio", "Investment Trust Net Buy Shares / Shares Outstanding", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("INST_03", "dealer_net_ratio", "Dealer Net Buy Shares / Shares Outstanding", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("INST_04", "total_institutional_flow", "Total 3-Institutional Net Buy / Shares Outstanding", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("INST_05", "margin_long_change_ratio", "Delta Margin Long Balance / Shares Outstanding", "ratio", "TWSE", "Daily 19:30 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("INST_06", "margin_short_change_ratio", "Delta Margin Short Balance / Shares Outstanding", "ratio", "TWSE", "Daily 19:30 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("INST_07", "foreign_holding_ratio", "Foreign Shares Held / Total Shares Outstanding", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("INST_08", "margin_utilization_ratio", "Margin Balance / Margin Quota", "ratio", "TWSE", "Daily 19:30 (<=20:00)", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_01", "foreign_net_buy_over_vol20d", "Foreign Net Buy Shares / MA20(Volume)", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_02", "trust_net_buy_over_vol20d", "Investment Trust Net Buy Shares / MA20(Volume)", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_03", "dealer_net_buy_over_vol20d", "Dealer Net Buy Shares / MA20(Volume)", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_04", "foreign_net_buy_5d", "Sum(Foreign Net Buy Shares, 5D) / (5 * MA20(Volume))", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_05", "total_institutional_net_buy_5d", "Sum(Total 3-Inst Net Buy Shares, 5D) / (5 * MA20(Volume))", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_06", "margin_balance_change", "(Margin Balance_t - Margin Balance_{t-1}) / MA20(Volume)", "ratio", "TWSE", "Daily 19:30 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_07", "short_balance_change", "(Short Balance_t - Short Balance_{t-1}) / MA20(Volume)", "ratio", "TWSE", "Daily 19:30 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_08", "short_margin_balance_ratio", "Short Balance / (Margin Balance + 1e-7)", "ratio", "TWSE", "Daily 19:30 (<=20:00)", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
 ]
 
 # Baseline Schema V8.0 Formal Specification: Macro (12 dims, M01-M12)
@@ -185,32 +198,44 @@ BASELINE_V8_0_STOCK_CONTEXT_FEATURE_FIELDS: List[FeatureField] = [
     FeatureField("CTX_16", "debt_to_equity_scaled", "Total debt / Total equity scaled", "ratio", "MOPS Financials", "Quarterly PIT Release", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
 ]
 
-# Baseline Schema V8.0 Formal Specification: Event Metadata (24 dims, E01-E24, Actor/Type/Status Embedding + E23 Age + E24 Active)
+# Baseline Schema V8.0 Formal Specification: Event Metadata (24 dims, E01-E24)
+# Authoritative V8 Specification Layout:
+# E01–E04: Actor / Institution Role Embedding (4D)
+# E05–E12: Event Type Embedding (8D)
+# E13–E16: Event Status Embedding (4D)
+# E17: Evidence Traceability
+# E18: Source Reliability Estimate
+# E19: Source Independence
+# E20: Novelty Input Estimate
+# E21: Market Surprise
+# E22: Quantified Magnitude
+# E23: Event Age (Index 22)
+# E24: Timestamp Reliability (Index 23)
 BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS: List[FeatureField] = [
-    FeatureField("EV_META_01", "actor_embedding_01", "Actor entity representation dimension 1", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_02", "actor_embedding_02", "Actor entity representation dimension 2", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_03", "actor_embedding_03", "Actor entity representation dimension 3", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_04", "actor_embedding_04", "Actor entity representation dimension 4", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_05", "actor_embedding_05", "Actor entity representation dimension 5", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_06", "actor_embedding_06", "Actor entity representation dimension 6", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_07", "actor_embedding_07", "Actor entity representation dimension 7", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_08", "actor_embedding_08", "Actor entity representation dimension 8", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_09", "type_embedding_01", "Event taxonomy & type representation dimension 1", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_10", "type_embedding_02", "Event taxonomy & type representation dimension 2", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_11", "type_embedding_03", "Event taxonomy & type representation dimension 3", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_12", "type_embedding_04", "Event taxonomy & type representation dimension 4", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_13", "type_embedding_05", "Event taxonomy & type representation dimension 5", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_14", "type_embedding_06", "Event taxonomy & type representation dimension 6", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_15", "type_embedding_07", "Event taxonomy & type representation dimension 7", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_16", "type_embedding_08", "Event taxonomy & type representation dimension 8", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_17", "status_embedding_01", "Event status & lifecycle representation dimension 1", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_18", "status_embedding_02", "Event status & lifecycle representation dimension 2", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_19", "status_embedding_03", "Event status & lifecycle representation dimension 3", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_20", "status_embedding_04", "Event status & lifecycle representation dimension 4", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_21", "status_embedding_05", "Event status & lifecycle representation dimension 5", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_22", "status_embedding_06", "Event status & lifecycle representation dimension 6", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_23", "event_age_fractional_days", "(T_decision - T_available) in fractional days (E23)", "days", "PIT Engine", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_24", "active_event_flag", "Binary indicator for ongoing active material event cycle", "binary", "Event State Machine", "Daily 20:00", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_01", "actor_role_embedding_01", "Actor / Institution Role Embedding dimension 1", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_02", "actor_role_embedding_02", "Actor / Institution Role Embedding dimension 2", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_03", "actor_role_embedding_03", "Actor / Institution Role Embedding dimension 3", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_04", "actor_role_embedding_04", "Actor / Institution Role Embedding dimension 4", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_05", "event_type_embedding_01", "Event Type Embedding dimension 1", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_06", "event_type_embedding_02", "Event Type Embedding dimension 2", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_07", "event_type_embedding_03", "Event Type Embedding dimension 3", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_08", "event_type_embedding_04", "Event Type Embedding dimension 4", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_09", "event_type_embedding_05", "Event Type Embedding dimension 5", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_10", "event_type_embedding_06", "Event Type Embedding dimension 6", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_11", "event_type_embedding_07", "Event Type Embedding dimension 7", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_12", "event_type_embedding_08", "Event Type Embedding dimension 8", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_13", "event_status_embedding_01", "Event Status Embedding dimension 1", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_14", "event_status_embedding_02", "Event Status Embedding dimension 2", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_15", "event_status_embedding_03", "Event Status Embedding dimension 3", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_16", "event_status_embedding_04", "Event Status Embedding dimension 4", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_17", "evidence_traceability", "Evidence Traceability score [0, 1]", "score", "LLM Extraction", "Event Release", "1.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_18", "source_reliability_estimate", "Source Reliability Estimate [0, 1]", "score", "Metadata Registry", "Event Release", "0.5", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_19", "source_independence", "Source Independence score [0, 1]", "score", "Metadata Registry", "Event Release", "1.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_20", "novelty_input_estimate", "Novelty Input Estimate prior score [0, 1]", "score", "Event Memory Engine", "Event Release", "0.5", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_21", "market_surprise", "Market Surprise metric: price jump / volatility proxy", "score", "Market Shock Engine", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_22", "quantified_magnitude", "Quantified financial / operational magnitude score [0, 1]", "score", "LLM Extraction", "Event Release", "0.5", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_23", "event_age", "(T_decision - T_available) in fractional days (E23)", "days", "PIT Engine", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_24", "timestamp_reliability", "Timestamp Reliability score [0, 1] (filing vs vendor PIT precision)", "score", "PIT Engine", "Event Release", "1.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
 ]
 
 # Baseline Schema V8.0 Formal Specification: Event-Stock Relation (8 dims, R01-R08)
@@ -479,12 +504,16 @@ def get_feature_index(key: str, table_name: Optional[str] = None, schema_version
         for i, f in enumerate(fields):
             if f.feature_id == key or f.name == key:
                 return i
+        if table_lower == "event_metadata" and key in ("event_age", "event_age_days"):
+            return CANDIDATE_V8_1_EVENT_AGE_METADATA_INDEX
         raise KeyError(f"Feature '{key}' not found in table '{table_name}'.")
 
     if key in GLOBAL_FEATURE_INDEX_BY_ID:
         return GLOBAL_FEATURE_INDEX_BY_ID[key]
     if key in GLOBAL_FEATURE_INDEX_BY_NAME:
         return GLOBAL_FEATURE_INDEX_BY_NAME[key]
+    if key in ("event_age", "event_age_days"):
+        return CANDIDATE_V8_1_EVENT_AGE_METADATA_INDEX
     
     # Fallback: check baseline table if not found in candidate
     for fields in BASELINE_V8_0_TABLE_NAME_TO_FIELDS.values():
