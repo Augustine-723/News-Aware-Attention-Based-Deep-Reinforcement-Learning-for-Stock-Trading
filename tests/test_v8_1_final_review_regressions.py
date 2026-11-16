@@ -215,3 +215,80 @@ def test_modifying_historical_available_time_updates_prior_mask():
         assert torch.allclose(causal_phase2[0, 1], nre_token_vec, atol=1e-5), (
             "Updating EV_META_13 available time must make Slot 1 fall back to NRE token"
         )
+
+
+def test_dual_feature_schema_versions_and_baseline_contract():
+    """
+    Requirement: Formal Dual Schema Architecture Setup
+    - Original V8: Formal Baseline (v8.0)
+    - Current V8.1: Alternative Feature Set / Ablation (v8.1-cand)
+    - Distinct Feature Schema Version constants
+    - Baseline V8.0 formal 12-dimensional quantitative price features contract
+    """
+    from stock_rl.config.schema import (
+        FeatureSchemaVersion,
+        CURRENT_ACTIVE_SCHEMA_VERSION,
+        BASELINE_V8_0_PRICE_FEATURE_FIELDS,
+        PRICE_FEATURE_FIELDS,
+    )
+
+    # 1. Verify schema version identifiers
+    assert FeatureSchemaVersion.BASELINE_V8_0.value == "v8.0"
+    assert FeatureSchemaVersion.ALTERNATIVE_V8_1_CANDIDATE.value == "v8.1-cand"
+    assert CURRENT_ACTIVE_SCHEMA_VERSION == FeatureSchemaVersion.ALTERNATIVE_V8_1_CANDIDATE.value
+
+    # 2. Verify BASELINE_V8_0 price fields: 12 fields
+    assert len(BASELINE_V8_0_PRICE_FEATURE_FIELDS) == 12
+    baseline_names = [f.name for f in BASELINE_V8_0_PRICE_FEATURE_FIELDS]
+    expected_baseline_names = [
+        "return_1d",
+        "return_5d",
+        "return_20d",
+        "return_60d",
+        "realized_vol_5d",
+        "realized_vol_20d",
+        "vwap_deviation",
+        "daily_return",
+        "intraday_range",
+        "shadow_upper",
+        "shadow_lower",
+        "effective_spread_proxy",
+    ]
+    assert baseline_names == expected_baseline_names, f"Baseline names mismatch: {baseline_names}"
+
+    # 3. Verify that all baseline price fields are tagged with version 'v8.0'
+    for f in BASELINE_V8_0_PRICE_FEATURE_FIELDS:
+        assert f.version == "v8.0", f"Field {f.feature_id} must have version 'v8.0', got {f.version}"
+        assert f.math_definition, f"Field {f.feature_id} missing math_definition"
+        assert f.unit, f"Field {f.feature_id} missing unit"
+        assert f.source, f"Field {f.feature_id} missing source"
+
+    # 4. Verify candidate ablation price fields: 12 fields
+    assert len(PRICE_FEATURE_FIELDS) == 12
+    cand_names = [f.name for f in PRICE_FEATURE_FIELDS]
+    expected_cand_names = [
+        "open_norm",
+        "high_norm",
+        "low_norm",
+        "close_norm",
+        "volume_norm",
+        "turnover_norm",
+        "vwap_norm",
+        "daily_return",
+        "intraday_range",
+        "shadow_upper",
+        "shadow_lower",
+        "effective_spread_proxy",
+    ]
+    assert cand_names == expected_cand_names, f"Candidate names mismatch: {cand_names}"
+
+    # 5. Semantic difference contract verification
+    for i in range(6):
+        # First 6 fields are semantically different
+        assert baseline_names[i] != cand_names[i], f"Index {i} should be semantically different: {baseline_names[i]} vs {cand_names[i]}"
+    # Index 6 is mathematically equivalent (vwap_deviation vs vwap_norm)
+    assert baseline_names[6] == "vwap_deviation" and cand_names[6] == "vwap_norm"
+    # Indices 7..11 are identical
+    for i in range(7, 12):
+        assert baseline_names[i] == cand_names[i], f"Index {i} should be identical: {baseline_names[i]} vs {cand_names[i]}"
+

@@ -5,7 +5,20 @@ Missing-Value Policy, and Version.
 """
 
 from dataclasses import dataclass
+from enum import Enum
 from typing import List, Dict, Any, Optional
+
+class FeatureSchemaVersion(str, Enum):
+    """
+    Formal Feature Schema Versions.
+    BASELINE_V8_0: Primary quantitative research baseline (Multi-horizon returns & realized volatility factors).
+    ALTERNATIVE_V8_1_CANDIDATE: Candidate market encoder ablation (Normalized OHLC candlestick levels & volume Z-scores).
+    """
+    BASELINE_V8_0 = "v8.0"
+    ALTERNATIVE_V8_1_CANDIDATE = "v8.1-cand"
+
+# Current active schema in runtime (Candidate ablation feature set pending formal migration)
+CURRENT_ACTIVE_SCHEMA_VERSION: str = FeatureSchemaVersion.ALTERNATIVE_V8_1_CANDIDATE.value
 
 # Sequence lengths
 MARKET_WINDOW_LENGTH: int = 60  # 60 trading days
@@ -82,6 +95,22 @@ PRICE_FEATURE_FIELDS: List[FeatureField] = [
     FeatureField("PRC_10", "shadow_upper", "(P_high - max(P_open, P_close)) / P_close", "ratio", "TWSE", "Daily 20:00", "Zero-fill"),
     FeatureField("PRC_11", "shadow_lower", "(min(P_open, P_close) - P_low) / P_close", "ratio", "TWSE", "Daily 20:00", "Zero-fill"),
     FeatureField("PRC_12", "effective_spread_proxy", "2 * sqrt(max(0, -cov(Delta P_t, Delta P_t-1))) / P_close", "ratio", "TWSE", "Daily 20:00", "Sector Median"),
+]
+
+# Baseline Schema V8.0 Formal Specification (Primary Research Quant Factor Baseline)
+BASELINE_V8_0_PRICE_FEATURE_FIELDS: List[FeatureField] = [
+    FeatureField("PRC_01", "return_1d", "(P_close,t - P_close,t-1) / P_close,t-1", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0.value),
+    FeatureField("PRC_02", "return_5d", "(P_close,t - P_close,t-5) / P_close,t-5", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0.value),
+    FeatureField("PRC_03", "return_20d", "(P_close,t - P_close,t-20) / P_close,t-20", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0.value),
+    FeatureField("PRC_04", "return_60d", "(P_close,t - P_close,t-60) / P_close,t-60", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0.value),
+    FeatureField("PRC_05", "realized_vol_5d", "Annualized 5-day realized volatility of log returns", "annualized_ratio", "TWSE", "Daily 20:00", "Sector Median", version=FeatureSchemaVersion.BASELINE_V8_0.value),
+    FeatureField("PRC_06", "realized_vol_20d", "Annualized 20-day realized volatility of log returns", "annualized_ratio", "TWSE", "Daily 20:00", "Sector Median", version=FeatureSchemaVersion.BASELINE_V8_0.value),
+    FeatureField("PRC_07", "vwap_deviation", "(VWAP - P_close) / P_close", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0.value),
+    FeatureField("PRC_08", "daily_return", "(P_close,t - P_close,t-1) / P_close,t-1", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0.value),
+    FeatureField("PRC_09", "intraday_range", "(P_high - P_low) / P_open", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0.value),
+    FeatureField("PRC_10", "shadow_upper", "(P_high - max(P_open, P_close)) / P_close", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0.value),
+    FeatureField("PRC_11", "shadow_lower", "(min(P_open, P_close) - P_low) / P_close", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0.value),
+    FeatureField("PRC_12", "effective_spread_proxy", "2 * sqrt(max(0, -cov(Delta P_t, Delta P_t-1))) / P_close", "ratio", "TWSE", "Daily 20:00", "Sector Median", version=FeatureSchemaVersion.BASELINE_V8_0.value),
 ]
 
 TECHNICAL_FEATURE_FIELDS: List[FeatureField] = [
