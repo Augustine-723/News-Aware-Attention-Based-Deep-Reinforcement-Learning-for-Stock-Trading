@@ -6,8 +6,9 @@ distinguishes terminated vs truncated flags for correct Double DQN bootstrapping
 
 from collections import deque
 import random
-from typing import List, Tuple, NamedTuple
+from typing import List, Tuple, NamedTuple, Optional
 import torch
+from stock_rl.config.schema import CURRENT_ACTIVE_SCHEMA_VERSION, validate_schema_version
 from stock_rl.data.synthetic_data import MultimodalBatch
 
 
@@ -24,10 +25,13 @@ class MultimodalReplayBuffer:
     """
     Fixed-capacity ring buffer storing transition tuples.
     Collates raw tensors into single batched MultimodalBatch objects upon sampling.
+    Guarantees strict schema version consistency and rejects mixed schemas.
     """
-    def __init__(self, capacity: int = 100_000):
+    def __init__(self, capacity: int = 100_000, schema_version: Optional[str] = None):
         self.capacity = capacity
         self.buffer = deque(maxlen=capacity)
+        self.schema_version = schema_version or CURRENT_ACTIVE_SCHEMA_VERSION
+        validate_schema_version(self.schema_version)
 
     def push(
         self,
@@ -38,6 +42,20 @@ class MultimodalReplayBuffer:
         terminated: bool,
         truncated: bool = False
     ):
+        obs_schema = getattr(obs, "schema_version", None)
+        next_obs_schema = getattr(next_obs, "schema_version", None)
+
+        if obs_schema is not None and obs_schema != self.schema_version:
+            raise ValueError(
+                f"Replay Buffer schema violation: buffer configured for '{self.schema_version}', "
+                f"but received obs with '{obs_schema}'. Silent mixing of different schemas is prohibited."
+            )
+        if next_obs_schema is not None and next_obs_schema != self.schema_version:
+            raise ValueError(
+                f"Replay Buffer schema violation: buffer configured for '{self.schema_version}', "
+                f"but received next_obs with '{next_obs_schema}'. Silent mixing of different schemas is prohibited."
+            )
+
         self.buffer.append(Transition(obs, action, reward, next_obs, bool(terminated), bool(truncated)))
 
     def __len__(self) -> int:
@@ -56,15 +74,16 @@ class MultimodalReplayBuffer:
         terminated = torch.tensor([float(s.terminated) for s in samples], dtype=torch.float32)
         truncated = torch.tensor([float(s.truncated) for s in samples], dtype=torch.float32)
 
-        # Collate observations into batched MultimodalBatch
-        batch_obs = self._collate_batches([s.obs for s in samples])
-        batch_next_obs = self._collate_batches([s.next_obs for s in samples])
+        # Collate observations into batched MultimodalBatch with explicit schema_version
+        batch_obs = self._collate_batches([s.obs for s in samples], schema_version=self.schema_version)
+        batch_next_obs = self._collate_batches([s.next_obs for s in samples], schema_version=self.schema_version)
 
         return batch_obs, actions, rewards, batch_next_obs, terminated, truncated
 
     @staticmethod
-    def _collate_batches(batch_list: List[MultimodalBatch]) -> MultimodalBatch:
+    def _collate_batches(batch_list: List[MultimodalBatch], schema_version: Optional[str] = None) -> MultimodalBatch:
         """Concatenates a list of single-sample batches along dim 0."""
+        target_schema = schema_version or getattr(batch_list[0], "schema_version", CURRENT_ACTIVE_SCHEMA_VERSION)
         return MultimodalBatch(
             price=torch.cat([b.price for b in batch_list], dim=0),
             technical=torch.cat([b.technical for b in batch_list], dim=0),
@@ -85,4 +104,5 @@ class MultimodalReplayBuffer:
             novelty_mask=torch.cat([b.novelty_mask for b in batch_list], dim=0) if batch_list[0].novelty_mask is not None else None,
             return_mask=torch.cat([b.return_mask for b in batch_list], dim=0) if batch_list[0].return_mask is not None else None,
             risk_mask=torch.cat([b.risk_mask for b in batch_list], dim=0) if batch_list[0].risk_mask is not None else None,
+            schema_version=target_schema,
         )

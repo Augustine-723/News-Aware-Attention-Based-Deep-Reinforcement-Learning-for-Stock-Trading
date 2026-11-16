@@ -4,7 +4,7 @@ Trains Market Encoders, Temporal Attention, Fusion, and Supervised Multi-Task He
 using 4 independent validity masks.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 import torch
 import torch.optim as optim
 
@@ -21,6 +21,7 @@ def train_stage1_epoch(
     num_batches: int = 20,
     batch_size: int = 64,
     device: torch.device = torch.device("cpu"),
+    schema_version: Optional[str] = None,
 ) -> Dict[str, float]:
     """Runs a single epoch of Stage 1 representation pretraining."""
     model.train()
@@ -35,7 +36,9 @@ def train_stage1_epoch(
     }
 
     for b in range(num_batches):
-        batch = generate_synthetic_batch(batch_size=batch_size, seed=100 + b).to(device)
+        batch = generate_synthetic_batch(
+            batch_size=batch_size, seed=100 + b, schema_version=schema_version
+        ).to(device)
 
         _, predictions, _ = model(batch)
 
@@ -71,6 +74,7 @@ def run_stage1_pretraining(
     num_batches: int = 10,
     lr: float = 3e-4,
     device: torch.device = torch.device("cpu"),
+    schema_version: Optional[str] = None,
 ) -> List[Dict[str, float]]:
     """Executes full Stage 1 training schedule."""
     loss_module = MultiTaskLoss(use_uncertainty_weighting=True, novelty_loss_type="huber").to(device)
@@ -85,6 +89,7 @@ def run_stage1_pretraining(
             optimizer=optimizer,
             num_batches=num_batches,
             device=device,
+            schema_version=schema_version,
         )
         history.append(metrics)
 

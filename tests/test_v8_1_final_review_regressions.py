@@ -75,7 +75,7 @@ def test_event_temporal_ordering_strictly_by_true_event_age():
     model = StockRLFullModel()
     model.eval()
 
-    batch = generate_synthetic_batch(batch_size=1, seed=42)
+    batch = generate_synthetic_batch(batch_size=1, seed=42, schema_version="v8.1-candidate")
 
     with torch.no_grad():
         batch.event_mask[:, :] = False
@@ -124,7 +124,7 @@ def test_modifying_event_category_does_not_alter_temporal_sorting():
     model = StockRLFullModel()
     model.eval()
 
-    batch = generate_synthetic_batch(batch_size=1, seed=42)
+    batch = generate_synthetic_batch(batch_size=1, seed=42, schema_version="v8.1-candidate")
 
     with torch.no_grad():
         batch.event_mask[:, :] = False
@@ -143,7 +143,7 @@ def test_modifying_event_category_does_not_alter_temporal_sorting():
         _, _, proj_orig, _, causal_prior_orig = model.encode_multimodal_state(batch)
 
         # Now heavily modify the event category fields (including index 4)
-        batch_cat_modified = generate_synthetic_batch(batch_size=1, seed=42)
+        batch_cat_modified = generate_synthetic_batch(batch_size=1, seed=42, schema_version="v8.1-candidate")
         batch_cat_modified.event_mask[:, :] = False
         batch_cat_modified.event_mask[:, 0] = True
         batch_cat_modified.event_mask[:, 1] = True
@@ -181,7 +181,7 @@ def test_modifying_historical_available_time_updates_prior_mask():
     model = StockRLFullModel()
     model.eval()
 
-    batch = generate_synthetic_batch(batch_size=1, seed=42)
+    batch = generate_synthetic_batch(batch_size=1, seed=42, schema_version="v8.1-candidate")
 
     with torch.no_grad():
         batch.event_mask[:, :] = False
@@ -235,7 +235,7 @@ def test_dual_feature_schema_versions_and_baseline_contract():
     # 1. Verify schema version identifiers
     assert FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value == "v8.0-original"
     assert FeatureSchemaVersion.ALTERNATIVE_V8_1_CANDIDATE.value == "v8.1-candidate"
-    assert CURRENT_ACTIVE_SCHEMA_VERSION == FeatureSchemaVersion.ALTERNATIVE_V8_1_CANDIDATE.value
+    assert CURRENT_ACTIVE_SCHEMA_VERSION == FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value
 
     # 2. Verify BASELINE_V8_0 price fields: 12 fields locked per ChatGPT V8
     assert len(BASELINE_V8_0_PRICE_FEATURE_FIELDS) == 12
@@ -344,7 +344,7 @@ def test_authoritative_100_feature_schema_v8_2_contracts():
     assert get_event_age_index(FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL) == 22
     assert get_event_age_index("v8.1-candidate") == 12
     assert get_event_age_index(FeatureSchemaVersion.ALTERNATIVE_V8_1_CANDIDATE) == 12
-    assert get_event_age_index() == 12  # Active default candidate
+    assert get_event_age_index() == 22  # Active default baseline (v8.0-original)
 
     # Event age index via get_feature_index
     assert get_feature_index("E23") == 22

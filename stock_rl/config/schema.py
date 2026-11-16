@@ -21,8 +21,8 @@ class FeatureSchemaVersion(str, Enum):
     BASELINE_V8_0 = "v8.0-original"
     ALTERNATIVE_V8_1 = "v8.1-candidate"
 
-# Current active schema in runtime (Candidate ablation feature set pending formal migration)
-CURRENT_ACTIVE_SCHEMA_VERSION: str = FeatureSchemaVersion.ALTERNATIVE_V8_1_CANDIDATE.value
+# Current active schema in runtime: v8.0-original is the Primary Research Baseline
+CURRENT_ACTIVE_SCHEMA_VERSION: str = FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value
 
 # Sequence lengths
 MARKET_WINDOW_LENGTH: int = 60  # 60 trading days
@@ -569,10 +569,45 @@ def get_event_age_index(schema_version: Optional[Any] = None) -> int:
     Unified lookup for Event Age index across schema versions:
     - BASELINE_V8_0_ORIGINAL ('v8.0-original'): E23 -> Index 22
     - ALTERNATIVE_V8_1_CANDIDATE ('v8.1-candidate'): EV_META_13 -> Index 12
+    Defaults to CURRENT_ACTIVE_SCHEMA_VERSION if schema_version is None.
     """
-    if schema_version in (FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL, "v8.0-original", "v8.0"):
+    ver = schema_version if schema_version is not None else CURRENT_ACTIVE_SCHEMA_VERSION
+    if ver in (FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL, "v8.0-original", "v8.0"):
         return ORIGINAL_V8_EVENT_AGE_METADATA_INDEX
     return CANDIDATE_V8_1_EVENT_AGE_METADATA_INDEX
+
+
+def validate_schema_version(schema_version: str) -> bool:
+    """
+    Validates whether a schema version string is supported.
+    Raises ValueError if unsupported.
+    """
+    valid = [v.value for v in FeatureSchemaVersion]
+    if schema_version not in valid:
+        raise ValueError(
+            f"Unsupported schema version '{schema_version}'. Supported versions are: {valid}. "
+            f"Silent mixing of schema versions is strictly prohibited."
+        )
+    return True
+
+
+def get_schema_table_fields(
+    table_name: str,
+    schema_version: Optional[str] = None
+) -> List[FeatureField]:
+    """
+    Returns the list of FeatureField definitions for the specified table and schema version.
+    """
+    ver = schema_version if schema_version is not None else CURRENT_ACTIVE_SCHEMA_VERSION
+    table_lower = table_name.lower().strip()
+    if ver in (FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL, "v8.0-original", "v8.0"):
+        if table_lower not in BASELINE_V8_0_TABLE_NAME_TO_FIELDS:
+            raise KeyError(f"Unknown table '{table_name}' in baseline schema.")
+        return BASELINE_V8_0_TABLE_NAME_TO_FIELDS[table_lower]
+    else:
+        if table_lower not in TABLE_NAME_TO_FIELDS:
+            raise KeyError(f"Unknown table '{table_name}' in candidate schema.")
+        return TABLE_NAME_TO_FIELDS[table_lower]
 
 
 @dataclass(frozen=True)

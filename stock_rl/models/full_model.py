@@ -14,6 +14,8 @@ from stock_rl.config.schema import (
     POSITION_STATE_DIM,
     TOTAL_EVENT_SLOTS,
     EVENT_AGE_METADATA_INDEX,
+    CURRENT_ACTIVE_SCHEMA_VERSION,
+    get_event_age_index,
     get_feature_index,
 )
 from stock_rl.data.synthetic_data import MultimodalBatch
@@ -38,7 +40,8 @@ class StockRLFullModel(nn.Module):
 
     def encode_multimodal_state(
         self,
-        batch: MultimodalBatch
+        batch: MultimodalBatch,
+        schema_version: Optional[str] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Runs encoders and fusion with Conditioned Temporal Attention.
@@ -50,6 +53,8 @@ class StockRLFullModel(nn.Module):
             prior_memory: [B, 128]
         """
         B = batch.price.shape[0]
+        effective_schema = schema_version or getattr(batch, "schema_version", CURRENT_ACTIVE_SCHEMA_VERSION)
+        age_idx = get_event_age_index(effective_schema)
 
         # 1. Market sequences -> [B, 5, 128]
         # Order: [Price, Tech, Inst, Macro, Context]
@@ -75,6 +80,8 @@ class StockRLFullModel(nn.Module):
             event_mask=batch.event_mask,
             stock_context=batch.stock_context,
             market_summary=market_summary,
+            schema_version=effective_schema,
+            event_age_idx=age_idx,
         )
 
         # 3. Cross-Modal Fusion across 5 market tokens + 1 aggregated event token -> [B, 128]
@@ -100,10 +107,9 @@ class StockRLFullModel(nn.Module):
 
         # b) Causal prior memory per event slot:
         # Each event's novelty must only compare against information known prior to its publication.
-        # Dynamically retrieve event age index from schema (EV_META_13 / event_age_fractional_days)
-        # to guarantee zero hardcoded index mismatch.
+        # Dynamically retrieve event age index from schema without hardcoding.
         # Since age = T_decision - T_available, older events (published before event j) have age_k > age_j.
-        event_ages = batch.event_metadata[:, :, EVENT_AGE_METADATA_INDEX]  # [B, 40]
+        event_ages = batch.event_metadata[:, :, age_idx]  # [B, 40]
         ages_k = event_ages.unsqueeze(1)            # [B, 1, 40]
         ages_j = event_ages.unsqueeze(2)            # [B, 40, 1]
         # Slot k was published strictly before slot j and is a valid event
@@ -113,8 +119,6 @@ class StockRLFullModel(nn.Module):
         prior_sum = torch.bmm(prior_weights, projected_events)        # [B, 40, 128]
 
         # Fallback to NRE / No-Prior-Memory token when no strictly prior event exists
-        # Review 3 Requirement: MUST NOT use active_projected_memory (which can aggregate later events).
-        # Fallback MUST be NRE / No-Prior-Memory token.
         nre_token_prior = self.event_module.nre_token.squeeze(1).unsqueeze(1).expand(B, TOTAL_EVENT_SLOTS, -1)
         causal_prior_memory = torch.where(
             prior_counts > 0,
@@ -126,7 +130,8 @@ class StockRLFullModel(nn.Module):
 
     def forward(
         self,
-        batch: MultimodalBatch
+        batch: MultimodalBatch,
+        schema_version: Optional[str] = None,
     ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor], torch.Tensor]:
         """
         Full forward pass returning Q-values, auxiliary predictions, and RL state.
@@ -135,7 +140,9 @@ class StockRLFullModel(nn.Module):
             predictions: dict of multi-task outputs
             rl_state: [B, 132]
         """
-        fused_rep, rl_state, projected_events, context_token, prior_memory = self.encode_multimodal_state(batch)
+        fused_rep, rl_state, projected_events, context_token, prior_memory = self.encode_multimodal_state(
+            batch, schema_version=schema_version
+        )
 
         # Multi-task auxiliary predictions with active memory comparison
         predictions = self.multi_task_heads(

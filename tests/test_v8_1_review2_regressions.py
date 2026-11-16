@@ -194,7 +194,7 @@ def test_feature_dictionary_and_pit_availability_validation():
 # ==============================================================================
 def test_novelty_causal_memory_and_padding_invariance():
     model = StockRLFullModel()
-    batch = generate_synthetic_batch(batch_size=2, seed=10)
+    batch = generate_synthetic_batch(batch_size=2, seed=10, schema_version="v8.1-candidate")
 
     # Scenario:
     # Slot 0: Age 5 days (occurred 5 days ago)
@@ -222,7 +222,7 @@ def test_novelty_causal_memory_and_padding_invariance():
 
     # 3. Test Publication Order Invariance:
     # Swap Slot 0 and Slot 1 (Slot 0 now age 2.0, Slot 1 age 5.0)
-    batch_swapped = generate_synthetic_batch(batch_size=2, seed=10)
+    batch_swapped = generate_synthetic_batch(batch_size=2, seed=10, schema_version="v8.1-candidate")
     batch_swapped.event_metadata[0, :, EVENT_AGE_METADATA_INDEX] = 0.0
     batch_swapped.event_metadata[0, 0, EVENT_AGE_METADATA_INDEX] = 2.0
     batch_swapped.event_metadata[0, 1, EVENT_AGE_METADATA_INDEX] = 5.0

@@ -26,6 +26,7 @@ def run_stage2_rl_training(
     agent: Optional[DuelingDoubleDQNAgent] = None,
     buffer: Optional[MultimodalReplayBuffer] = None,
     device: torch.device = torch.device("cpu"),
+    schema_version: Optional[str] = None,
 ) -> Tuple[DuelingDoubleDQNAgent, MultimodalReplayBuffer, List[Dict[str, float]]]:
     """
     Executes Stage 2: representation encoders frozen, Dueling DDQN trained on environment.
@@ -37,10 +38,12 @@ def run_stage2_rl_training(
     # Freeze representation encoders
     model.freeze_encoders()
 
+    effective_schema = schema_version or getattr(env, "schema_version", None)
+
     if agent is None:
-        agent = DuelingDoubleDQNAgent(model=model, device=device)
+        agent = DuelingDoubleDQNAgent(model=model, device=device, schema_version=effective_schema)
     if buffer is None:
-        buffer = MultimodalReplayBuffer(capacity=50_000)
+        buffer = MultimodalReplayBuffer(capacity=50_000, schema_version=agent.schema_version)
 
     episode_history: List[Dict[str, float]] = []
 

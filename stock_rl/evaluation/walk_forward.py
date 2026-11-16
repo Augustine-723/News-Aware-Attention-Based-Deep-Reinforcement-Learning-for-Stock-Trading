@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import torch
 
+from stock_rl.config.schema import CURRENT_ACTIVE_SCHEMA_VERSION
 from stock_rl.evaluation.metrics import compute_trading_metrics
 from stock_rl.env.stock_trading_env import PointInTimeStockEnv
 from stock_rl.models.full_model import StockRLFullModel
@@ -144,15 +145,17 @@ def evaluate_policy_on_env(
     model: StockRLFullModel,
     env: PointInTimeStockEnv,
     device: torch.device = torch.device("cpu"),
+    schema_version: Optional[str] = None,
 ) -> Tuple[Dict[str, float], List[float], List[int]]:
     """
     Evaluates a frozen policy model deterministically on an environment instance.
     Returns:
-        metrics: Dict[str, float]
+        metrics: Dict[str, float] (tagged with schema_version)
         equity_curve: List[float]
         actions_taken: List[int]
     """
-    agent = DuelingDoubleDQNAgent(model=model, device=device)
+    effective_schema = schema_version or getattr(env, "schema_version", CURRENT_ACTIVE_SCHEMA_VERSION)
+    agent = DuelingDoubleDQNAgent(model=model, device=device, schema_version=effective_schema)
     obs, _ = env.reset()
     done = False
     actions_taken = []
@@ -165,4 +168,5 @@ def evaluate_policy_on_env(
         obs = next_obs
 
     metrics = compute_trading_metrics(env.equity_history, actions_taken)
+    metrics["schema_version"] = effective_schema
     return metrics, env.equity_history, actions_taken

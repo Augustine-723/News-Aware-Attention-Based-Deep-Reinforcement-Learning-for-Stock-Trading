@@ -25,6 +25,8 @@ from stock_rl.config.schema import (
     ACTION_LONG,
     NUM_ACTIONS,
     POSITION_STATE_DIM,
+    CURRENT_ACTIVE_SCHEMA_VERSION,
+    validate_schema_version,
 )
 from stock_rl.config.settings import TradingConfig
 from stock_rl.env.execution import TWSEExecutionSimulator, ExecutionResult
@@ -44,10 +46,13 @@ class PointInTimeStockEnv(gym.Env):
         multimodal_batches: Optional[List[MultimodalBatch]] = None,
         config: TradingConfig = TradingConfig(),
         initial_capital: float = 1_000_000.0,
+        schema_version: Optional[str] = None,
     ):
         super().__init__()
         self.config = config
         self.initial_capital = initial_capital
+        self.schema_version = schema_version or CURRENT_ACTIVE_SCHEMA_VERSION
+        validate_schema_version(self.schema_version)
         self.simulator = TWSEExecutionSimulator(config)
 
         # Action space: 0 (Cash), 1 (Long)
@@ -90,7 +95,7 @@ class PointInTimeStockEnv(gym.Env):
 
         # Pre-generate multimodal batches for each timestep
         self.multimodal_batches = [
-            generate_synthetic_batch(batch_size=1, seed=1000 + t)
+            generate_synthetic_batch(batch_size=1, seed=1000 + t, schema_version=self.schema_version)
             for t in range(self.episode_length)
         ]
 

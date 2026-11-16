@@ -12,6 +12,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from stock_rl.config.settings import RLConfig
+from stock_rl.config.schema import CURRENT_ACTIVE_SCHEMA_VERSION, validate_schema_version
 from stock_rl.data.synthetic_data import MultimodalBatch
 from stock_rl.models.full_model import StockRLFullModel
 
@@ -19,15 +20,20 @@ from stock_rl.models.full_model import StockRLFullModel
 class DuelingDoubleDQNAgent:
     """
     Agent coordinating action selection and Double DQN updates with consistent target networks.
+    Enforces schema version consistency across checkpoints and training updates.
     """
     def __init__(
         self,
         model: StockRLFullModel,
         config: RLConfig = RLConfig(),
         device: torch.device = torch.device("cpu"),
+        schema_version: Optional[str] = None,
     ):
         self.config = config
         self.device = device
+        self.schema_version = schema_version or CURRENT_ACTIVE_SCHEMA_VERSION
+        validate_schema_version(self.schema_version)
+
         self.online_model = model.to(device)
         self.target_model = copy.deepcopy(model).to(device)
         self.target_model.eval()
@@ -190,3 +196,50 @@ class DuelingDoubleDQNAgent:
     def hard_update_target(self):
         """Copies weights from online to target network directly."""
         self.target_model.load_state_dict(self.online_model.state_dict())
+
+    def save_checkpoint(
+        self,
+        filepath: str,
+        additional_metadata: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Saves agent state dictionary with explicit schema version metadata.
+        """
+        checkpoint = {
+            "online_model_state_dict": self.online_model.state_dict(),
+            "target_model_state_dict": self.target_model.state_dict(),
+            "optimizer_state_dict": self.optimizer.state_dict() if self.optimizer is not None else None,
+            "epsilon": self.epsilon,
+            "total_steps": self.total_steps,
+            "schema_version": self.schema_version,
+            "metadata": additional_metadata or {},
+        }
+        torch.save(checkpoint, filepath)
+
+    def load_checkpoint(
+        self,
+        filepath: str,
+        expected_schema_version: Optional[str] = None,
+        strict_schema_check: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Loads agent state dictionary with strict schema version verification.
+        Raises ValueError if checkpoint schema does not match expected schema.
+        """
+        checkpoint = torch.load(filepath, map_location=self.device)
+        saved_schema = checkpoint.get("schema_version", None)
+        expected_schema = expected_schema_version or self.schema_version
+
+        if strict_schema_check and saved_schema != expected_schema:
+            raise ValueError(
+                f"Checkpoint schema violation: checkpoint was saved with schema_version '{saved_schema}', "
+                f"but agent/runtime requires '{expected_schema}'. Silent mixing of different schemas is prohibited."
+            )
+
+        self.online_model.load_state_dict(checkpoint["online_model_state_dict"])
+        self.target_model.load_state_dict(checkpoint["target_model_state_dict"])
+        if self.optimizer is not None and checkpoint.get("optimizer_state_dict") is not None:
+            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        self.epsilon = checkpoint.get("epsilon", self.epsilon)
+        self.total_steps = checkpoint.get("total_steps", self.total_steps)
+        return checkpoint

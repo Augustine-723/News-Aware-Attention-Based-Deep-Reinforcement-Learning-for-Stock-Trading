@@ -28,6 +28,7 @@ def run_stage3_joint_finetuning(
     agent: Optional[DuelingDoubleDQNAgent] = None,
     buffer: Optional[MultimodalReplayBuffer] = None,
     device: torch.device = torch.device("cpu"),
+    schema_version: Optional[str] = None,
 ) -> Tuple[DuelingDoubleDQNAgent, MultimodalReplayBuffer, List[Dict[str, float]]]:
     """
     Executes Stage 3: selective unfreezing of Temporal Attention, Fusion,
@@ -37,10 +38,12 @@ def run_stage3_joint_finetuning(
     # Selectively unfreeze Temporal Attention, Fusion, Event Projection, Heads, and DQN
     model.unfreeze_for_stage3()
 
+    effective_schema = schema_version or getattr(env, "schema_version", None)
+
     if agent is None:
-        agent = DuelingDoubleDQNAgent(model=model, device=device)
+        agent = DuelingDoubleDQNAgent(model=model, device=device, schema_version=effective_schema)
     if buffer is None:
-        buffer = MultimodalReplayBuffer(capacity=50_000)
+        buffer = MultimodalReplayBuffer(capacity=50_000, schema_version=agent.schema_version)
 
     # Reconfigure optimizer for Stage 3 while migrating existing momentum states
     agent.reconfigure_optimizer_for_stage3(lr=lr)
