@@ -220,10 +220,10 @@ def test_modifying_historical_available_time_updates_prior_mask():
 def test_dual_feature_schema_versions_and_baseline_contract():
     """
     Requirement: Formal Dual Schema Architecture Setup
-    - Original V8: Formal Baseline (v8.0)
-    - Current V8.1: Alternative Feature Set / Ablation (v8.1-cand)
+    - Original V8: Formal Baseline (v8.0-original) per ChatGPT V8 protocol
+    - Current V8.1: Alternative Feature Set / Ablation (v8.1-candidate)
     - Distinct Feature Schema Version constants
-    - Baseline V8.0 formal 12-dimensional quantitative price features contract
+    - Baseline V8.0 formal 12-dimensional quantitative price features contract (P01-P12)
     """
     from stock_rl.config.schema import (
         FeatureSchemaVersion,
@@ -233,32 +233,32 @@ def test_dual_feature_schema_versions_and_baseline_contract():
     )
 
     # 1. Verify schema version identifiers
-    assert FeatureSchemaVersion.BASELINE_V8_0.value == "v8.0"
-    assert FeatureSchemaVersion.ALTERNATIVE_V8_1_CANDIDATE.value == "v8.1-cand"
+    assert FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value == "v8.0-original"
+    assert FeatureSchemaVersion.ALTERNATIVE_V8_1_CANDIDATE.value == "v8.1-candidate"
     assert CURRENT_ACTIVE_SCHEMA_VERSION == FeatureSchemaVersion.ALTERNATIVE_V8_1_CANDIDATE.value
 
-    # 2. Verify BASELINE_V8_0 price fields: 12 fields
+    # 2. Verify BASELINE_V8_0 price fields: 12 fields locked per ChatGPT V8
     assert len(BASELINE_V8_0_PRICE_FEATURE_FIELDS) == 12
     baseline_names = [f.name for f in BASELINE_V8_0_PRICE_FEATURE_FIELDS]
     expected_baseline_names = [
         "return_1d",
         "return_5d",
         "return_20d",
-        "return_60d",
-        "realized_vol_5d",
-        "realized_vol_20d",
-        "vwap_deviation",
-        "daily_return",
-        "intraday_range",
-        "shadow_upper",
-        "shadow_lower",
-        "effective_spread_proxy",
+        "overnight_gap",
+        "open_close_return",
+        "high_low_range",
+        "close_location",
+        "log_volume",
+        "volume_ratio_20d",
+        "turnover_ratio",
+        "realized_volatility_20d",
+        "log_trading_value",
     ]
     assert baseline_names == expected_baseline_names, f"Baseline names mismatch: {baseline_names}"
 
-    # 3. Verify that all baseline price fields are tagged with version 'v8.0'
+    # 3. Verify that all baseline price fields are tagged with version 'v8.0-original'
     for f in BASELINE_V8_0_PRICE_FEATURE_FIELDS:
-        assert f.version == "v8.0", f"Field {f.feature_id} must have version 'v8.0', got {f.version}"
+        assert f.version == "v8.0-original", f"Field {f.feature_id} must have version 'v8.0-original', got {f.version}"
         assert f.math_definition, f"Field {f.feature_id} missing math_definition"
         assert f.unit, f"Field {f.feature_id} missing unit"
         assert f.source, f"Field {f.feature_id} missing source"
@@ -282,13 +282,11 @@ def test_dual_feature_schema_versions_and_baseline_contract():
     ]
     assert cand_names == expected_cand_names, f"Candidate names mismatch: {cand_names}"
 
-    # 5. Semantic difference contract verification
-    for i in range(6):
-        # First 6 fields are semantically different
-        assert baseline_names[i] != cand_names[i], f"Index {i} should be semantically different: {baseline_names[i]} vs {cand_names[i]}"
-    # Index 6 is mathematically equivalent (vwap_deviation vs vwap_norm)
-    assert baseline_names[6] == "vwap_deviation" and cand_names[6] == "vwap_norm"
-    # Indices 7..11 are identical
-    for i in range(7, 12):
-        assert baseline_names[i] == cand_names[i], f"Index {i} should be identical: {baseline_names[i]} vs {cand_names[i]}"
+    # 5. Semantic difference verification:
+    # All 12 Price features in v8.0-original are distinct in name/definition from v8.1-candidate
+    for i in range(12):
+        assert baseline_names[i] != cand_names[i], (
+            f"Index {i} ({baseline_names[i]}) must be semantically distinct from candidate ({cand_names[i]})"
+        )
+
 
