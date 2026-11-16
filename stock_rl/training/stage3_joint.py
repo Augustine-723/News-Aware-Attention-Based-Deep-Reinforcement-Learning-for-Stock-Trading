@@ -86,8 +86,8 @@ def run_stage3_joint_finetuning(
 
                     q_target_next, _, _ = agent.target_model(b_next_obs)
                     target_next_q = q_target_next.gather(1, best_next_actions).squeeze(1)
-                    # (1.0 - b_term): Time-limit truncated states continue bootstrapping
-                    expected_q = b_rew + (1.0 - b_term) * (agent.config.gamma * target_next_q)
+                    # (1.0 - b_term.float()): Time-limit truncated states continue bootstrapping
+                    expected_q = b_rew + (1.0 - b_term.float()) * (agent.config.gamma * target_next_q)
 
                 rl_loss = agent.loss_fn(q_action_values, expected_q)
 

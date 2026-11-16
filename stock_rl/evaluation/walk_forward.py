@@ -58,15 +58,17 @@ class WalkForwardEngine:
         test_end = pd.Timestamp("2026-11-01")
 
         # Dynamically determine the last valid trading day before boundary
+        # For horizon H, label realization is at T+1+H Open.
+        # To ensure T+1+H <= split_end, sample index <= N - (H + 2).
         train_trading_days = decision_dates[(decision_dates >= train_start) & (decision_dates <= train_end)]
-        if len(train_trading_days) > max_label_horizon_days:
-            purged_train_end = train_trading_days[-max_label_horizon_days - 1]
+        if len(train_trading_days) >= max_label_horizon_days + 2:
+            purged_train_end = train_trading_days[-(max_label_horizon_days + 2)]
         else:
             purged_train_end = train_end
 
         val_trading_days = decision_dates[(decision_dates >= val_start) & (decision_dates <= val_end)]
-        if len(val_trading_days) > max_label_horizon_days:
-            purged_val_end = val_trading_days[-max_label_horizon_days - 1]
+        if len(val_trading_days) >= max_label_horizon_days + 2:
+            purged_val_end = val_trading_days[-(max_label_horizon_days + 2)]
         else:
             purged_val_end = val_end
 

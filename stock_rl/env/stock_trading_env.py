@@ -1,6 +1,17 @@
 """
 Point-in-Time Single-Stock Trading Gym Environment V8.0
 Standardized gymnasium.Env implementing 20:00 decision cycle and mark-to-market equity log return.
+
+Simulation Modeling Assumptions:
+1. Continuous share proxy: Portfolio trades continuous share quantities as a high-fidelity proxy
+   for 1,000-share board lots and intraday odd lots (officially permitted by TWSE since October 2020).
+2. Execution mechanics: Next-day open price execution with broker commission discounts (0.1425% * 0.28),
+   securities transaction tax (0.3% on sales), and linear bid-ask slippage.
+3. Limit lock rejection: Limit-up buy orders and limit-down sell orders are rejected instantaneously at open.
+   When rejected:
+   - Rejected Buy: portfolio remains in Cash (0), holding days = 0, entry price = 0.0.
+   - Rejected Sell: portfolio remains Long (1), holding days accumulate (+1), original entry price preserved.
+4. Corporate Actions: Cash dividends and stock rights are accounted for via cash-adjusted total return pricing.
 """
 
 from typing import Dict, Any, Tuple, Optional, List
@@ -161,12 +172,18 @@ class PointInTimeStockEnv(gym.Env):
         self.shares = new_shares
         self.current_position = exec_res.executed_action
 
-        # Update entry price and holding days
-        if action == ACTION_LONG:
-            if self.entry_price == 0.0 or exec_res.shares_traded > 0:
+        # Update entry price and holding days strictly based on executed_action and rejection state
+        if exec_res.executed_action == ACTION_LONG:
+            if exec_res.shares_traded > 0 and self.entry_price == 0.0:
+                # Newly opened Long position
                 self.entry_price = exec_res.executed_price
+            elif exec_res.order_rejected:
+                # Sell order rejected (e.g. limit-down lock): maintain original entry_price
+                pass
+            # Holding days accumulate while position is held
             self.holding_days += 1
         else:
+            # Position is Cash: either already cash, successfully sold, or buy order rejected
             self.entry_price = 0.0
             self.holding_days = 0
 

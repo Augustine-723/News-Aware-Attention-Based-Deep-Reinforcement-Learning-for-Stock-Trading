@@ -5,7 +5,7 @@ Missing-Value Policy, and Version.
 """
 
 from dataclasses import dataclass
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 # Sequence lengths
 MARKET_WINDOW_LENGTH: int = 60  # 60 trading days
@@ -53,6 +53,15 @@ class FeatureField:
     available_timing: str
     missing_policy: str
     version: str = "v8.0"
+
+    def is_available_at(self, record_timestamp: Optional[Any], decision_timestamp: Any) -> bool:
+        """
+        Validates historical availability: actual record timestamp must be <= decision_timestamp.
+        Static available_timing documentation cannot substitute for point-in-time timestamp verification.
+        """
+        if record_timestamp is None:
+            return False
+        return record_timestamp <= decision_timestamp
 
 
 # ==============================================================================

@@ -44,7 +44,15 @@ class DocumentVersion:
     vendor_available_time: Optional[datetime]  # When vendor feed historically made this version accessible
     is_verified: bool                          # Whether historical availability timestamp is audit-verified
     headline: str
+    content: str = ""                          # Versioned document content / factual evidence snippet
     metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        # Strict validation: vendor feed cannot historically precede official publication
+        if self.vendor_available_time is not None and self.pub_time > self.vendor_available_time:
+            raise ValueError(
+                f"Chronological inconsistency: pub_time ({self.pub_time}) cannot be after vendor_available_time ({self.vendor_available_time})"
+            )
 
     @property
     def availability_status(self) -> str:
@@ -111,6 +119,20 @@ class VersionedEventRecord:
         latest_version = max(valid_versions, key=lambda v: (v.vendor_available_time, v.version_id))
         return latest_version, AvailabilityStatus.VERIFIED
 
+    def get_text_at(
+        self,
+        decision_timestamp: datetime,
+        live_mode: bool = False
+    ) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Retrieves (headline, content) strictly as of decision_timestamp.
+        Guarantees that past event representations cannot be reconstructed from future revisions.
+        """
+        ver, status = self.get_version_as_of(decision_timestamp, live_mode=live_mode)
+        if status == AvailabilityStatus.VERIFIED and ver is not None:
+            return ver.headline, ver.content
+        return None, None
+
 
 class PointInTimeGuard:
     """
@@ -172,11 +194,14 @@ class PointInTimeGuard:
         split_boundaries: List[Tuple[str, pd.Timestamp, pd.Timestamp]]
     ) -> Dict[str, np.ndarray]:
         """
-        Dynamically purges samples whose forward-looking label window overlaps past split boundaries.
+        Dynamically purges samples whose forward-looking label window overlaps past split boundaries
+        or exceeds historical dataset cutoff.
 
-        For a sample at decision date t with maximum label horizon H trading days,
-        the label spans [t+1 Open, t+1+H Open]. If this window crosses into the subsequent split,
-        it is purged dynamically.
+        For a sample at decision date t (index idx) with maximum label horizon H trading days,
+        the label spans [t+1 Open, t+1+H Open] (e.g. for 5-day horizon: T+1 Open to T+6 Open).
+        The realization date index is: label_end_idx = idx + 1 + max_horizon.
+        - If label_end_idx >= len(decision_dates), the label exceeds dataset cutoff and is marked invalid/purged.
+        - If decision_dates[label_end_idx] > end_ts, the label crosses into the next split and is purged.
         """
         max_horizon = max(label_horizons_days)
         masks = {}
@@ -190,13 +215,14 @@ class PointInTimeGuard:
                 masks[split_name] = np.zeros(len(decision_dates), dtype=bool)
                 continue
 
-            # Identify cutoff: for any date in split, check if t + max_horizon trading days > end_ts
-            # If the index + max_horizon reaches or exceeds the boundary into the next split, purge it
             valid_indices = []
             for idx in split_indices:
-                target_idx = idx + max_horizon
-                if target_idx < len(decision_dates) and decision_dates[target_idx] > end_ts:
-                    # Label overlaps past the end boundary of this split
+                label_end_idx = idx + 1 + max_horizon
+                # Check dataset cutoff
+                if label_end_idx >= len(decision_dates):
+                    continue
+                # Check split boundary
+                if decision_dates[label_end_idx] > end_ts:
                     continue
                 valid_indices.append(idx)
 
@@ -226,3 +252,19 @@ def check_no_future_leakage(
             f"Example at index {first_violation_idx}: Feature available at {feat_ts} > Decision at {dec_ts}"
         )
     return True
+
+
+def validate_feature_historical_availability(
+    feature_name: str,
+    feature_source_time: Optional[pd.Timestamp],
+    decision_timestamp: pd.Timestamp,
+    is_audit_verified: bool = True
+) -> bool:
+    """
+    Validates whether a specific feature was historically available at decision_timestamp.
+    Requires an audit-verified source timestamp <= decision_timestamp.
+    Static publication descriptions cannot substitute for point-in-time timestamp verification.
+    """
+    if not is_audit_verified or feature_source_time is None:
+        return False
+    return feature_source_time <= decision_timestamp

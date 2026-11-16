@@ -6,7 +6,7 @@ and stage state preservation/migration across training phases.
 
 import copy
 import random
-from typing import Tuple, Dict, Optional
+from typing import Tuple, Dict, Optional, Any
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -103,7 +103,8 @@ class DuelingDoubleDQNAgent:
             target_next_q = q_target_next.gather(1, best_next_actions).squeeze(1)
 
             # Strict V8.0 Bootstrap Rule: Only zero out bootstrap on actual termination (e.g. delisting)
-            expected_q = rewards + (1.0 - terminated) * (self.config.gamma * target_next_q)
+            term_mask = terminated.float() if isinstance(terminated, torch.Tensor) else float(terminated)
+            expected_q = rewards + (1.0 - term_mask) * (self.config.gamma * target_next_q)
 
         # 3. Compute loss and optimize
         loss = self.loss_fn(q_action_values, expected_q)
@@ -118,24 +119,69 @@ class DuelingDoubleDQNAgent:
 
         return float(loss.item())
 
-    def reconfigure_optimizer_for_stage3(self, lr: float = 5e-5, weight_decay: float = 1e-4):
+    def reconfigure_optimizer_for_stage3(
+        self,
+        lr: float = 5e-5,
+        weight_decay: float = 1e-4,
+        inherit_momentum: bool = True
+    ) -> Dict[str, Any]:
         """
-        Reconfigures optimizer for Stage 3 joint fine-tuning while migrating
-        and preserving existing momentum states for already-trained parameters.
-        """
-        old_state = self.optimizer.state_dict() if self.optimizer is not None else None
+        Reconfigures optimizer for Stage 3 joint fine-tuning.
 
+        If inherit_momentum is True:
+            Migrates first (exp_avg) and second (exp_avg_sq) moment buffers and step counts
+            for parameters already trained in Stage 2 (DQN backbone). Newly unfrozen parameters
+            (Temporal Attention, Fusion, Event Projection) initialize with clean zero momentum.
+        If inherit_momentum is False:
+            Explicitly re-initializes all optimizer states from scratch.
+
+        Returns:
+            migration_summary: Dict with count of migrated vs newly initialized parameters.
+        """
+        migrated_count = 0
+        newly_initialized_count = 0
+
+        # Extract current optimizer momentum states by parameter object reference
+        param_to_state = {}
+        if self.optimizer is not None:
+            for p in self.online_model.parameters():
+                if p in self.optimizer.state:
+                    param_to_state[p] = self.optimizer.state[p]
+
+        # Gather currently active trainable parameters (now including unfrozen encoders)
         trainable_params = list(filter(lambda p: p.requires_grad, self.online_model.parameters()))
+
+        # Instantiate Stage 3 AdamW optimizer
         self.optimizer = optim.AdamW(
             trainable_params,
             lr=lr,
             weight_decay=weight_decay,
         )
 
-        # Migrate parameter states where param id matches
-        if old_state is not None and "state" in old_state:
-            # Reconstruct parameter state mapping
-            pass
+        if inherit_momentum and param_to_state:
+            for p in trainable_params:
+                if p in param_to_state and len(param_to_state[p]) > 0:
+                    old_p_state = param_to_state[p]
+                    # Deep copy momentum tensors into the new optimizer state
+                    new_p_state = {}
+                    for k, v in old_p_state.items():
+                        if isinstance(v, torch.Tensor):
+                            new_p_state[k] = v.clone().detach()
+                        else:
+                            new_p_state[k] = copy.deepcopy(v)
+                    self.optimizer.state[p] = new_p_state
+                    migrated_count += 1
+                else:
+                    newly_initialized_count += 1
+        else:
+            newly_initialized_count = len(trainable_params)
+
+        return {
+            "inherit_momentum": inherit_momentum,
+            "migrated_parameters": migrated_count,
+            "newly_initialized_parameters": newly_initialized_count,
+            "total_trainable_parameters": len(trainable_params),
+        }
 
     def _soft_update_target(self, tau: float):
         for target_param, online_param in zip(self.target_model.parameters(), self.online_model.parameters()):

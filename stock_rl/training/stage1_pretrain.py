@@ -58,7 +58,9 @@ def train_stage1_epoch(
         optimizer.step()
 
         for k, v in loss_dict.items():
-            epoch_metrics[k] += v / num_batches
+            if k not in epoch_metrics:
+                epoch_metrics[k] = 0.0
+            epoch_metrics[k] += float(v) / num_batches
 
     return epoch_metrics
 
