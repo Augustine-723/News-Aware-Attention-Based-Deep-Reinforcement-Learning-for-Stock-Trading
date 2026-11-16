@@ -38,6 +38,8 @@ from stock_rl.config.schema import (
     EVENT_STOCK_RELATION_FEATURES,
     POSITION_STATE_FEATURES,
     FeatureDimensions,
+    get_feature_index,
+    EVENT_AGE_METADATA_INDEX,
 )
 from stock_rl.config.settings import (
     TradingConfig,
@@ -86,6 +88,8 @@ __all__ = [
     "EVENT_STOCK_RELATION_FEATURES",
     "POSITION_STATE_FEATURES",
     "FeatureDimensions",
+    "get_feature_index",
+    "EVENT_AGE_METADATA_INDEX",
     "TradingConfig",
     "RLConfig",
     "ModelConfig",

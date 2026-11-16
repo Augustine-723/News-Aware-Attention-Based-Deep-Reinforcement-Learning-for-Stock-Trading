@@ -15,6 +15,8 @@ from stock_rl.config.schema import (
     EVENT_PROJECTION_INTERMEDIATE_DIM,
     EVENT_PROJECTION_OUTPUT_DIM,
     STOCK_CONTEXT_DIM,
+    EVENT_AGE_METADATA_INDEX,
+    get_feature_index,
 )
 
 
@@ -118,8 +120,8 @@ class EventModule(nn.Module):
         # 2. Project: 160 -> 256 -> 128
         projected = self.projection(raw_features)  # [B, 40, 128]
 
-        # 3. Add Event-Age encoding (age is index 4 in metadata)
-        event_age = event_meta[:, :, 4:5]  # [B, 40, 1]
+        # 3. Add Event-Age encoding (age index retrieved dynamically from schema: EV_META_13)
+        event_age = event_meta[:, :, EVENT_AGE_METADATA_INDEX : EVENT_AGE_METADATA_INDEX + 1]  # [B, 40, 1]
         age_enc = self.age_encoder(event_age)
         projected_with_age = projected + age_enc
 

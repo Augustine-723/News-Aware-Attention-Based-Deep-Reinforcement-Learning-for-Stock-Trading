@@ -37,6 +37,7 @@ from stock_rl.config.schema import (
     EVENT_STOCK_RELATION_FEATURE_IDS,
     POSITION_STATE_FEATURE_IDS,
     TOTAL_EVENT_SLOTS,
+    EVENT_AGE_METADATA_INDEX,
 )
 from stock_rl.config.settings import TradingConfig
 from stock_rl.data.synthetic_data import MultimodalBatch, generate_synthetic_batch
@@ -107,10 +108,10 @@ def test_novelty_counterfactual_future_invariance():
         batch.event_mask[:, 1] = True
         batch.event_mask[:, 2] = True
 
-        batch.event_metadata[:, :, 4] = 0.0
-        batch.event_metadata[:, 0, 4] = 20.0  # earliest
-        batch.event_metadata[:, 1, 4] = 10.0  # intermediate
-        batch.event_metadata[:, 2, 4] = 1.0   # latest
+        batch.event_metadata[:, :, EVENT_AGE_METADATA_INDEX] = 0.0
+        batch.event_metadata[:, 0, EVENT_AGE_METADATA_INDEX] = 20.0  # earliest
+        batch.event_metadata[:, 1, EVENT_AGE_METADATA_INDEX] = 10.0  # intermediate
+        batch.event_metadata[:, 2, EVENT_AGE_METADATA_INDEX] = 1.0   # latest
 
         # Forward pass 1
         _, preds1, _ = model(batch)
@@ -169,7 +170,7 @@ def test_novelty_no_prior_memory_fallback():
         # Mask out all events except slot 0
         batch.event_mask[:, :] = False
         batch.event_mask[:, 0] = True
-        batch.event_metadata[:, 0, 4] = 5.0
+        batch.event_metadata[:, 0, EVENT_AGE_METADATA_INDEX] = 5.0
 
         _, _, projected_events, _, causal_prior_memory = model.encode_multimodal_state(batch)
 

@@ -13,6 +13,8 @@ from stock_rl.config.schema import (
     RL_STATE_DIM,
     POSITION_STATE_DIM,
     TOTAL_EVENT_SLOTS,
+    EVENT_AGE_METADATA_INDEX,
+    get_feature_index,
 )
 from stock_rl.data.synthetic_data import MultimodalBatch
 from stock_rl.models.market_encoder import MarketEncoders
@@ -98,9 +100,10 @@ class StockRLFullModel(nn.Module):
 
         # b) Causal prior memory per event slot:
         # Each event's novelty must only compare against information known prior to its publication.
-        # event_age_fractional_days is at index 4 of event_metadata [B, 40, 24].
+        # Dynamically retrieve event age index from schema (EV_META_13 / event_age_fractional_days)
+        # to guarantee zero hardcoded index mismatch.
         # Since age = T_decision - T_available, older events (published before event j) have age_k > age_j.
-        event_ages = batch.event_metadata[:, :, 4]  # [B, 40]
+        event_ages = batch.event_metadata[:, :, EVENT_AGE_METADATA_INDEX]  # [B, 40]
         ages_k = event_ages.unsqueeze(1)            # [B, 1, 40]
         ages_j = event_ages.unsqueeze(2)            # [B, 40, 1]
         # Slot k was published strictly before slot j and is a valid event

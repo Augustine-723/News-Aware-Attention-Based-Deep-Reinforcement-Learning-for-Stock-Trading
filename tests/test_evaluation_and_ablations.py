@@ -10,6 +10,7 @@ from stock_rl.evaluation.metrics import compute_trading_metrics
 from stock_rl.evaluation.ablations import AblationMasker, run_buy_and_hold_benchmark
 from stock_rl.evaluation.walk_forward import evaluate_policy_on_env
 from stock_rl.data.synthetic_data import generate_synthetic_batch
+from stock_rl.config.schema import EVENT_AGE_METADATA_INDEX
 from stock_rl.env.stock_trading_env import PointInTimeStockEnv
 from stock_rl.models.full_model import StockRLFullModel
 
@@ -43,7 +44,7 @@ def test_ablation_maskers():
 
     # 3. Date Perturbation
     d_batch = AblationMasker.apply_date_perturbation(batch, max_jitter_days=3.0)
-    assert (d_batch.event_metadata[:, :, 4:5] >= 0.0).all()
+    assert (d_batch.event_metadata[:, :, EVENT_AGE_METADATA_INDEX : EVENT_AGE_METADATA_INDEX + 1] >= 0.0).all()
 
 
 def test_buy_and_hold_benchmark():

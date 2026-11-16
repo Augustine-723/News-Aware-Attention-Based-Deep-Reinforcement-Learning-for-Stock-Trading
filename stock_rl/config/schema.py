@@ -149,29 +149,29 @@ STOCK_CONTEXT_FEATURE_FIELDS: List[FeatureField] = [
 ]
 
 EVENT_METADATA_FEATURE_FIELDS: List[FeatureField] = [
-    FeatureField("EV_META_01", "event_category_id", "Taxonomy: Earnings=1, Guidance=2, M&A=3, Legal=4, CapEx=5, Macro=6", "categorical", "LLM Extraction", "Event Release", "Categorical 0"),
-    FeatureField("EV_META_02", "source_credibility_tier", "Exchange MOPS=1.0, Major News=0.8, Media Wire=0.6", "score", "Metadata Registry", "Event Release", "0.5"),
-    FeatureField("EV_META_03", "event_sentiment_score", "LLM sentiment score [-1.0, +1.0]", "bounded_score", "LLM Extraction", "Event Release", "0.0"),
-    FeatureField("EV_META_04", "sentiment_confidence", "LLM extraction confidence [0.0, 1.0]", "score", "LLM Extraction", "Event Release", "0.5"),
-    FeatureField("EV_META_05", "event_age_fractional_days", "(T_decision - T_available) in fractional days", "days", "PIT Engine", "Event Release", "0.0"),
-    FeatureField("EV_META_06", "event_scope_tier", "Company-specific=1.0, Supply-chain=0.7, Sector=0.4, Macro=0.1", "score", "LLM Extraction", "Event Release", "1.0"),
-    FeatureField("EV_META_07", "is_regulatory_filing", "Binary indicator for MOPS material announcement", "binary", "Exchange Filing", "Event Release", "0.0"),
-    FeatureField("EV_META_08", "is_earnings_guidance", "Binary indicator for quarterly revenue/margin guidance", "binary", "LLM Extraction", "Event Release", "0.0"),
-    FeatureField("EV_META_09", "is_supply_chain_disruption", "Binary indicator for outage, fire, fab shortage", "binary", "LLM Extraction", "Event Release", "0.0"),
-    FeatureField("EV_META_10", "is_merger_acquisition", "Binary indicator for tender offer, M&A, equity investment", "binary", "LLM Extraction", "Event Release", "0.0"),
-    FeatureField("EV_META_11", "is_litigation_investigation", "Binary indicator for patent lawsuit, regulatory probe", "binary", "LLM Extraction", "Event Release", "0.0"),
-    FeatureField("EV_META_12", "is_macro_policy", "Binary indicator for export restrictions, tariff change", "binary", "LLM Extraction", "Event Release", "0.0"),
-    FeatureField("EV_META_13", "is_capital_reduction", "Binary indicator for cash capital reduction", "binary", "Exchange Filing", "Event Release", "0.0"),
-    FeatureField("EV_META_14", "is_dividend_announcement", "Binary indicator for cash dividend distribution announcement", "binary", "Exchange Filing", "Event Release", "0.0"),
-    FeatureField("EV_META_15", "revision_count", "Number of official revision amendments published", "count", "PIT Engine", "Event Release", "0.0"),
-    FeatureField("EV_META_16", "urgency_flag", "Binary indicator for urgent breaking development", "binary", "News Vendor", "Event Release", "0.0"),
-    FeatureField("EV_META_17", "historical_source_accuracy", "Empirical reliability score of publishing media outlet", "score", "Historical Analytics", "Event Release", "0.5"),
-    FeatureField("EV_META_18", "title_body_consistency", "Cosine similarity between headline and extracted evidence", "score", "LLM Extraction", "Event Release", "1.0"),
-    FeatureField("EV_META_19", "verified_entity_count", "Number of verified TWSE stock symbols matched", "count", "Entity Resolver", "Event Release", "1.0"),
-    FeatureField("EV_META_20", "is_breaking_news", "Binary indicator: published during regular trading hours", "binary", "PIT Engine", "Event Release", "0.0"),
-    FeatureField("EV_META_21", "vendor_ingestion_delay_min", "ln(1 + vendor delay minutes)", "dimensionless", "PIT Engine", "Event Release", "0.0"),
-    FeatureField("EV_META_22", "document_word_count_bucket", "Word count bucket: Short=1, Medium=2, Long=3, Deep=4", "categorical", "Document Parser", "Event Release", "2.0"),
-    FeatureField("EV_META_23", "evidence_span_count", "Count of extracted factual evidence sentence spans", "count", "LLM Extraction", "Event Release", "1.0"),
+    FeatureField("EV_META_01", "category_earnings", "Binary indicator: earnings release, quarterly financial results", "binary", "Exchange MOPS", "Event Release", "0.0"),
+    FeatureField("EV_META_02", "category_revenue_guidance", "Binary indicator: monthly revenue, guidance update", "binary", "Exchange MOPS", "Event Release", "0.0"),
+    FeatureField("EV_META_03", "category_order_contract", "Binary indicator: major client order, commercial supply contract", "binary", "LLM Extraction", "Event Release", "0.0"),
+    FeatureField("EV_META_04", "category_capacity_expansion", "Binary indicator: capex expansion, new fab, equipment purchase", "binary", "Exchange MOPS", "Event Release", "0.0"),
+    FeatureField("EV_META_05", "category_merger_acquisition", "Binary indicator: tender offer, M&A, equity investment", "binary", "Exchange MOPS", "Event Release", "0.0"),
+    FeatureField("EV_META_06", "category_litigation_regulatory", "Binary indicator: patent lawsuit, legal dispute, regulator probe", "binary", "Exchange MOPS", "Event Release", "0.0"),
+    FeatureField("EV_META_07", "category_management_governance", "Binary indicator: board / executive change, insider holding change", "binary", "Exchange MOPS", "Event Release", "0.0"),
+    FeatureField("EV_META_08", "category_macro_industry", "Binary indicator: macro policy, tariff, export controls, trade restriction", "binary", "News Vendor", "Event Release", "0.0"),
+    FeatureField("EV_META_09", "source_credibility_tier", "Exchange MOPS=1.0, Major News=0.8, Media Wire=0.6, Other=0.4", "score", "Metadata Registry", "Event Release", "0.5"),
+    FeatureField("EV_META_10", "event_sentiment_score", "LLM sentiment score [-1.0, +1.0]", "bounded_score", "LLM Extraction", "Event Release", "0.0"),
+    FeatureField("EV_META_11", "sentiment_confidence", "LLM extraction confidence [0.0, 1.0]", "score", "LLM Extraction", "Event Release", "0.5"),
+    FeatureField("EV_META_12", "event_scope_tier", "Company-specific=1.0, Supply-chain=0.7, Sector=0.4, Macro=0.1", "score", "LLM Extraction", "Event Release", "1.0"),
+    FeatureField("EV_META_13", "event_age_fractional_days", "(T_decision - T_available) in fractional days", "days", "PIT Engine", "Event Release", "0.0"),
+    FeatureField("EV_META_14", "historical_source_accuracy", "Empirical reliability score of publishing media outlet", "score", "Historical Analytics", "Event Release", "0.5"),
+    FeatureField("EV_META_15", "title_body_consistency", "Cosine similarity between headline and extracted evidence", "score", "LLM Extraction", "Event Release", "1.0"),
+    FeatureField("EV_META_16", "verified_entity_count", "Number of verified TWSE stock symbols matched", "count", "Entity Resolver", "Event Release", "1.0"),
+    FeatureField("EV_META_17", "is_breaking_news", "Binary indicator: published during regular trading hours", "binary", "PIT Engine", "Event Release", "0.0"),
+    FeatureField("EV_META_18", "revision_count", "Number of official revision amendments published", "count", "PIT Engine", "Event Release", "0.0"),
+    FeatureField("EV_META_19", "urgency_flag", "Binary indicator for urgent breaking development", "binary", "News Vendor", "Event Release", "0.0"),
+    FeatureField("EV_META_20", "vendor_ingestion_delay_min", "ln(1 + vendor delay minutes)", "dimensionless", "PIT Engine", "Event Release", "0.0"),
+    FeatureField("EV_META_21", "document_word_count_bucket", "Word count bucket: Short=1, Medium=2, Long=3, Deep=4", "categorical", "Document Parser", "Event Release", "2.0"),
+    FeatureField("EV_META_22", "evidence_span_count", "Count of extracted factual evidence sentence spans", "count", "LLM Extraction", "Event Release", "1.0"),
+    FeatureField("EV_META_23", "is_regulatory_filing", "Binary indicator for MOPS material announcement", "binary", "Exchange Filing", "Event Release", "0.0"),
     FeatureField("EV_META_24", "active_flag", "Binary indicator: ongoing material event cycle (e.g. active tender)", "binary", "Event State Machine", "Daily 20:00", "0.0"),
 ]
 
@@ -226,6 +226,75 @@ ALL_FEATURE_FIELDS: List[FeatureField] = (
 
 FEATURE_ID_TO_FIELD: Dict[str, FeatureField] = {f.feature_id: f for f in ALL_FEATURE_FIELDS}
 FEATURE_NAME_TO_FIELD: Dict[str, FeatureField] = {f.name: f for f in ALL_FEATURE_FIELDS}
+
+TABLE_NAME_TO_FIELDS: Dict[str, List[FeatureField]] = {
+    "price": PRICE_FEATURE_FIELDS,
+    "technical": TECHNICAL_FEATURE_FIELDS,
+    "institutional": INSTITUTIONAL_FEATURE_FIELDS,
+    "macro": MACRO_FEATURE_FIELDS,
+    "stock_context": STOCK_CONTEXT_FEATURE_FIELDS,
+    "event_metadata": EVENT_METADATA_FEATURE_FIELDS,
+    "event_stock_relation": EVENT_STOCK_RELATION_FEATURE_FIELDS,
+    "position_state": POSITION_STATE_FEATURE_FIELDS,
+}
+
+PRICE_INDEX_BY_ID: Dict[str, int] = {f.feature_id: i for i, f in enumerate(PRICE_FEATURE_FIELDS)}
+PRICE_INDEX_BY_NAME: Dict[str, int] = {f.name: i for i, f in enumerate(PRICE_FEATURE_FIELDS)}
+
+TECHNICAL_INDEX_BY_ID: Dict[str, int] = {f.feature_id: i for i, f in enumerate(TECHNICAL_FEATURE_FIELDS)}
+TECHNICAL_INDEX_BY_NAME: Dict[str, int] = {f.name: i for i, f in enumerate(TECHNICAL_FEATURE_FIELDS)}
+
+INSTITUTIONAL_INDEX_BY_ID: Dict[str, int] = {f.feature_id: i for i, f in enumerate(INSTITUTIONAL_FEATURE_FIELDS)}
+INSTITUTIONAL_INDEX_BY_NAME: Dict[str, int] = {f.name: i for i, f in enumerate(INSTITUTIONAL_FEATURE_FIELDS)}
+
+MACRO_INDEX_BY_ID: Dict[str, int] = {f.feature_id: i for i, f in enumerate(MACRO_FEATURE_FIELDS)}
+MACRO_INDEX_BY_NAME: Dict[str, int] = {f.name: i for i, f in enumerate(MACRO_FEATURE_FIELDS)}
+
+STOCK_CONTEXT_INDEX_BY_ID: Dict[str, int] = {f.feature_id: i for i, f in enumerate(STOCK_CONTEXT_FEATURE_FIELDS)}
+STOCK_CONTEXT_INDEX_BY_NAME: Dict[str, int] = {f.name: i for i, f in enumerate(STOCK_CONTEXT_FEATURE_FIELDS)}
+
+EVENT_METADATA_INDEX_BY_ID: Dict[str, int] = {f.feature_id: i for i, f in enumerate(EVENT_METADATA_FEATURE_FIELDS)}
+EVENT_METADATA_INDEX_BY_NAME: Dict[str, int] = {f.name: i for i, f in enumerate(EVENT_METADATA_FEATURE_FIELDS)}
+
+EVENT_STOCK_RELATION_INDEX_BY_ID: Dict[str, int] = {f.feature_id: i for i, f in enumerate(EVENT_STOCK_RELATION_FEATURE_FIELDS)}
+EVENT_STOCK_RELATION_INDEX_BY_NAME: Dict[str, int] = {f.name: i for i, f in enumerate(EVENT_STOCK_RELATION_FEATURE_FIELDS)}
+
+POSITION_STATE_INDEX_BY_ID: Dict[str, int] = {f.feature_id: i for i, f in enumerate(POSITION_STATE_FEATURE_FIELDS)}
+POSITION_STATE_INDEX_BY_NAME: Dict[str, int] = {f.name: i for i, f in enumerate(POSITION_STATE_FEATURE_FIELDS)}
+
+GLOBAL_FEATURE_INDEX_BY_ID: Dict[str, int] = {}
+GLOBAL_FEATURE_INDEX_BY_NAME: Dict[str, int] = {}
+for fields in TABLE_NAME_TO_FIELDS.values():
+    for i, f in enumerate(fields):
+        GLOBAL_FEATURE_INDEX_BY_ID[f.feature_id] = i
+        GLOBAL_FEATURE_INDEX_BY_NAME[f.name] = i
+
+
+def get_feature_index(key: str, table_name: Optional[str] = None) -> int:
+    """
+    Unified lookup interface: returns the 0-based column index of a feature in its tensor.
+    Accepts feature_id (e.g. 'EV_META_13', 'POS_04', 'PRC_01') or feature name (e.g. 'event_age_fractional_days').
+    If table_name is specified (e.g. 'price', 'event_metadata'), searches strictly within that table.
+    """
+    if table_name is not None:
+        table_lower = table_name.lower().strip()
+        if table_lower not in TABLE_NAME_TO_FIELDS:
+            raise KeyError(f"Unknown table_name '{table_name}'. Valid tables: {list(TABLE_NAME_TO_FIELDS.keys())}")
+        fields = TABLE_NAME_TO_FIELDS[table_lower]
+        for i, f in enumerate(fields):
+            if f.feature_id == key or f.name == key:
+                return i
+        raise KeyError(f"Feature '{key}' not found in table '{table_name}'.")
+
+    if key in GLOBAL_FEATURE_INDEX_BY_ID:
+        return GLOBAL_FEATURE_INDEX_BY_ID[key]
+    if key in GLOBAL_FEATURE_INDEX_BY_NAME:
+        return GLOBAL_FEATURE_INDEX_BY_NAME[key]
+    raise KeyError(f"Feature '{key}' not found in any feature table.")
+
+
+# Authoritative constant for Event Age metadata index: EV_META_13 (index 12)
+EVENT_AGE_METADATA_INDEX: int = get_feature_index("EV_META_13", "event_metadata")
 
 
 @dataclass(frozen=True)

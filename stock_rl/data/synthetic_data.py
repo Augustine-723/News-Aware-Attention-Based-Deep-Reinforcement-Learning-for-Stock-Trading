@@ -24,6 +24,7 @@ from stock_rl.config.schema import (
     EVENT_STOCK_RELATION_DIM,
     POSITION_STATE_DIM,
     NUM_HORIZONS,
+    EVENT_AGE_METADATA_INDEX,
 )
 
 
@@ -102,6 +103,8 @@ def generate_synthetic_batch(
     active_emb = torch.tensor(raw_active / (np.linalg.norm(raw_active, axis=-1, keepdims=True) + 1e-8), dtype=torch.float32)
 
     event_metadata = torch.tensor(rng.uniform(0.0, 1.0, (batch_size, TOTAL_EVENT_SLOTS, EVENT_METADATA_DIM)), dtype=torch.float32)
+    # Event age in fractional days (EV_META_13)
+    event_metadata[:, :, EVENT_AGE_METADATA_INDEX] = torch.tensor(rng.uniform(0.1, 60.0, (batch_size, TOTAL_EVENT_SLOTS)), dtype=torch.float32)
     event_stock_rel = torch.tensor(rng.uniform(0.0, 1.0, (batch_size, TOTAL_EVENT_SLOTS, EVENT_STOCK_RELATION_DIM)), dtype=torch.float32)
 
     # Event mask: simulate 5 to 30 active events per sample

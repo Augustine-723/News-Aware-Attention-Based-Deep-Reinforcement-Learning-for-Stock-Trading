@@ -10,6 +10,7 @@ import torch
 import numpy as np
 
 from stock_rl.data.synthetic_data import MultimodalBatch
+from stock_rl.config.schema import EVENT_AGE_METADATA_INDEX, get_feature_index
 from stock_rl.env.stock_trading_env import PointInTimeStockEnv
 from stock_rl.models.full_model import StockRLFullModel
 from stock_rl.evaluation.walk_forward import evaluate_policy_on_env
@@ -36,9 +37,10 @@ class AblationMasker:
         b.recent_event_emb = torch.zeros_like(batch.recent_event_emb)
         b.active_event_emb = torch.zeros_like(batch.active_event_emb)
         b.event_stock_rel = torch.zeros_like(batch.event_stock_rel)
-        # Keep only metadata indices 2:4 (sentiment score & confidence)
+        # Keep only metadata sentiment score & confidence
+        sent_start = get_feature_index("EV_META_10", "event_metadata")
         meta_zeroed = torch.zeros_like(batch.event_metadata)
-        meta_zeroed[:, :, 2:4] = batch.event_metadata[:, :, 2:4]
+        meta_zeroed[:, :, sent_start : sent_start + 2] = batch.event_metadata[:, :, sent_start : sent_start + 2]
         b.event_metadata = meta_zeroed
         return b
 
@@ -47,8 +49,9 @@ class AblationMasker:
         """Adds random temporal noise to event ages to test PIT timestamp sensitivity."""
         b = copy.copy(batch)
         meta = batch.event_metadata.clone()
-        jitter = torch.FloatTensor(meta[:, :, 4:5].shape).uniform_(-max_jitter_days, max_jitter_days)
-        meta[:, :, 4:5] = torch.clamp(meta[:, :, 4:5] + jitter, min=0.0)
+        age_slice = slice(EVENT_AGE_METADATA_INDEX, EVENT_AGE_METADATA_INDEX + 1)
+        jitter = torch.FloatTensor(meta[:, :, age_slice].shape).uniform_(-max_jitter_days, max_jitter_days)
+        meta[:, :, age_slice] = torch.clamp(meta[:, :, age_slice] + jitter, min=0.0)
         b.event_metadata = meta
         return b
 

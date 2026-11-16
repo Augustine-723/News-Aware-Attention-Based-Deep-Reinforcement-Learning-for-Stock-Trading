@@ -37,6 +37,7 @@ from stock_rl.config.schema import (
     EVENT_METADATA_FEATURE_FIELDS,
     EVENT_STOCK_RELATION_FEATURE_FIELDS,
     POSITION_STATE_FEATURE_FIELDS,
+    EVENT_AGE_METADATA_INDEX,
 )
 from stock_rl.data.pit_engine import (
     DocumentVersion,
@@ -200,10 +201,10 @@ def test_novelty_causal_memory_and_padding_invariance():
     # Slot 1: Age 2 days (occurred 2 days ago, newer than slot 0)
     # Slot 2: Padded / invalid slot
     # Slots 3..39: Padded / invalid slots
-    batch.event_metadata[0, :, 4] = 0.0
-    batch.event_metadata[0, 0, 4] = 5.0
-    batch.event_metadata[0, 1, 4] = 2.0
-    batch.event_metadata[0, 2, 4] = 10.0  # Older, but padded!
+    batch.event_metadata[0, :, EVENT_AGE_METADATA_INDEX] = 0.0
+    batch.event_metadata[0, 0, EVENT_AGE_METADATA_INDEX] = 5.0
+    batch.event_metadata[0, 1, EVENT_AGE_METADATA_INDEX] = 2.0
+    batch.event_metadata[0, 2, EVENT_AGE_METADATA_INDEX] = 10.0  # Older, but padded!
 
     batch.event_mask[0, :] = False
     batch.event_mask[0, 0] = True
@@ -222,9 +223,9 @@ def test_novelty_causal_memory_and_padding_invariance():
     # 3. Test Publication Order Invariance:
     # Swap Slot 0 and Slot 1 (Slot 0 now age 2.0, Slot 1 age 5.0)
     batch_swapped = generate_synthetic_batch(batch_size=2, seed=10)
-    batch_swapped.event_metadata[0, :, 4] = 0.0
-    batch_swapped.event_metadata[0, 0, 4] = 2.0
-    batch_swapped.event_metadata[0, 1, 4] = 5.0
+    batch_swapped.event_metadata[0, :, EVENT_AGE_METADATA_INDEX] = 0.0
+    batch_swapped.event_metadata[0, 0, EVENT_AGE_METADATA_INDEX] = 2.0
+    batch_swapped.event_metadata[0, 1, EVENT_AGE_METADATA_INDEX] = 5.0
     batch_swapped.event_mask[0, :] = False
     batch_swapped.event_mask[0, 0] = True
     batch_swapped.event_mask[0, 1] = True
