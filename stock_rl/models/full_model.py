@@ -1,6 +1,7 @@
 """
 Integrated Multimodal Stock RL Model V8.0
-Unifies MarketEncoders, EventModule, CrossModalAttention, MultiTaskHeads, and DuelingDQN.
+Unifies MarketEncoders, EventModule (with Conditioned Temporal Attention),
+CrossModalAttention, MultiTaskHeads, and DuelingDQN.
 """
 
 from typing import Dict, Tuple, Optional
@@ -35,14 +36,15 @@ class StockRLFullModel(nn.Module):
     def encode_multimodal_state(
         self,
         batch: MultimodalBatch
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """
-        Runs encoders and fusion.
+        Runs encoders and fusion with Conditioned Temporal Attention.
         Returns:
             fused_representation: [B, 128]
             rl_state: [B, 132]
             projected_events: [B, 40, 128]
             context_token: [B, 128]
+            prior_memory: [B, 128]
         """
         # 1. Market sequences -> [B, 5, 128]
         # Order: [Price, Tech, Inst, Macro, Context]
@@ -54,15 +56,20 @@ class StockRLFullModel(nn.Module):
             context=batch.stock_context,
         )
         context_token = market_tokens[:, 4, :]  # [B, 128]
+        market_summary = market_tokens[:, 0:4, :].mean(dim=1)  # [B, 128]
 
         # 2. Event tokens: [B, 40, 128] and [B, 1, 128]
         # Combine recent (32) and active (8) text embeddings -> [B, 40, 128]
         event_text = torch.cat([batch.recent_event_emb, batch.active_event_emb], dim=1)
+
+        # Conditioned Temporal Attention: q = Base + StockProj + MarketProj
         projected_events, aggregated_event_token = self.event_module(
             event_text=event_text,
             event_meta=batch.event_metadata,
             event_rel=batch.event_stock_rel,
             event_mask=batch.event_mask,
+            stock_context=batch.stock_context,
+            market_summary=market_summary,
         )
 
         # 3. Cross-Modal Fusion across 5 market tokens + 1 aggregated event token -> [B, 128]
@@ -74,7 +81,11 @@ class StockRLFullModel(nn.Module):
         # 4. Construct 132-d RL state = [Fused (128) + Position (4)]
         rl_state = torch.cat([fused_rep, batch.position], dim=-1)  # [B, 132]
 
-        return fused_rep, rl_state, projected_events, context_token
+        # 5. Prior event memory for Novelty comparison:
+        # Use projected representation of active event slots (slots 32..40)
+        active_projected_memory = projected_events[:, 32:, :].mean(dim=1)  # [B, 128]
+
+        return fused_rep, rl_state, projected_events, context_token, active_projected_memory
 
     def forward(
         self,
@@ -87,11 +98,12 @@ class StockRLFullModel(nn.Module):
             predictions: dict of multi-task outputs
             rl_state: [B, 132]
         """
-        fused_rep, rl_state, projected_events, context_token = self.encode_multimodal_state(batch)
+        fused_rep, rl_state, projected_events, context_token, prior_memory = self.encode_multimodal_state(batch)
 
-        # Multi-task auxiliary predictions
+        # Multi-task auxiliary predictions with active memory comparison
         predictions = self.multi_task_heads(
             projected_events=projected_events,
+            prior_memory=prior_memory,
             fused_representation=fused_rep,
             context_token=context_token,
         )
@@ -111,21 +123,19 @@ class StockRLFullModel(nn.Module):
             p.requires_grad = False
         for p in self.multi_task_heads.parameters():
             p.requires_grad = False
+        for p in self.dqn.parameters():
+            p.requires_grad = True
 
     def unfreeze_for_stage3(self):
         """
         Selectively unfreezes Temporal Attention, Cross-Modal Fusion,
         and Event Projection for Stage 3 fine-tuning.
         """
-        # Event projection and temporal attention
         for p in self.event_module.parameters():
             p.requires_grad = True
-        # Cross-Modal Fusion
         for p in self.cross_modal_fusion.parameters():
             p.requires_grad = True
-        # Auxiliary heads
         for p in self.multi_task_heads.parameters():
             p.requires_grad = True
-        # DQN heads
         for p in self.dqn.parameters():
             p.requires_grad = True

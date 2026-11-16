@@ -1,9 +1,10 @@
 """
 Stage 2 Training Pipeline: Frozen-Encoder Dueling Double DQN V8.0
-Freezes representation encoders and trains Q-value backbone on environment transitions.
+Freezes representation encoders, trains Q-value backbone on environment transitions,
+distinguishes terminated vs truncated, and returns (agent, buffer, history) for Stage 3 inheritance.
 """
 
-from typing import List, Dict
+from typing import List, Dict, Tuple, Optional
 import numpy as np
 import torch
 
@@ -22,16 +23,24 @@ def run_stage2_rl_training(
     warmup_steps: int = 128,
     train_steps_per_env_step: int = 1,
     batch_size: int = 32,
+    agent: Optional[DuelingDoubleDQNAgent] = None,
+    buffer: Optional[MultimodalReplayBuffer] = None,
     device: torch.device = torch.device("cpu"),
-) -> List[Dict[str, float]]:
+) -> Tuple[DuelingDoubleDQNAgent, MultimodalReplayBuffer, List[Dict[str, float]]]:
     """
     Executes Stage 2: representation encoders frozen, Dueling DDQN trained on environment.
+    Returns:
+        agent: Trained DuelingDoubleDQNAgent
+        buffer: Accumulated MultimodalReplayBuffer
+        episode_history: List of episode summary metrics
     """
     # Freeze representation encoders
     model.freeze_encoders()
 
-    agent = DuelingDoubleDQNAgent(model=model, device=device)
-    buffer = MultimodalReplayBuffer(capacity=50_000)
+    if agent is None:
+        agent = DuelingDoubleDQNAgent(model=model, device=device)
+    if buffer is None:
+        buffer = MultimodalReplayBuffer(capacity=50_000)
 
     episode_history: List[Dict[str, float]] = []
 
@@ -49,15 +58,16 @@ def run_stage2_rl_training(
             done = terminated or truncated
             total_reward += reward
 
-            # Push transition to replay buffer
-            buffer.push(obs, action, reward, next_obs, done)
+            # Push transition with separate terminated and truncated flags
+            buffer.push(obs, action, reward, next_obs, terminated=terminated, truncated=truncated)
             obs = next_obs
 
             # Train if buffer exceeds warmup
             if len(buffer) >= warmup_steps:
                 for _ in range(train_steps_per_env_step):
-                    b_obs, b_act, b_rew, b_next_obs, b_done = buffer.sample(batch_size)
-                    loss = agent.train_step(b_obs, b_act, b_rew, b_next_obs, b_done)
+                    b_obs, b_act, b_rew, b_next_obs, b_term, b_trunc = buffer.sample(batch_size)
+                    # DDQN updates bootstrap on (1.0 - terminated)
+                    loss = agent.train_step(b_obs, b_act, b_rew, b_next_obs, b_term)
                     losses.append(loss)
 
         avg_loss = float(np.mean(losses)) if losses else 0.0
@@ -70,4 +80,4 @@ def run_stage2_rl_training(
             "epsilon": agent.epsilon,
         })
 
-    return episode_history
+    return agent, buffer, episode_history

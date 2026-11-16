@@ -1,6 +1,7 @@
 """
 Stage 1 Training Pipeline: Multi-Task Representation Pretraining V8.0
-Trains Market Encoders, Temporal Attention, Fusion, and Supervised Multi-Task Heads.
+Trains Market Encoders, Temporal Attention, Fusion, and Supervised Multi-Task Heads
+using 4 independent validity masks.
 """
 
 from typing import Dict, List
@@ -44,7 +45,11 @@ def train_stage1_epoch(
             novelty_labels=batch.novelty_labels,
             return_targets=batch.return_targets,
             risk_targets=batch.risk_targets,
-            event_mask=batch.event_mask,
+            relevance_mask=batch.relevance_mask,
+            novelty_mask=batch.novelty_mask,
+            return_mask=batch.return_mask,
+            risk_mask=batch.risk_mask,
+            fallback_event_mask=batch.event_mask,
         )
 
         optimizer.zero_grad()
@@ -66,7 +71,7 @@ def run_stage1_pretraining(
     device: torch.device = torch.device("cpu"),
 ) -> List[Dict[str, float]]:
     """Executes full Stage 1 training schedule."""
-    loss_module = MultiTaskLoss(use_uncertainty_weighting=True).to(device)
+    loss_module = MultiTaskLoss(use_uncertainty_weighting=True, novelty_loss_type="huber").to(device)
     all_params = list(model.parameters()) + list(loss_module.parameters())
     optimizer = optim.AdamW(all_params, lr=lr, weight_decay=1e-4)
 

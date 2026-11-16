@@ -1,38 +1,120 @@
 """
-Point-in-Time (PIT) Data Engine & Timestamp Guard
-Enforces strict historical availability rules per V8.0 Section 3.
+Point-in-Time (PIT) Data Engine & Versioned Availability Guard V8.0
+Enforces strict historical availability, document versioning, and dynamic label boundary purging.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Any
 import pandas as pd
 import numpy as np
 
 
+class AvailabilityStatus:
+    VERIFIED = "VERIFIED"
+    UNKNOWN = "UNKNOWN"
+    UNAVAILABLE = "UNAVAILABLE"
+
+
 @dataclass(frozen=True)
 class EventTimestampRecord:
+    """Legacy compatibility dataclass for single-version events."""
     event_id: str
-    occur_time: datetime      # Actual event occurrence
-    pub_time: datetime        # Media publication time
-    vendor_time: datetime     # Vendor feed availability time
-    ingest_time: datetime     # System internal ingestion time
-    revision_time: datetime   # Most recent revision time if amended
+    occur_time: datetime
+    pub_time: datetime
+    vendor_time: datetime
+    ingest_time: datetime
+    revision_time: datetime
     headline: str
     stock_id: str
 
-    def is_available_as_of(self, decision_timestamp: datetime) -> bool:
+    def is_available_as_of(self, decision_timestamp: datetime, live_mode: bool = False) -> bool:
+        if live_mode:
+            return self.vendor_time <= decision_timestamp and self.ingest_time <= decision_timestamp
+        return self.vendor_time <= decision_timestamp
+
+
+@dataclass(frozen=True)
+class DocumentVersion:
+    """
+    Represents an immutable historical version or revision of an event announcement/news.
+    """
+    version_id: int
+    pub_time: datetime                         # Official media / exchange publication time
+    vendor_available_time: Optional[datetime]  # When vendor feed historically made this version accessible
+    is_verified: bool                          # Whether historical availability timestamp is audit-verified
+    headline: str
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def availability_status(self) -> str:
+        if not self.is_verified or self.vendor_available_time is None:
+            return AvailabilityStatus.UNKNOWN
+        return AvailabilityStatus.VERIFIED
+
+
+@dataclass
+class VersionedEventRecord:
+    """
+    A financial event entity with multiple point-in-time document versions/revisions.
+    """
+    event_id: str
+    stock_id: str
+    occur_time: datetime                       # Ground-truth event occurrence time
+    versions: List[DocumentVersion] = field(default_factory=list)
+    system_ingest_time: Optional[datetime] = None  # Local system ingestion timestamp
+
+    def add_version(self, version: DocumentVersion):
+        self.versions.append(version)
+        self.versions.sort(key=lambda v: v.version_id)
+
+    def get_version_as_of(
+        self,
+        decision_timestamp: datetime,
+        live_mode: bool = False
+    ) -> Tuple[Optional[DocumentVersion], str]:
         """
-        PIT Verification: Event is strictly available only if vendor feed
-        was received at or before the decision timestamp.
+        Retrieves the exact document version available at historical decision_timestamp.
+
+        Rules per Specification V8.0:
+        1. Backfill records: Historical availability is determined by `vendor_available_time`,
+           NOT modern `system_ingest_time`.
+        2. Point-in-Time Versioning: Selects the latest revision whose `vendor_available_time <= decision_timestamp`.
+           Revisions occurring after decision_timestamp must not leak into model inputs.
+        3. Unknown Availability: If `is_verified` is False or `vendor_available_time` is missing,
+           the document is marked UNKNOWN and CANNOT be assumed available.
+        4. Live Trading Mode: If `live_mode=True`, additionally enforces `system_ingest_time <= decision_timestamp`.
         """
-        effective_availability = max(self.vendor_time, self.ingest_time)
-        return effective_availability <= decision_timestamp
+        # In live execution mode, system must have actually ingested the record
+        if live_mode:
+            if self.system_ingest_time is None or self.system_ingest_time > decision_timestamp:
+                return None, AvailabilityStatus.UNAVAILABLE
+
+        valid_versions = []
+        for v in self.versions:
+            # Rule 3: Unverified timestamps cannot be assumed available
+            if v.availability_status == AvailabilityStatus.UNKNOWN:
+                continue
+
+            # Rule 1 & 2: Check historical vendor availability
+            if v.vendor_available_time <= decision_timestamp:
+                valid_versions.append(v)
+
+        if not valid_versions:
+            # Check if any unverified version existed
+            has_unverified = any(v.availability_status == AvailabilityStatus.UNKNOWN for v in self.versions)
+            if has_unverified:
+                return None, AvailabilityStatus.UNKNOWN
+            return None, AvailabilityStatus.UNAVAILABLE
+
+        # Return latest revision available as of decision_timestamp
+        latest_version = max(valid_versions, key=lambda v: (v.vendor_available_time, v.version_id))
+        return latest_version, AvailabilityStatus.VERIFIED
 
 
 class PointInTimeGuard:
     """
-    Enforces no-lookahead policies, temporal purging, and source availability guards.
+    Enforces no-lookahead policies, temporal dynamic purging, and source availability guards.
     """
 
     def __init__(self, decision_time_str: str = "20:00:00", timezone: str = "Asia/Taipei"):
@@ -46,32 +128,33 @@ class PointInTimeGuard:
 
     def filter_events_pit(
         self,
-        events: List[EventTimestampRecord],
-        decision_timestamp: datetime
-    ) -> List[EventTimestampRecord]:
-        """Filters events to only those available at or before the decision timestamp."""
-        return [ev for ev in events if ev.is_available_as_of(decision_timestamp)]
+        events: List[VersionedEventRecord],
+        decision_timestamp: datetime,
+        live_mode: bool = False
+    ) -> List[Tuple[VersionedEventRecord, DocumentVersion]]:
+        """
+        Filters events and returns pairs of (event, active_version) strictly available at decision_timestamp.
+        Excludes UNAVAILABLE and UNKNOWN events.
+        """
+        available_events = []
+        for ev in events:
+            ver, status = ev.get_version_as_of(decision_timestamp, live_mode=live_mode)
+            if status == AvailabilityStatus.VERIFIED and ver is not None:
+                available_events.append((ev, ver))
+        return available_events
 
     @staticmethod
     def purge_train_val_test_boundaries(
         df_index: pd.DatetimeIndex,
-        split_dates: List[Tuple[str, str]],
+        split_dates: List[Tuple[str, Tuple[str, str]]],
         purge_window_days: int = 5
     ) -> Dict[str, np.ndarray]:
-        """
-        Generates split masks with boundary purging.
-        For an N-day forward label, samples within the final N days before a split
-        boundary must be purged to prevent label leakage into subsequent splits.
-        """
+        """Legacy helper for static purge window boundary splitting."""
         masks = {}
         for split_name, (start_str, end_str) in split_dates:
             start_dt = pd.Timestamp(start_str)
             end_dt = pd.Timestamp(end_str)
-
-            # Determine purge cutoff: purge last `purge_window_days` from training/validation
             mask = (df_index >= start_dt) & (df_index <= end_dt)
-
-            # If not the final test set, identify trading days in this split and drop the last N
             split_indices = np.where(mask)[0]
             if len(split_indices) > purge_window_days:
                 purged_indices = split_indices[:-purge_window_days]
@@ -80,6 +163,46 @@ class PointInTimeGuard:
                 masks[split_name] = purged_mask
             else:
                 masks[split_name] = mask
+        return masks
+
+    @staticmethod
+    def purge_label_overlap_boundaries(
+        decision_dates: pd.DatetimeIndex,
+        label_horizons_days: List[int],
+        split_boundaries: List[Tuple[str, pd.Timestamp, pd.Timestamp]]
+    ) -> Dict[str, np.ndarray]:
+        """
+        Dynamically purges samples whose forward-looking label window overlaps past split boundaries.
+
+        For a sample at decision date t with maximum label horizon H trading days,
+        the label spans [t+1 Open, t+1+H Open]. If this window crosses into the subsequent split,
+        it is purged dynamically.
+        """
+        max_horizon = max(label_horizons_days)
+        masks = {}
+
+        for split_name, start_ts, end_ts in split_boundaries:
+            # Samples falling within the split range
+            in_split = (decision_dates >= start_ts) & (decision_dates <= end_ts)
+            split_indices = np.where(in_split)[0]
+
+            if len(split_indices) == 0:
+                masks[split_name] = np.zeros(len(decision_dates), dtype=bool)
+                continue
+
+            # Identify cutoff: for any date in split, check if t + max_horizon trading days > end_ts
+            # If the index + max_horizon reaches or exceeds the boundary into the next split, purge it
+            valid_indices = []
+            for idx in split_indices:
+                target_idx = idx + max_horizon
+                if target_idx < len(decision_dates) and decision_dates[target_idx] > end_ts:
+                    # Label overlaps past the end boundary of this split
+                    continue
+                valid_indices.append(idx)
+
+            mask = np.zeros(len(decision_dates), dtype=bool)
+            mask[valid_indices] = True
+            masks[split_name] = mask
 
         return masks
 

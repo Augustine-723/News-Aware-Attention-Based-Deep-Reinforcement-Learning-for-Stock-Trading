@@ -1,7 +1,7 @@
 """
 Multimodal Experience Replay Buffer V8.0
-Stores complete transition tuples with raw multimodal observation tensors to maintain
-encoder-update compatibility across Stage 2 and Stage 3 training.
+Stores complete transition tuples with raw multimodal observation tensors and explicitly
+distinguishes terminated vs truncated flags for correct Double DQN bootstrapping.
 """
 
 from collections import deque
@@ -16,7 +16,8 @@ class Transition(NamedTuple):
     action: int
     reward: float
     next_obs: MultimodalBatch
-    done: bool
+    terminated: bool
+    truncated: bool
 
 
 class MultimodalReplayBuffer:
@@ -34,30 +35,32 @@ class MultimodalReplayBuffer:
         action: int,
         reward: float,
         next_obs: MultimodalBatch,
-        done: bool
+        terminated: bool,
+        truncated: bool = False
     ):
-        self.buffer.append(Transition(obs, action, reward, next_obs, done))
+        self.buffer.append(Transition(obs, action, reward, next_obs, bool(terminated), bool(truncated)))
 
     def __len__(self) -> int:
         return len(self.buffer)
 
-    def sample(self, batch_size: int) -> Tuple[MultimodalBatch, torch.Tensor, torch.Tensor, MultimodalBatch, torch.Tensor]:
+    def sample(self, batch_size: int) -> Tuple[MultimodalBatch, torch.Tensor, torch.Tensor, MultimodalBatch, torch.Tensor, torch.Tensor]:
         """
         Samples a mini-batch of transitions.
         Returns:
-            (batch_obs, batch_actions, batch_rewards, batch_next_obs, batch_dones)
+            (batch_obs, batch_actions, batch_rewards, batch_next_obs, batch_terminated, batch_truncated)
         """
         samples: List[Transition] = random.sample(self.buffer, batch_size)
 
         actions = torch.tensor([s.action for s in samples], dtype=torch.int64)
         rewards = torch.tensor([s.reward for s in samples], dtype=torch.float32)
-        dones = torch.tensor([float(s.done) for s in samples], dtype=torch.float32)
+        terminated = torch.tensor([float(s.terminated) for s in samples], dtype=torch.float32)
+        truncated = torch.tensor([float(s.truncated) for s in samples], dtype=torch.float32)
 
         # Collate observations into batched MultimodalBatch
         batch_obs = self._collate_batches([s.obs for s in samples])
         batch_next_obs = self._collate_batches([s.next_obs for s in samples])
 
-        return batch_obs, actions, rewards, batch_next_obs, dones
+        return batch_obs, actions, rewards, batch_next_obs, terminated, truncated
 
     @staticmethod
     def _collate_batches(batch_list: List[MultimodalBatch]) -> MultimodalBatch:
@@ -78,4 +81,8 @@ class MultimodalReplayBuffer:
             novelty_labels=torch.cat([b.novelty_labels for b in batch_list], dim=0) if batch_list[0].novelty_labels is not None else None,
             return_targets=torch.cat([b.return_targets for b in batch_list], dim=0) if batch_list[0].return_targets is not None else None,
             risk_targets=torch.cat([b.risk_targets for b in batch_list], dim=0) if batch_list[0].risk_targets is not None else None,
+            relevance_mask=torch.cat([b.relevance_mask for b in batch_list], dim=0) if batch_list[0].relevance_mask is not None else None,
+            novelty_mask=torch.cat([b.novelty_mask for b in batch_list], dim=0) if batch_list[0].novelty_mask is not None else None,
+            return_mask=torch.cat([b.return_mask for b in batch_list], dim=0) if batch_list[0].return_mask is not None else None,
+            risk_mask=torch.cat([b.risk_mask for b in batch_list], dim=0) if batch_list[0].risk_mask is not None else None,
         )

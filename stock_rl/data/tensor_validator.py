@@ -63,18 +63,33 @@ def validate_multimodal_batch(batch: MultimodalBatch) -> bool:
             if torch.isinf(tensor).any():
                 raise TensorSchemaError(f"Inf detected in tensor {name}")
 
-    # Verify targets if provided
+    # Verify targets and independent masks if provided
     if batch.relevance_labels is not None:
         if tuple(batch.relevance_labels.shape) != (B, TOTAL_EVENT_SLOTS, 1):
             raise TensorSchemaError(f"Relevance labels shape mismatch: {tuple(batch.relevance_labels.shape)}")
+    if batch.relevance_mask is not None:
+        if tuple(batch.relevance_mask.shape) != (B, TOTAL_EVENT_SLOTS, 1):
+            raise TensorSchemaError(f"Relevance mask shape mismatch: {tuple(batch.relevance_mask.shape)}")
+
     if batch.novelty_labels is not None:
         if tuple(batch.novelty_labels.shape) != (B, TOTAL_EVENT_SLOTS, 1):
             raise TensorSchemaError(f"Novelty labels shape mismatch: {tuple(batch.novelty_labels.shape)}")
+    if batch.novelty_mask is not None:
+        if tuple(batch.novelty_mask.shape) != (B, TOTAL_EVENT_SLOTS, 1):
+            raise TensorSchemaError(f"Novelty mask shape mismatch: {tuple(batch.novelty_mask.shape)}")
+
     if batch.return_targets is not None:
         if tuple(batch.return_targets.shape) != (B, NUM_HORIZONS):
             raise TensorSchemaError(f"Return targets shape mismatch: {tuple(batch.return_targets.shape)}")
+    if batch.return_mask is not None:
+        if tuple(batch.return_mask.shape) != (B, NUM_HORIZONS):
+            raise TensorSchemaError(f"Return mask shape mismatch: {tuple(batch.return_mask.shape)}")
+
     if batch.risk_targets is not None:
         if tuple(batch.risk_targets.shape) != (B, NUM_HORIZONS):
             raise TensorSchemaError(f"Risk targets shape mismatch: {tuple(batch.risk_targets.shape)}")
+    if batch.risk_mask is not None:
+        if tuple(batch.risk_mask.shape) != (B, NUM_HORIZONS):
+            raise TensorSchemaError(f"Risk mask shape mismatch: {tuple(batch.risk_mask.shape)}")
 
     return True

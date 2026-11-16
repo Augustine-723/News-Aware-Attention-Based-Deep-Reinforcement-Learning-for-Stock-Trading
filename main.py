@@ -1,6 +1,7 @@
 """
 Event-Driven Stock RL — Main Demonstration Pipeline V8.0
-Executes Stages 1, 2, and 3, followed by Walk-Forward Evaluation & Ablation comparisons.
+Executes Stages 1, 2, and 3 (with strict training state inheritance),
+followed by Walk-Forward Evaluation & Benchmark comparisons.
 """
 
 import sys
@@ -46,7 +47,7 @@ def main():
 
     # 3. Stage 2: Frozen Encoders & Dueling Double DQN
     print("\n[+] Stage 2: Training Dueling Double DQN (Frozen Encoders)...")
-    s2_history = run_stage2_rl_training(
+    agent, buffer, s2_history = run_stage2_rl_training(
         model=model,
         env=env,
         episodes=3,
@@ -58,13 +59,15 @@ def main():
         print(f"    Episode {h['episode']:02d} | Return: {h['total_reward']:.4f} | "
               f"Equity: ${h['final_equity']:,.2f} | Loss: {h['avg_loss']:.4f} | Epsilon: {h['epsilon']:.3f}")
 
-    # 4. Stage 3: Selective Fine-Tuning
+    # 4. Stage 3: Selective Fine-Tuning (Inheriting agent and buffer)
     print("\n[+] Stage 3: Joint Fine-Tuning (RL + Auxiliary Multi-Task Loss)...")
-    s3_history = run_stage3_joint_finetuning(
+    agent, buffer, s3_history = run_stage3_joint_finetuning(
         model=model,
         env=env,
         episodes=2,
         batch_size=16,
+        agent=agent,
+        buffer=buffer,
         device=device,
     )
     for h in s3_history:

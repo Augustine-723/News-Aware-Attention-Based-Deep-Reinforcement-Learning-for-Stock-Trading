@@ -23,12 +23,12 @@ def test_replay_buffer_and_double_dqn_update():
     next_obs = generate_synthetic_batch(batch_size=1, seed=2)
 
     for _ in range(10):
-        buffer.push(obs, action=1, reward=0.01, next_obs=next_obs, done=False)
+        buffer.push(obs, action=1, reward=0.01, next_obs=next_obs, terminated=False, truncated=False)
 
     assert len(buffer) == 10
 
-    b_obs, b_act, b_rew, b_next_obs, b_done = buffer.sample(batch_size=4)
-    loss = agent.train_step(b_obs, b_act, b_rew, b_next_obs, b_done)
+    b_obs, b_act, b_rew, b_next_obs, b_term, b_trunc = buffer.sample(batch_size=4)
+    loss = agent.train_step(b_obs, b_act, b_rew, b_next_obs, b_term)
 
     assert not torch.isnan(torch.tensor(loss))
     assert loss >= 0.0
@@ -44,11 +44,15 @@ def test_three_stage_pipeline_execution():
     assert "loss_total" in s1_history[0]
 
     # Stage 2: Frozen RL (1 episode)
-    s2_history = run_stage2_rl_training(model=model, env=env, episodes=1, warmup_steps=4, batch_size=4)
+    agent_s2, buffer_s2, s2_history = run_stage2_rl_training(
+        model=model, env=env, episodes=1, warmup_steps=4, batch_size=4
+    )
     assert len(s2_history) == 1
     assert "total_reward" in s2_history[0]
 
-    # Stage 3: Joint Fine-Tuning (1 episode)
-    s3_history = run_stage3_joint_finetuning(model=model, env=env, episodes=1, batch_size=4)
+    # Stage 3: Joint Fine-Tuning (1 episode inheriting agent and buffer)
+    agent_s3, buffer_s3, s3_history = run_stage3_joint_finetuning(
+        model=model, env=env, episodes=1, batch_size=4, agent=agent_s2, buffer=buffer_s2
+    )
     assert len(s3_history) == 1
     assert "avg_joint_loss" in s3_history[0]

@@ -1,5 +1,8 @@
 from stock_rl.data.pit_engine import (
     EventTimestampRecord,
+    DocumentVersion,
+    VersionedEventRecord,
+    AvailabilityStatus,
     PointInTimeGuard,
     check_no_future_leakage,
 )
@@ -18,6 +21,9 @@ from stock_rl.data.tensor_validator import (
 
 __all__ = [
     "EventTimestampRecord",
+    "DocumentVersion",
+    "VersionedEventRecord",
+    "AvailabilityStatus",
     "PointInTimeGuard",
     "check_no_future_leakage",
     "DynamicUniverseManager",

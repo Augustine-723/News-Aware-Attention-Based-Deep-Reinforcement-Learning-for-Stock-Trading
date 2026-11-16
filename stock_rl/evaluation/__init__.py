@@ -1,7 +1,8 @@
 from stock_rl.evaluation.metrics import compute_trading_metrics
 from stock_rl.evaluation.walk_forward import (
+    WalkForwardSplit,
+    WalkForwardEngine,
     evaluate_policy_on_env,
-    run_multi_seed_evaluation,
 )
 from stock_rl.evaluation.ablations import (
     AblationMasker,
@@ -10,8 +11,9 @@ from stock_rl.evaluation.ablations import (
 
 __all__ = [
     "compute_trading_metrics",
+    "WalkForwardSplit",
+    "WalkForwardEngine",
     "evaluate_policy_on_env",
-    "run_multi_seed_evaluation",
     "AblationMasker",
     "run_buy_and_hold_benchmark",
 ]
