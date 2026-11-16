@@ -163,39 +163,63 @@ BASELINE_V8_0_INSTITUTIONAL_FEATURE_FIELDS: List[FeatureField] = [
 ]
 
 # Baseline Schema V8.0 Formal Specification: Macro (12 dims, M01-M12)
+# Authoritative V8 Specification:
+# M01: TAIEX Return 1D
+# M02: TAIEX Return 5D
+# M03: TAIEX Volatility 20D
+# M04: Sector Return 1D
+# M05: Sector Relative Strength 20D
+# M06: USD/TWD Return
+# M07: S&P 500 Return (T-1 PIT <= 20:00)
+# M08: NASDAQ Return (T-1 PIT <= 20:00)
+# M09: SOX Return (T-1 PIT <= 20:00)
+# M10: VIX Level (T-1 PIT <= 20:00)
+# M11: US 10Y Yield (T-1 PIT <= 20:00)
+# M12: US 10Y Yield Change (T-1 PIT <= 20:00)
+# All cross-market features must strictly adhere to Historical Availability at Taiwan Time 20:00.
 BASELINE_V8_0_MACRO_FEATURE_FIELDS: List[FeatureField] = [
-    FeatureField("MACRO_01", "taiex_return", "Delta ln(TAIEX)", "ratio", "TWSE", "Daily 14:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("MACRO_02", "taiex_vol_20", "20-day annualized realized vol of TAIEX", "annualized_ratio", "TWSE", "Daily 14:00 (<=20:00)", "Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("MACRO_03", "usdtwd_fx_return", "Delta ln(USD/TWD spot)", "ratio", "Taipei Forex", "Daily 16:30 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("MACRO_04", "tw_10y_yield_diff", "Delta Taiwan 10Y sovereign yield (bps)", "bps", "TPEx", "Daily 17:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("MACRO_05", "us_10y_yield_diff", "Delta US 10Y Treasury yield (bps, T-1 PIT)", "bps", "Federal Reserve / US", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("MACRO_06", "sox_semiconductor_return", "SOX index daily return (T-1 PIT)", "ratio", "NASDAQ", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_01", "taiex_return_1d", "(TAIEX_t - TAIEX_{t-1}) / TAIEX_{t-1}", "ratio", "TWSE", "Daily 14:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_02", "taiex_return_5d", "(TAIEX_t - TAIEX_{t-5}) / TAIEX_{t-5}", "ratio", "TWSE", "Daily 14:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_03", "taiex_volatility_20d", "20-day annualized realized vol of TAIEX", "annualized_ratio", "TWSE", "Daily 14:00 (<=20:00)", "Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_04", "sector_return_1d", "(SectorIndex_t - SectorIndex_{t-1}) / SectorIndex_{t-1}", "ratio", "TWSE Industry Index", "Daily 14:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_05", "sector_relative_strength_20d", "SectorReturn_20D - TAIEX_Return_20D", "ratio", "TWSE Industry Index", "Daily 14:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_06", "usdtwd_return", "(USDTWD_t - USDTWD_{t-1}) / USDTWD_{t-1}", "ratio", "Taipei Forex", "Daily 16:30 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("MACRO_07", "sp500_return", "S&P 500 daily return (T-1 PIT)", "ratio", "Cboe / S&P", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("MACRO_08", "brent_crude_return", "Brent crude daily return (T-1 PIT)", "ratio", "ICE", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("MACRO_09", "taiwan_interbank_rate", "Delta Taiwan Interbank Overnight / CP Rate (bps)", "ratio", "CBC Taiwan", "Daily 17:00 (<=20:00)", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("MACRO_10", "macro_economic_leading_indicator", "Delta NDC Composite Leading Indicator", "dimensionless", "NDC Taiwan", "Monthly (PIT release)", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("MACRO_11", "tsmc_adr_premium", "(TSMC ADR / 5 * USD/TWD - TSMC Close) / TSMC Close (T-1 PIT)", "ratio", "NYSE/TWSE", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("MACRO_12", "vix_tw_proxy", "Taiwan implied/realized volatility index proxy", "annualized_ratio", "TAIFEX", "Daily 14:00 (<=20:00)", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_08", "nasdaq_return", "NASDAQ Composite daily return (T-1 PIT)", "ratio", "NASDAQ", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_09", "sox_return", "SOX Semiconductor index daily return (T-1 PIT)", "ratio", "PHLX", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_10", "vix_level", "Cboe VIX index level / 100.0 (T-1 PIT)", "ratio", "Cboe", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_11", "us_10y_yield", "US 10Y Treasury sovereign yield / 100.0 (T-1 PIT)", "ratio", "Federal Reserve / US", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_12", "us_10y_yield_change", "Delta US 10Y Treasury yield bps / 100.0 (T-1 PIT)", "bps", "Federal Reserve / US", "T-1 Available <= 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
 ]
 
-# Baseline Schema V8.0 Formal Specification: Stock Context (16 dims, C01-C16, with 8-dim Industry Embedding)
+# Baseline Schema V8.0 Formal Specification: Stock Context (16 dims, C01-C16)
+# Authoritative V8 Specification:
+# C01–C08: Industry Embedding 8D (strictly trained on lagged historical data with independent versioning)
+# C09: Log Market Capitalization
+# C10: Log Average Trading Value 60D
+# C11: Volatility Percentile
+# C12: Liquidity Percentile
+# C13: Beta 120D
+# C14: Market Cap Percentile Within Industry
+# C15: Listing Age
+# C16: Recent Trading Suspension Indicator
 BASELINE_V8_0_STOCK_CONTEXT_FEATURE_FIELDS: List[FeatureField] = [
-    FeatureField("CTX_01", "industry_embedding_01", "Dense continuous industry embedding vector dimension 1", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_02", "industry_embedding_02", "Dense continuous industry embedding vector dimension 2", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_03", "industry_embedding_03", "Dense continuous industry embedding vector dimension 3", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_04", "industry_embedding_04", "Dense continuous industry embedding vector dimension 4", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_05", "industry_embedding_05", "Dense continuous industry embedding vector dimension 5", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_06", "industry_embedding_06", "Dense continuous industry embedding vector dimension 6", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_07", "industry_embedding_07", "Dense continuous industry embedding vector dimension 7", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_08", "industry_embedding_08", "Dense continuous industry embedding vector dimension 8", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_09", "market_cap_tier", "Market cap percentile rank [0, 1]", "rank", "TWSE", "Monthly Rebalance", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_10", "historical_beta_1y", "250-day rolling beta against TAIEX", "ratio", "Market Data Engine", "Daily 20:00", "Market Neutral 1.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_11", "annualized_vol_1y", "250-day annualized realized return vol", "annualized_ratio", "Market Data Engine", "Daily 20:00", "Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_12", "avg_daily_turnover_ratio", "60-day median turnover / shares outstanding", "ratio", "Market Data Engine", "Daily 20:00", "Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_13", "pb_ratio_scaled", "P/B ratio scaled by sector median", "ratio", "TWSE", "Daily 20:00", "Neutral 1.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_14", "pe_ratio_scaled", "P/E ratio scaled by sector median", "ratio", "TWSE", "Daily 20:00", "Neutral 1.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_15", "dividend_yield_scaled", "Trailing 12M cash dividend yield", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("CTX_16", "debt_to_equity_scaled", "Total debt / Total equity scaled", "ratio", "MOPS Financials", "Quarterly PIT Release", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_01", "industry_embedding_01", "Industry Embedding dimension 1 (Historical As-Of versioned)", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_02", "industry_embedding_02", "Industry Embedding dimension 2 (Historical As-Of versioned)", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_03", "industry_embedding_03", "Industry Embedding dimension 3 (Historical As-Of versioned)", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_04", "industry_embedding_04", "Industry Embedding dimension 4 (Historical As-Of versioned)", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_05", "industry_embedding_05", "Industry Embedding dimension 5 (Historical As-Of versioned)", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_06", "industry_embedding_06", "Industry Embedding dimension 6 (Historical As-Of versioned)", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_07", "industry_embedding_07", "Industry Embedding dimension 7 (Historical As-Of versioned)", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_08", "industry_embedding_08", "Industry Embedding dimension 8 (Historical As-Of versioned)", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_09", "log_market_capitalization", "ln(Market Capitalization_t)", "dimensionless", "TWSE", "Monthly Rebalance", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_10", "log_avg_trading_value_60d", "ln(1 + MA60(Trading Value))", "dimensionless", "Market Data Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_11", "volatility_percentile", "Cross-sectional percentile rank of 60D volatility [0, 1]", "rank", "Market Data Engine", "Daily 20:00", "Median (0.5)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_12", "liquidity_percentile", "Cross-sectional percentile rank of 60D turnover [0, 1]", "rank", "Market Data Engine", "Daily 20:00", "Median (0.5)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_13", "beta_120d", "120-day rolling beta against TAIEX benchmark", "ratio", "Market Data Engine", "Daily 20:00", "Market Neutral (1.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_14", "market_cap_percentile_within_industry", "Percentile rank of market cap within same industry [0, 1]", "rank", "TWSE", "Monthly Rebalance", "Median (0.5)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_15", "listing_age", "min(days_since_ipo / (365.25 * 10), 1.0)", "normalized_duration", "TWSE", "Static / Daily 20:00", "1.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_16", "recent_trading_suspension_indicator", "1.0 if stock had trading halt in prior 20D, else 0.0", "binary", "TWSE", "Daily 20:00", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
 ]
 
 # Baseline Schema V8.0 Formal Specification: Event Metadata (24 dims, E01-E24)
@@ -207,7 +231,7 @@ BASELINE_V8_0_STOCK_CONTEXT_FEATURE_FIELDS: List[FeatureField] = [
 # E18: Source Reliability Estimate
 # E19: Source Independence
 # E20: Novelty Input Estimate
-# E21: Market Surprise
+# E21: Market Surprise (Pre-event prior implied volatility/move, NO post-event price reaction)
 # E22: Quantified Magnitude
 # E23: Event Age (Index 22)
 # E24: Timestamp Reliability (Index 23)
@@ -232,22 +256,32 @@ BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS: List[FeatureField] = [
     FeatureField("EV_META_18", "source_reliability_estimate", "Source Reliability Estimate [0, 1]", "score", "Metadata Registry", "Event Release", "0.5", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("EV_META_19", "source_independence", "Source Independence score [0, 1]", "score", "Metadata Registry", "Event Release", "1.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("EV_META_20", "novelty_input_estimate", "Novelty Input Estimate prior score [0, 1]", "score", "Event Memory Engine", "Event Release", "0.5", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_META_21", "market_surprise", "Market Surprise metric: price jump / volatility proxy", "score", "Market Shock Engine", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_21", "market_surprise", "Pre-event implied move vs prior historical volatility (strictly prior to event release, NO post-event price reaction)", "score", "Market Shock Engine", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("EV_META_22", "quantified_magnitude", "Quantified financial / operational magnitude score [0, 1]", "score", "LLM Extraction", "Event Release", "0.5", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("EV_META_23", "event_age", "(T_decision - T_available) in fractional days (E23)", "days", "PIT Engine", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("EV_META_24", "timestamp_reliability", "Timestamp Reliability score [0, 1] (filing vs vendor PIT precision)", "score", "PIT Engine", "Event Release", "1.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
 ]
 
 # Baseline Schema V8.0 Formal Specification: Event-Stock Relation (8 dims, R01-R08)
+# Authoritative V8 Specification:
+# R01: Direct Company Mention
+# R02: Industry Match
+# R03: Upstream Exposure
+# R04: Downstream Exposure
+# R05: Customer Relationship
+# R06: Supplier Relationship
+# R07: Geographic Exposure
+# R08: Macro Factor Exposure
+# All company relations and supply chain links must be Historical As-Of.
 BASELINE_V8_0_EVENT_STOCK_RELATION_FEATURE_FIELDS: List[FeatureField] = [
-    FeatureField("EV_REL_01", "entity_role_primary", "1.0 if stock is primary subject of event, else 0.0", "binary", "Entity Linker", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_REL_02", "entity_role_supplier", "1.0 if stock is an upstream supplier to mentioned entity", "binary", "Knowledge Graph", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_REL_03", "entity_role_customer", "1.0 if stock is downstream customer of mentioned entity", "binary", "Knowledge Graph", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_REL_04", "entity_role_competitor", "1.0 if stock is direct horizontal market competitor", "binary", "Knowledge Graph", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_REL_05", "co_occurrence_frequency_norm", "Rolling 1Y co-occurrence score in financial news", "score", "Knowledge Graph", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_REL_06", "supply_chain_tier_distance", "1 / Tier distance (Tier 1 = 1.0, Tier 2 = 0.5, Tier 3 = 0.33)", "score", "Knowledge Graph", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_REL_07", "revenue_exposure_percentage", "Estimated direct/indirect revenue exposure percentage", "ratio", "Supply Chain DB", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("EV_REL_08", "relation_confidence", "Confidence score of the linked entity-stock relationship", "score", "Knowledge Graph", "Event Release", "0.5", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_01", "direct_company_mention", "1.0 if stock symbol/name is explicitly mentioned, else 0.0", "binary", "Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_02", "industry_match", "1.0 if event entity shares same primary industry sector, else 0.0", "binary", "Industry KG", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_03", "upstream_exposure", "Upstream supply chain exposure weight (Historical As-Of) [0, 1]", "score", "Supply Chain DB", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_04", "downstream_exposure", "Downstream supply chain exposure weight (Historical As-Of) [0, 1]", "score", "Supply Chain DB", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_05", "customer_relationship", "Customer relationship connection weight (Historical As-Of) [0, 1]", "score", "Supply Chain DB", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_06", "supplier_relationship", "Supplier relationship connection weight (Historical As-Of) [0, 1]", "score", "Supply Chain DB", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_07", "geographic_exposure", "Geographic / Regional operational exposure weight [0, 1]", "score", "Knowledge Graph", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_08", "macro_factor_exposure", "Macro economic factor exposure sensitivity score [0, 1]", "score", "Factor Model", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
 ]
 
 # Baseline Schema V8.0 Formal Specification: Position State (4 dims, S01-S04)
