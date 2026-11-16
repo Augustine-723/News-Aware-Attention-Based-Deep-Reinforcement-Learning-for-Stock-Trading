@@ -109,13 +109,140 @@ BASELINE_V8_0_PRICE_FEATURE_FIELDS: List[FeatureField] = [
     FeatureField("PRC_04", "overnight_gap", "(P_open,t - P_close,t-1) / P_close,t-1", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("PRC_05", "open_close_return", "(P_close,t - P_open,t) / P_open,t", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("PRC_06", "high_low_range", "(P_high,t - P_low,t) / P_open,t", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
-    FeatureField("PRC_07", "close_location", "(2 * P_close,t - P_high,t - P_low,t) / (P_high,t - P_low,t + 1e-7)", "bounded_ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("PRC_07", "close_location", "(P_close,t - P_low,t) / (P_high,t - P_low,t + 1e-7)", "ratio_0_1", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("PRC_08", "log_volume", "ln(1 + Volume_t)", "dimensionless", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("PRC_09", "volume_ratio_20d", "Volume_t / MA20(Volume)", "ratio", "TWSE", "Daily 20:00", "Neutral (1.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("PRC_10", "turnover_ratio", "Volume_t / Shares_Outstanding", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("PRC_11", "realized_volatility_20d", "Annualized 20-day realized volatility of daily log returns", "annualized_ratio", "TWSE", "Daily 20:00", "Sector Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
     FeatureField("PRC_12", "log_trading_value", "ln(1 + Trading_Value_t)", "dimensionless", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
 ]
+
+# Baseline Schema V8.0 Formal Specification: Technical (16 dims, T01-T16)
+BASELINE_V8_0_TECHNICAL_FEATURE_FIELDS: List[FeatureField] = [
+    FeatureField("TECH_01", "rsi_14", "(RSI_14 - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_02", "macd_line", "(EMA12 - EMA26) / P_close", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_03", "macd_signal", "EMA9(MACD) / P_close", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_04", "macd_hist", "(MACD - Signal) / P_close", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_05", "bb_upper_dist", "(BB_upper - P_close) / P_close", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_06", "bb_lower_dist", "(P_close - BB_lower) / P_close", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_07", "bb_width", "(BB_upper - BB_lower) / MA20", "ratio", "Technical Engine", "Daily 20:00", "Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_08", "atr_14_norm", "ATR_14 / P_close", "ratio", "Technical Engine", "Daily 20:00", "Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_09", "obv_slope", "10-day linear regression slope of OBV", "dimensionless", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_10", "kdj_k", "(K_9 - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_11", "kdj_d", "(D_9 - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_12", "kdj_j", "(3K - 2D - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_13", "mfi_14", "(MFI_14 - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_14", "cci_14", "(TP - MA14) / (0.015 * MD14) [Parameter Confirmation Needed]", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_15", "roc_10", "(P_close,t - P_close,t-10) / P_close,t-10", "ratio", "Technical Engine", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("TECH_16", "adx_14", "ADX_14 / 100.0", "ratio", "Technical Engine", "Daily 20:00", "Neutral (0.2)", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+]
+
+# Baseline Schema V8.0 Formal Specification: Institutional (8 dims, I01-I08)
+BASELINE_V8_0_INSTITUTIONAL_FEATURE_FIELDS: List[FeatureField] = [
+    FeatureField("INST_01", "foreign_net_ratio", "Foreign Net Buy Shares / Shares Outstanding", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_02", "trust_net_ratio", "Investment Trust Net Buy Shares / Shares Outstanding", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_03", "dealer_net_ratio", "Dealer Net Buy Shares / Shares Outstanding", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_04", "total_institutional_flow", "Total 3-Institutional Net Buy / Shares Outstanding", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_05", "margin_long_change_ratio", "Delta Margin Long Balance / Shares Outstanding", "ratio", "TWSE", "Daily 19:30 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_06", "margin_short_change_ratio", "Delta Margin Short Balance / Shares Outstanding", "ratio", "TWSE", "Daily 19:30 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_07", "foreign_holding_ratio", "Foreign Shares Held / Total Shares Outstanding", "ratio", "TWSE", "Daily 18:00 (<=20:00)", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("INST_08", "margin_utilization_ratio", "Margin Balance / Margin Quota", "ratio", "TWSE", "Daily 19:30 (<=20:00)", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+]
+
+# Baseline Schema V8.0 Formal Specification: Macro (12 dims, M01-M12)
+BASELINE_V8_0_MACRO_FEATURE_FIELDS: List[FeatureField] = [
+    FeatureField("MACRO_01", "taiex_return", "Delta ln(TAIEX)", "ratio", "TWSE", "Daily 14:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_02", "taiex_vol_20", "20-day annualized realized vol of TAIEX", "annualized_ratio", "TWSE", "Daily 14:00 (<=20:00)", "Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_03", "usdtwd_fx_return", "Delta ln(USD/TWD spot)", "ratio", "Taipei Forex", "Daily 16:30 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_04", "tw_10y_yield_diff", "Delta Taiwan 10Y sovereign yield (bps)", "bps", "TPEx", "Daily 17:00 (<=20:00)", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_05", "us_10y_yield_diff", "Delta US 10Y Treasury yield (bps, T-1 PIT)", "bps", "Federal Reserve / US", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_06", "sox_semiconductor_return", "SOX index daily return (T-1 PIT)", "ratio", "NASDAQ", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_07", "sp500_return", "S&P 500 daily return (T-1 PIT)", "ratio", "Cboe / S&P", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_08", "brent_crude_return", "Brent crude daily return (T-1 PIT)", "ratio", "ICE", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_09", "taiwan_interbank_rate", "Delta Taiwan Interbank Overnight / CP Rate (bps)", "ratio", "CBC Taiwan", "Daily 17:00 (<=20:00)", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_10", "macro_economic_leading_indicator", "Delta NDC Composite Leading Indicator", "dimensionless", "NDC Taiwan", "Monthly (PIT release)", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_11", "tsmc_adr_premium", "(TSMC ADR / 5 * USD/TWD - TSMC Close) / TSMC Close (T-1 PIT)", "ratio", "NYSE/TWSE", "T-1 Available <= 20:00", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("MACRO_12", "vix_tw_proxy", "Taiwan implied/realized volatility index proxy", "annualized_ratio", "TAIFEX", "Daily 14:00 (<=20:00)", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+]
+
+# Baseline Schema V8.0 Formal Specification: Stock Context (16 dims, C01-C16, with 8-dim Industry Embedding)
+BASELINE_V8_0_STOCK_CONTEXT_FEATURE_FIELDS: List[FeatureField] = [
+    FeatureField("CTX_01", "industry_embedding_01", "Dense continuous industry embedding vector dimension 1", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_02", "industry_embedding_02", "Dense continuous industry embedding vector dimension 2", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_03", "industry_embedding_03", "Dense continuous industry embedding vector dimension 3", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_04", "industry_embedding_04", "Dense continuous industry embedding vector dimension 4", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_05", "industry_embedding_05", "Dense continuous industry embedding vector dimension 5", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_06", "industry_embedding_06", "Dense continuous industry embedding vector dimension 6", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_07", "industry_embedding_07", "Dense continuous industry embedding vector dimension 7", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_08", "industry_embedding_08", "Dense continuous industry embedding vector dimension 8", "embedding", "Industry Representation", "Annual PIT", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_09", "market_cap_tier", "Market cap percentile rank [0, 1]", "rank", "TWSE", "Monthly Rebalance", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_10", "historical_beta_1y", "250-day rolling beta against TAIEX", "ratio", "Market Data Engine", "Daily 20:00", "Market Neutral 1.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_11", "annualized_vol_1y", "250-day annualized realized return vol", "annualized_ratio", "Market Data Engine", "Daily 20:00", "Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_12", "avg_daily_turnover_ratio", "60-day median turnover / shares outstanding", "ratio", "Market Data Engine", "Daily 20:00", "Median", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_13", "pb_ratio_scaled", "P/B ratio scaled by sector median", "ratio", "TWSE", "Daily 20:00", "Neutral 1.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_14", "pe_ratio_scaled", "P/E ratio scaled by sector median", "ratio", "TWSE", "Daily 20:00", "Neutral 1.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_15", "dividend_yield_scaled", "Trailing 12M cash dividend yield", "ratio", "TWSE", "Daily 20:00", "Zero-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("CTX_16", "debt_to_equity_scaled", "Total debt / Total equity scaled", "ratio", "MOPS Financials", "Quarterly PIT Release", "Forward-fill", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+]
+
+# Baseline Schema V8.0 Formal Specification: Event Metadata (24 dims, E01-E24, Actor/Type/Status Embedding + E23 Age + E24 Active)
+BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS: List[FeatureField] = [
+    FeatureField("EV_META_01", "actor_embedding_01", "Actor entity representation dimension 1", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_02", "actor_embedding_02", "Actor entity representation dimension 2", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_03", "actor_embedding_03", "Actor entity representation dimension 3", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_04", "actor_embedding_04", "Actor entity representation dimension 4", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_05", "actor_embedding_05", "Actor entity representation dimension 5", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_06", "actor_embedding_06", "Actor entity representation dimension 6", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_07", "actor_embedding_07", "Actor entity representation dimension 7", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_08", "actor_embedding_08", "Actor entity representation dimension 8", "embedding", "LLM Entity Resolver", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_09", "type_embedding_01", "Event taxonomy & type representation dimension 1", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_10", "type_embedding_02", "Event taxonomy & type representation dimension 2", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_11", "type_embedding_03", "Event taxonomy & type representation dimension 3", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_12", "type_embedding_04", "Event taxonomy & type representation dimension 4", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_13", "type_embedding_05", "Event taxonomy & type representation dimension 5", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_14", "type_embedding_06", "Event taxonomy & type representation dimension 6", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_15", "type_embedding_07", "Event taxonomy & type representation dimension 7", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_16", "type_embedding_08", "Event taxonomy & type representation dimension 8", "embedding", "LLM Event Classifier", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_17", "status_embedding_01", "Event status & lifecycle representation dimension 1", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_18", "status_embedding_02", "Event status & lifecycle representation dimension 2", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_19", "status_embedding_03", "Event status & lifecycle representation dimension 3", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_20", "status_embedding_04", "Event status & lifecycle representation dimension 4", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_21", "status_embedding_05", "Event status & lifecycle representation dimension 5", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_22", "status_embedding_06", "Event status & lifecycle representation dimension 6", "embedding", "LLM Status Parser", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_23", "event_age_fractional_days", "(T_decision - T_available) in fractional days (E23)", "days", "PIT Engine", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_META_24", "active_event_flag", "Binary indicator for ongoing active material event cycle", "binary", "Event State Machine", "Daily 20:00", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+]
+
+# Baseline Schema V8.0 Formal Specification: Event-Stock Relation (8 dims, R01-R08)
+BASELINE_V8_0_EVENT_STOCK_RELATION_FEATURE_FIELDS: List[FeatureField] = [
+    FeatureField("EV_REL_01", "entity_role_primary", "1.0 if stock is primary subject of event, else 0.0", "binary", "Entity Linker", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_02", "entity_role_supplier", "1.0 if stock is an upstream supplier to mentioned entity", "binary", "Knowledge Graph", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_03", "entity_role_customer", "1.0 if stock is downstream customer of mentioned entity", "binary", "Knowledge Graph", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_04", "entity_role_competitor", "1.0 if stock is direct horizontal market competitor", "binary", "Knowledge Graph", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_05", "co_occurrence_frequency_norm", "Rolling 1Y co-occurrence score in financial news", "score", "Knowledge Graph", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_06", "supply_chain_tier_distance", "1 / Tier distance (Tier 1 = 1.0, Tier 2 = 0.5, Tier 3 = 0.33)", "score", "Knowledge Graph", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_07", "revenue_exposure_percentage", "Estimated direct/indirect revenue exposure percentage", "ratio", "Supply Chain DB", "Event Release", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("EV_REL_08", "relation_confidence", "Confidence score of the linked entity-stock relationship", "score", "Knowledge Graph", "Event Release", "0.5", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+]
+
+# Baseline Schema V8.0 Formal Specification: Position State (4 dims, S01-S04)
+BASELINE_V8_0_POSITION_STATE_FEATURE_FIELDS: List[FeatureField] = [
+    FeatureField("POS_01", "current_target_position", "Target position state: 0.0 for Cash, 1.0 for Long", "state", "Gym Environment", "Decision 20:00", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("POS_02", "unrealized_pnl_pct", "(P_close,t - P_entry) / P_entry", "ratio", "Gym Environment", "Decision 20:00", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("POS_03", "holding_duration_days", "min(days_in_position / 60.0, 1.0)", "normalized_duration", "Gym Environment", "Decision 20:00", "0.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+    FeatureField("POS_04", "time_since_last_successful_trade", "min(days_since_last_successful_trade / 60.0, 1.0)", "normalized_duration", "Gym Environment", "Decision 20:00", "1.0", version=FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value),
+]
+
+BASELINE_V8_0_ALL_FEATURE_FIELDS: List[FeatureField] = (
+    BASELINE_V8_0_PRICE_FEATURE_FIELDS
+    + BASELINE_V8_0_TECHNICAL_FEATURE_FIELDS
+    + BASELINE_V8_0_INSTITUTIONAL_FEATURE_FIELDS
+    + BASELINE_V8_0_MACRO_FEATURE_FIELDS
+    + BASELINE_V8_0_STOCK_CONTEXT_FEATURE_FIELDS
+    + BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS
+    + BASELINE_V8_0_EVENT_STOCK_RELATION_FEATURE_FIELDS
+    + BASELINE_V8_0_POSITION_STATE_FEATURE_FIELDS
+)
 
 TECHNICAL_FEATURE_FIELDS: List[FeatureField] = [
     FeatureField("TECH_01", "rsi_14", "(RSI_14 - 50) / 50", "bounded_ratio", "Technical Engine", "Daily 20:00", "Neutral (0.0)"),
@@ -271,6 +398,17 @@ TABLE_NAME_TO_FIELDS: Dict[str, List[FeatureField]] = {
     "position_state": POSITION_STATE_FEATURE_FIELDS,
 }
 
+BASELINE_V8_0_TABLE_NAME_TO_FIELDS: Dict[str, List[FeatureField]] = {
+    "price": BASELINE_V8_0_PRICE_FEATURE_FIELDS,
+    "technical": BASELINE_V8_0_TECHNICAL_FEATURE_FIELDS,
+    "institutional": BASELINE_V8_0_INSTITUTIONAL_FEATURE_FIELDS,
+    "macro": BASELINE_V8_0_MACRO_FEATURE_FIELDS,
+    "stock_context": BASELINE_V8_0_STOCK_CONTEXT_FEATURE_FIELDS,
+    "event_metadata": BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS,
+    "event_stock_relation": BASELINE_V8_0_EVENT_STOCK_RELATION_FEATURE_FIELDS,
+    "position_state": BASELINE_V8_0_POSITION_STATE_FEATURE_FIELDS,
+}
+
 PRICE_INDEX_BY_ID: Dict[str, int] = {f.feature_id: i for i, f in enumerate(PRICE_FEATURE_FIELDS)}
 PRICE_INDEX_BY_NAME: Dict[str, int] = {f.name: i for i, f in enumerate(PRICE_FEATURE_FIELDS)}
 
@@ -303,12 +441,36 @@ for fields in TABLE_NAME_TO_FIELDS.values():
         GLOBAL_FEATURE_INDEX_BY_NAME[f.name] = i
 
 
-def get_feature_index(key: str, table_name: Optional[str] = None) -> int:
+def get_feature_index(key: str, table_name: Optional[str] = None, schema_version: Optional[Any] = None) -> int:
     """
     Unified lookup interface: returns the 0-based column index of a feature in its tensor.
-    Accepts feature_id (e.g. 'EV_META_13', 'POS_04', 'PRC_01') or feature name (e.g. 'event_age_fractional_days').
-    If table_name is specified (e.g. 'price', 'event_metadata'), searches strictly within that table.
+    Supports both v8.1-candidate (EV_META_13, etc.) and v8.0-original (E23, P01, etc.).
+    Accepts standard shorthand codes (e.g. 'P07' -> 6, 'C01' -> 0, 'E23' -> 22, 'S04' -> 3).
+    If table_name is specified, searches within that table.
     """
+    import re
+    # Standard shorthand matching (e.g. P07 -> 6, E23 -> 22, C01 -> 0, S04 -> 3)
+    m = re.match(r"^([PTIMCERS])(\d{2})$", key)
+    if m:
+        return int(m.group(2)) - 1
+
+    # Check baseline schema if requested
+    if schema_version in (FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL, "v8.0-original", "v8.0"):
+        if key in ("event_age_fractional_days", "event_age_days", "event_age"):
+            return ORIGINAL_V8_EVENT_AGE_METADATA_INDEX
+        if table_name is not None:
+            table_lower = table_name.lower().strip()
+            if table_lower in BASELINE_V8_0_TABLE_NAME_TO_FIELDS:
+                fields = BASELINE_V8_0_TABLE_NAME_TO_FIELDS[table_lower]
+                for i, f in enumerate(fields):
+                    if f.feature_id == key or f.name == key:
+                        return i
+        for fields in BASELINE_V8_0_TABLE_NAME_TO_FIELDS.values():
+            for i, f in enumerate(fields):
+                if f.feature_id == key or f.name == key:
+                    return i
+
+    # Candidate / Default lookup
     if table_name is not None:
         table_lower = table_name.lower().strip()
         if table_lower not in TABLE_NAME_TO_FIELDS:
@@ -323,11 +485,31 @@ def get_feature_index(key: str, table_name: Optional[str] = None) -> int:
         return GLOBAL_FEATURE_INDEX_BY_ID[key]
     if key in GLOBAL_FEATURE_INDEX_BY_NAME:
         return GLOBAL_FEATURE_INDEX_BY_NAME[key]
+    
+    # Fallback: check baseline table if not found in candidate
+    for fields in BASELINE_V8_0_TABLE_NAME_TO_FIELDS.values():
+        for i, f in enumerate(fields):
+            if f.feature_id == key or f.name == key:
+                return i
+
     raise KeyError(f"Feature '{key}' not found in any feature table.")
 
 
-# Authoritative constant for Event Age metadata index: EV_META_13 (index 12)
-EVENT_AGE_METADATA_INDEX: int = get_feature_index("EV_META_13", "event_metadata")
+# Authoritative constants for Event Age metadata index:
+ORIGINAL_V8_EVENT_AGE_METADATA_INDEX: int = 22  # E23 in v8.0-original
+CANDIDATE_V8_1_EVENT_AGE_METADATA_INDEX: int = 12  # EV_META_13 in v8.1-candidate
+EVENT_AGE_METADATA_INDEX: int = 12  # Active runtime candidate schema
+
+
+def get_event_age_index(schema_version: Optional[Any] = None) -> int:
+    """
+    Unified lookup for Event Age index across schema versions:
+    - BASELINE_V8_0_ORIGINAL ('v8.0-original'): E23 -> Index 22
+    - ALTERNATIVE_V8_1_CANDIDATE ('v8.1-candidate'): EV_META_13 -> Index 12
+    """
+    if schema_version in (FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL, "v8.0-original", "v8.0"):
+        return ORIGINAL_V8_EVENT_AGE_METADATA_INDEX
+    return CANDIDATE_V8_1_EVENT_AGE_METADATA_INDEX
 
 
 @dataclass(frozen=True)

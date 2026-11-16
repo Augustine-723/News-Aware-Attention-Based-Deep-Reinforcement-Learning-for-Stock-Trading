@@ -290,3 +290,147 @@ def test_dual_feature_schema_versions_and_baseline_contract():
         )
 
 
+def test_authoritative_100_feature_schema_v8_2_contracts():
+    """
+    Requirement: V8.2 Authoritative 100-Feature Schema Finalization Contracts
+    - Baseline v8.0-original full 100 dimensions across 8 modules
+    - Dynamic event age index: 22 for v8.0-original (E23) vs 12 for v8.1-candidate (EV_META_13)
+    - Stock context C01-C08 8-dim continuous industry embedding
+    - Event metadata E01-E08 Actor, E09-E16 Type, E17-E22 Status embeddings
+    - Price P07 close location bounded on [0, 1] (ratio_0_1)
+    - Shorthand index lookup for P01-P12, T01-T16, I01-I08, M01-M12, C01-C16, E01-E24, R01-R08, S01-S04
+    """
+    from stock_rl.config.schema import (
+        FeatureSchemaVersion,
+        BASELINE_V8_0_ALL_FEATURE_FIELDS,
+        BASELINE_V8_0_PRICE_FEATURE_FIELDS,
+        BASELINE_V8_0_TECHNICAL_FEATURE_FIELDS,
+        BASELINE_V8_0_INSTITUTIONAL_FEATURE_FIELDS,
+        BASELINE_V8_0_MACRO_FEATURE_FIELDS,
+        BASELINE_V8_0_STOCK_CONTEXT_FEATURE_FIELDS,
+        BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS,
+        BASELINE_V8_0_EVENT_STOCK_RELATION_FEATURE_FIELDS,
+        BASELINE_V8_0_POSITION_STATE_FEATURE_FIELDS,
+        ORIGINAL_V8_EVENT_AGE_METADATA_INDEX,
+        CANDIDATE_V8_1_EVENT_AGE_METADATA_INDEX,
+        get_event_age_index,
+        get_feature_index,
+    )
+
+    # 1. Total dimensions and module dimensions
+    assert len(BASELINE_V8_0_ALL_FEATURE_FIELDS) == 100
+    assert len(BASELINE_V8_0_PRICE_FEATURE_FIELDS) == 12
+    assert len(BASELINE_V8_0_TECHNICAL_FEATURE_FIELDS) == 16
+    assert len(BASELINE_V8_0_INSTITUTIONAL_FEATURE_FIELDS) == 8
+    assert len(BASELINE_V8_0_MACRO_FEATURE_FIELDS) == 12
+    assert len(BASELINE_V8_0_STOCK_CONTEXT_FEATURE_FIELDS) == 16
+    assert len(BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS) == 24
+    assert len(BASELINE_V8_0_EVENT_STOCK_RELATION_FEATURE_FIELDS) == 8
+    assert len(BASELINE_V8_0_POSITION_STATE_FEATURE_FIELDS) == 4
+
+    # All baseline fields tagged with v8.0-original
+    for f in BASELINE_V8_0_ALL_FEATURE_FIELDS:
+        assert f.version == "v8.0-original"
+        assert f.feature_id
+        assert f.name
+        assert f.math_definition
+        assert f.unit
+        assert f.source
+
+    # 2. Dynamic Event Age index resolution
+    assert ORIGINAL_V8_EVENT_AGE_METADATA_INDEX == 22
+    assert CANDIDATE_V8_1_EVENT_AGE_METADATA_INDEX == 12
+    assert get_event_age_index("v8.0-original") == 22
+    assert get_event_age_index(FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL) == 22
+    assert get_event_age_index("v8.1-candidate") == 12
+    assert get_event_age_index(FeatureSchemaVersion.ALTERNATIVE_V8_1_CANDIDATE) == 12
+    assert get_event_age_index() == 12  # Active default candidate
+
+    # Event age index via get_feature_index
+    assert get_feature_index("E23") == 22
+    assert get_feature_index("EV_META_13") == 12
+    assert get_feature_index("event_age_fractional_days", schema_version="v8.0-original") == 22
+    assert get_feature_index("event_age_fractional_days", schema_version="v8.1-candidate") == 12
+
+    # 3. Stock Context: C01-C08 8-dimensional industry embedding
+    for i in range(8):
+        f = BASELINE_V8_0_STOCK_CONTEXT_FEATURE_FIELDS[i]
+        assert f.name == f"industry_embedding_{i+1:02d}"
+        assert f.unit == "embedding"
+
+    # C09-C16 scalar context features
+    expected_c_scalars = [
+        "market_cap_tier",
+        "historical_beta_1y",
+        "annualized_vol_1y",
+        "avg_daily_turnover_ratio",
+        "pb_ratio_scaled",
+        "pe_ratio_scaled",
+        "dividend_yield_scaled",
+        "debt_to_equity_scaled",
+    ]
+    actual_c_scalars = [f.name for f in BASELINE_V8_0_STOCK_CONTEXT_FEATURE_FIELDS[8:16]]
+    assert actual_c_scalars == expected_c_scalars
+
+    # 4. Event Metadata: Actor (8), Type (8), Status (6), Age (E23=22), Active (E24=23)
+    # Actor embeddings E01-E08
+    for i in range(8):
+        f = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[i]
+        assert f.name == f"actor_embedding_{i+1:02d}"
+        assert f.unit == "embedding"
+
+    # Type embeddings E09-E16
+    for i in range(8):
+        f = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[8 + i]
+        assert f.name == f"type_embedding_{i+1:02d}"
+        assert f.unit == "embedding"
+
+    # Status embeddings E17-E22
+    for i in range(6):
+        f = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[16 + i]
+        assert f.name == f"status_embedding_{i+1:02d}"
+        assert f.unit == "embedding"
+
+    # E23 Event Age at index 22
+    f_e23 = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[22]
+    assert f_e23.feature_id == "EV_META_23"
+    assert f_e23.name == "event_age_fractional_days"
+    assert "E23" in f_e23.math_definition
+    assert f_e23.unit == "days"
+
+    # E24 Active Event Flag at index 23
+    f_e24 = BASELINE_V8_0_EVENT_METADATA_FEATURE_FIELDS[23]
+    assert f_e24.feature_id == "EV_META_24"
+    assert f_e24.name == "active_event_flag"
+    assert f_e24.unit == "binary"
+
+    # 5. Price P07 Close Location range [0, 1]
+    p07 = BASELINE_V8_0_PRICE_FEATURE_FIELDS[6]
+    assert p07.feature_id == "PRC_07"
+    assert p07.name == "close_location"
+    assert p07.unit == "ratio_0_1"
+    assert "(P_close,t - P_low,t) / (P_high,t - P_low,t" in p07.math_definition
+
+    # 6. Position State S04: time_since_last_successful_trade
+    s04 = BASELINE_V8_0_POSITION_STATE_FEATURE_FIELDS[3]
+    assert s04.name == "time_since_last_successful_trade"
+
+    # 7. Shorthand resolution verification across all groups
+    shorthand_tests = [
+        ("P", 12),
+        ("T", 16),
+        ("I", 8),
+        ("M", 12),
+        ("C", 16),
+        ("E", 24),
+        ("R", 8),
+        ("S", 4),
+    ]
+    for prefix, count in shorthand_tests:
+        for idx in range(1, count + 1):
+            code = f"{prefix}{idx:02d}"
+            expected_idx = idx - 1
+            assert get_feature_index(code) == expected_idx, f"Shorthand {code} must resolve to {expected_idx}"
+
+
+
