@@ -36,12 +36,14 @@ class TensorSchemaError(ValueError):
 
 def validate_multimodal_batch(
     batch: MultimodalBatch,
-    schema_version: Optional[str] = None
+    schema_version: Optional[str] = None,
+    is_normalized: bool = False,
 ) -> bool:
     """
     Validates all tensors in MultimodalBatch against Specification V8.0 / V8.3 contracts.
     Enforces shape contracts, finite values, mask consistency, value bounds,
     and dynamic schema-dependent Event Age indices.
+    When is_normalized=True, skips raw [0, 1] bounded interval checks on z-scored features.
     """
     effective_schema = schema_version or getattr(batch, "schema_version", CURRENT_ACTIVE_SCHEMA_VERSION)
     validate_schema_version(effective_schema)
@@ -129,8 +131,8 @@ def validate_multimodal_batch(
     if (active_ages < 0.0).any():
         raise TensorSchemaError(f"Negative event age detected at index {event_age_idx} in active event slots.")
 
-    # 4. Semantic field boundaries for Baseline V8.0
-    if effective_schema in (FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value, "v8.0-original", "v8.0"):
+    # 4. Semantic field boundaries for Baseline V8.0 (on raw features)
+    if not is_normalized and effective_schema in (FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value, "v8.0-original", "v8.0"):
         # P07 Close Location in [0.0, 1.0]
         close_loc = batch.price[:, :, 6]
         if (close_loc < -1e-4).any() or (close_loc > 1.0 + 1e-4).any():

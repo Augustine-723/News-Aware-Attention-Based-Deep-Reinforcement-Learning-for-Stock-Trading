@@ -117,7 +117,7 @@ class PointInTimeStockEnv(gym.Env):
         return torch.tensor(pos_vec).unsqueeze(0)  # [1, 4]
 
     def _get_current_observation(self) -> MultimodalBatch:
-        batch = self.multimodal_batches[self.current_step]
+        batch = self.multimodal_batches[self.current_step].clone()
         current_close = self.prices_df[self.current_step, 3]
         batch.position = self._get_position_features(current_close)
         return batch

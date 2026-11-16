@@ -56,7 +56,7 @@ class MultimodalReplayBuffer:
                 f"but received next_obs with '{next_obs_schema}'. Silent mixing of different schemas is prohibited."
             )
 
-        self.buffer.append(Transition(obs, action, reward, next_obs, bool(terminated), bool(truncated)))
+        self.buffer.append(Transition(obs.clone(), action, reward, next_obs.clone(), bool(terminated), bool(truncated)))
 
     def __len__(self) -> int:
         return len(self.buffer)
