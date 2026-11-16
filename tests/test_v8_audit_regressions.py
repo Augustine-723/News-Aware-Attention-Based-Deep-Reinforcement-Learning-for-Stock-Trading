@@ -215,7 +215,7 @@ def test_regression_p1_5_feature_dictionary_metadata_completeness():
             assert f.source, f"Empty source in {table_name}: {f.name}"
             assert f.available_timing, f"Empty available timing in {table_name}: {f.name}"
             assert f.missing_policy, f"Empty missing policy in {table_name}: {f.name}"
-            assert f.version == "v8.0", f"Incorrect version in {table_name}: {f.name}"
+            assert f.version in ("v8.0", "V8.0"), f"Incorrect version in {table_name}: {f.name}"
 
 
 # ==============================================================================

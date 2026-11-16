@@ -69,6 +69,7 @@ class PointInTimeStockEnv(gym.Env):
         self.current_position: int = ACTION_CASH
         self.entry_price: float = 0.0
         self.holding_days: int = 0
+        self.days_since_last_trade: int = 60
         self.portfolio_equity: float = initial_capital
         self.equity_history: List[float] = []
 
@@ -95,8 +96,8 @@ class PointInTimeStockEnv(gym.Env):
 
     def _get_position_features(self, current_close: float) -> torch.Tensor:
         """
-        Computes 4-d position state:
-        [current_target_position, unrealized_pnl_pct, holding_duration_norm, distance_to_limit]
+        Computes 4-d position state per V8.0 specification:
+        [current_target_position, unrealized_pnl_pct, holding_duration_norm, time_since_last_trade_norm]
         """
         pos_action = float(self.current_position)
         if self.current_position == ACTION_LONG and self.entry_price > 0:
@@ -105,10 +106,9 @@ class PointInTimeStockEnv(gym.Env):
             unrealized_pnl = 0.0
 
         holding_duration_norm = min(self.holding_days / 60.0, 1.0)
+        time_since_last_trade_norm = min(self.days_since_last_trade / 60.0, 1.0)
 
-        # Price limit distance
-        limit_dist = self.config.daily_price_limit_pct
-        pos_vec = np.array([pos_action, unrealized_pnl, holding_duration_norm, limit_dist], dtype=np.float32)
+        pos_vec = np.array([pos_action, unrealized_pnl, holding_duration_norm, time_since_last_trade_norm], dtype=np.float32)
         return torch.tensor(pos_vec).unsqueeze(0)  # [1, 4]
 
     def _get_current_observation(self) -> MultimodalBatch:
@@ -125,6 +125,7 @@ class PointInTimeStockEnv(gym.Env):
         self.current_position = ACTION_CASH
         self.entry_price = 0.0
         self.holding_days = 0
+        self.days_since_last_trade = 60
         self.portfolio_equity = self.initial_capital
         self.equity_history = [self.portfolio_equity]
 
@@ -186,6 +187,13 @@ class PointInTimeStockEnv(gym.Env):
             # Position is Cash: either already cash, successfully sold, or buy order rejected
             self.entry_price = 0.0
             self.holding_days = 0
+
+        # Update days since last successful trade
+        # Only resets to 0 when a trade was actually executed (shares bought/sold without rejection)
+        if abs(exec_res.shares_traded) > 0.0 and not exec_res.order_rejected:
+            self.days_since_last_trade = 0
+        else:
+            self.days_since_last_trade += 1
 
         # 3. Mark-to-market at 20:00 day t+1
         V_next = self.cash + (self.shares * next_close_price)

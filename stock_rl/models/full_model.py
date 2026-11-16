@@ -109,12 +109,14 @@ class StockRLFullModel(nn.Module):
         prior_counts = prior_weights.sum(dim=-1, keepdim=True)        # [B, 40, 1]
         prior_sum = torch.bmm(prior_weights, projected_events)        # [B, 40, 128]
 
-        # Fallback to active_projected_memory (or NRE token) when no strictly prior event exists
-        default_mem = active_projected_memory.unsqueeze(1).expand(-1, TOTAL_EVENT_SLOTS, -1)
+        # Fallback to NRE / No-Prior-Memory token when no strictly prior event exists
+        # Review 3 Requirement: MUST NOT use active_projected_memory (which can aggregate later events).
+        # Fallback MUST be NRE / No-Prior-Memory token.
+        nre_token_prior = self.event_module.nre_token.squeeze(1).unsqueeze(1).expand(B, TOTAL_EVENT_SLOTS, -1)
         causal_prior_memory = torch.where(
             prior_counts > 0,
             prior_sum / torch.clamp(prior_counts, min=1e-8),
-            default_mem,
+            nre_token_prior,
         )  # [B, 40, 128]
 
         return fused_rep, rl_state, projected_events, context_token, causal_prior_memory
