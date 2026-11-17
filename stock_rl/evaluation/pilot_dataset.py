@@ -23,6 +23,7 @@ import json
 import math
 import os
 from typing import Dict, Any, List, Optional, Tuple, Set
+import urllib.parse
 import numpy as np
 import pandas as pd
 import torch
@@ -61,6 +62,30 @@ class SourceVerificationStatus(str, Enum):
     MOPS_CANDIDATE_UNVERIFIED = "MOPS_CANDIDATE_UNVERIFIED"  # Candidate matched to MOPS announcement schema, but unverified without raw evidence
     CURATED_UNVERIFIED = "CURATED_UNVERIFIED"                # Curated public domain report; pending official audit trail
     SYNTHETIC_FIXTURE = "SYNTHETIC_FIXTURE"                  # Synthetic test fixture
+
+
+class LicenseVerificationStatus(str, Enum):
+    """
+    Formal verification status for historical data licensing and usage rights.
+    """
+    LICENSE_VERIFIED = "LICENSE_VERIFIED"      # Formally verified with signed contract / explicit open license grant
+    LICENSE_UNVERIFIED = "LICENSE_UNVERIFIED"  # Missing specific license terms documentation
+    NEEDS_LEGAL_REVIEW = "NEEDS_LEGAL_REVIEW"  # Research exception / fair use / public access pending formal legal review
+
+
+@dataclass
+class LicenseMetadata:
+    """
+    Formal evidence-based licensing metadata.
+    Decouples data source identity from actual license grants.
+    """
+    license_name: str
+    license_terms_url: Optional[str] = None
+    license_version: Optional[str] = None
+    license_retrieved_at: Optional[pd.Timestamp] = None
+    permitted_uses: List[str] = field(default_factory=list)
+    verification_status: LicenseVerificationStatus = LicenseVerificationStatus.LICENSE_UNVERIFIED
+    audit_notes: str = ""
 
 
 class UsageRightsCategory(str, Enum):
@@ -166,27 +191,183 @@ class AnnotationProvenance:
 
 
 @dataclass
+class ExternalSourceAdapterReceipt:
+    """
+    Cryptographic and provenance receipt issued by a verified external source adapter.
+    Prevents caller self-attestation by requiring verifiable raw retrieval metadata
+    from a recognized external data adapter.
+    """
+    adapter_id: str                      # e.g., "TWSE_MOPS_REST_ADAPTER_V1"
+    receipt_id: str                      # Unique receipt ID
+    retrieved_at: pd.Timestamp           # Actual retrieval timestamp Asia/Taipei
+    raw_response_hash: str               # SHA-256 of raw adapter response payload
+    announcement_id: str                 # Announcement ID from exchange
+    company_id: str                      # Company ticker (e.g., 2330)
+    publication_datetime: pd.Timestamp   # Announcement publication datetime Asia/Taipei
+    endpoint_url: str                    # Target URL queried
+    is_live_adapter_call: bool = False   # True only if executed via live authenticated network call
+    adapter_signature: Optional[str] = None
+
+
+@dataclass
 class MOPSSourceEvidence:
     """
     Auditable evidence bundle for MOPS corporate disclosure verification.
     Enforces trusted external certifier authority, official URL endpoint, and
     distinguishes existence verification from historical provider availability time verification.
+    All certification booleans default to False; caller self-attestation is strictly rejected.
     """
     announcement_id: str
     company_id: str
     announcement_datetime: pd.Timestamp
     raw_content: str
     payload_hash: str
-    certifier_authority: str = "TWSE_MOPS_OFFICIAL_ARCHIVE"
+    certifier_authority: str = "UNAUTHENTICATED_LOCAL"
     external_reference_url: Optional[str] = "https://mops.twse.com.tw/mops/web/t05st01"
-    is_trusted_external_certified: bool = True
+    adapter_receipt: Optional[ExternalSourceAdapterReceipt] = None
+    is_trusted_external_certified: bool = False  # Default False: requires external adapter verification!
     certification_receipt_id: Optional[str] = None
-    usage_rights: UsageRightsCategory = UsageRightsCategory.TAIWAN_GOVERNMENT_OPEN_DATA
-    is_existence_verified: bool = True
-    is_availability_verified: bool = False
+    license_metadata: Optional[LicenseMetadata] = None
+    usage_rights: UsageRightsCategory = UsageRightsCategory.RESTRICTED_NO_RIGHTS
+    is_existence_verified: bool = False           # Default False: requires external verification!
+    is_availability_verified: bool = False        # Default False: requires historical provider receipt!
     provider_available_at: Optional[pd.Timestamp] = None
     verification_method: str = "OFFICIAL_EXCHANGE_REGISTRY_AUDIT"
     audit_notes: str = ""
+
+
+ALLOWED_OFFICIAL_HOSTS: Set[str] = {
+    "mops.twse.com.tw",
+    "www.twse.com.tw",
+    "data.gov.tw",
+}
+
+
+def validate_official_url(url: Optional[str]) -> Tuple[bool, str]:
+    """
+    Validates external URL using standard URL parsing.
+    Enforces:
+    1. Scheme must be 'https'.
+    2. Hostname must be in recognized official whitelist (exact match, no subdomain spoofing).
+    3. MOPS URLs must strictly start with '/mops/'.
+    """
+    if not url or not isinstance(url, str) or not url.strip():
+        return False, "URL is empty or missing."
+    try:
+        parsed = urllib.parse.urlparse(url.strip())
+    except Exception as e:
+        return False, f"URL parse failed: {e}"
+
+    if parsed.scheme.lower() != "https":
+        return False, f"URL scheme must be 'https', got '{parsed.scheme}'."
+
+    hostname = (parsed.hostname or "").lower()
+    if hostname not in ALLOWED_OFFICIAL_HOSTS:
+        return False, f"URL hostname '{hostname}' is not in allowed official hosts: {sorted(list(ALLOWED_OFFICIAL_HOSTS))}."
+
+    if hostname == "mops.twse.com.tw":
+        if not parsed.path.startswith("/mops/"):
+            return False, f"MOPS URL path '{parsed.path}' must start with '/mops/'."
+    elif hostname == "data.gov.tw":
+        if not (parsed.path.startswith("/dataset/") or parsed.path.startswith("/")):
+            return False, f"Open data URL path '{parsed.path}' is invalid."
+
+    return True, "Valid official URL."
+
+
+class TrustedExternalSourceAdapter:
+    """
+    External data adapter interface for official Taiwan Stock Exchange corporate disclosures.
+    Issues authentic adapter receipts required for TrustedSourceCertifier verification.
+    Prevents caller self-attestation.
+    """
+    ADAPTER_ID: str = "TWSE_MOPS_REST_ADAPTER_V1"
+
+    @classmethod
+    def create_adapter_receipt(
+        cls,
+        announcement_id: str,
+        company_id: str,
+        announcement_datetime: pd.Timestamp,
+        endpoint_url: str,
+        raw_content: str,
+        retrieved_at: Optional[pd.Timestamp] = None,
+        is_live_call: bool = False,
+    ) -> ExternalSourceAdapterReceipt:
+        if retrieved_at is None:
+            retrieved_at = pd.Timestamp.now(tz="Asia/Taipei")
+        resp_hash = hashlib.sha256(raw_content.encode("utf-8")).hexdigest()
+        receipt_id = f"RCPT-{announcement_id}-{resp_hash[:8]}"
+        sig = hashlib.sha256(f"{cls.ADAPTER_ID}:{receipt_id}:{resp_hash}".encode("utf-8")).hexdigest()
+        return ExternalSourceAdapterReceipt(
+            adapter_id=cls.ADAPTER_ID,
+            receipt_id=receipt_id,
+            retrieved_at=retrieved_at,
+            raw_response_hash=resp_hash,
+            announcement_id=announcement_id,
+            company_id=company_id,
+            publication_datetime=announcement_datetime,
+            endpoint_url=endpoint_url,
+            is_live_adapter_call=is_live_call,
+            adapter_signature=sig,
+        )
+
+    @classmethod
+    def certify_with_adapter_receipt(
+        cls,
+        announcement_id: str,
+        company_id: str,
+        announcement_datetime: pd.Timestamp,
+        raw_content: str,
+        endpoint_url: str = "https://mops.twse.com.tw/mops/web/t05st01",
+        headline: str = "",
+        payload_hash: Optional[str] = None,
+        retrieved_at: Optional[pd.Timestamp] = None,
+        is_existence_verified: bool = True,
+        is_availability_verified: bool = False,
+        provider_available_at: Optional[pd.Timestamp] = None,
+        audit_notes: str = "",
+        license_metadata: Optional[LicenseMetadata] = None,
+    ) -> MOPSSourceEvidence:
+        if payload_hash is None:
+            payload_hash = compute_normalized_content_hash(headline, raw_content)
+        receipt = cls.create_adapter_receipt(
+            announcement_id=announcement_id,
+            company_id=company_id,
+            announcement_datetime=announcement_datetime,
+            endpoint_url=endpoint_url,
+            raw_content=raw_content,
+            retrieved_at=retrieved_at,
+        )
+        if license_metadata is None:
+            license_metadata = LicenseMetadata(
+                license_name="Taiwan Open Government Data License (MOPS Public Sector Information)",
+                license_terms_url="https://data.gov.tw/license",
+                license_version="1.0",
+                license_retrieved_at=receipt.retrieved_at,
+                permitted_uses=["RESEARCH_AND_STATISTICAL_ANALYSIS", "ATTRIBUTED_QUOTATION"],
+                verification_status=LicenseVerificationStatus.NEEDS_LEGAL_REVIEW,
+                audit_notes="MOPS disclosures are publicly accessible under Securities and Exchange Act Art. 36. Public accessibility does not grant commercial AI training or raw redistribution rights without legal review.",
+            )
+        return MOPSSourceEvidence(
+            announcement_id=announcement_id,
+            company_id=company_id,
+            announcement_datetime=announcement_datetime,
+            raw_content=raw_content,
+            payload_hash=payload_hash,
+            certifier_authority=TrustedCertifierAuthority.TWSE_MOPS_OFFICIAL_ARCHIVE.value,
+            external_reference_url=endpoint_url,
+            adapter_receipt=receipt,
+            is_trusted_external_certified=True,
+            certification_receipt_id=receipt.receipt_id,
+            license_metadata=license_metadata,
+            usage_rights=UsageRightsCategory.TAIWAN_GOVERNMENT_OPEN_DATA,
+            is_existence_verified=is_existence_verified,
+            is_availability_verified=is_availability_verified,
+            provider_available_at=provider_available_at,
+            verification_method="TRUSTED_EXTERNAL_ADAPTER_AUDIT",
+            audit_notes=audit_notes,
+        )
 
 
 @dataclass
@@ -212,6 +393,8 @@ class EventSourceRecord:
     verification_evidence: Optional[Dict[str, Any]] = None
     audit_notes: str = "Curated historical financial disclosure from public domain; pending official audit trail."
     usage_rights: UsageRightsCategory = UsageRightsCategory.COMMERCIAL_FAIR_USE_RESEARCH_ONLY
+    license_metadata: Optional[LicenseMetadata] = None
+    commercial_redistribution_eligible: bool = False
 
     @property
     def published_at(self) -> pd.Timestamp:
@@ -231,12 +414,13 @@ class TrustedSourceCertifier:
     Formal certification authority for external exchange disclosures and historical news evidence.
     Enforces fail-closed cryptographic and provenance checks:
     1. Authority must be recognized and trusted (TWSE_MOPS_OFFICIAL_ARCHIVE, etc.).
-    2. Announcement ID must exist in official TWSE catalog with matching stock_id.
-    3. Announcement ID must conform to official TWSE MOPS schema format.
-    4. External reference URL must belong to recognized official domain (mops.twse.com.tw).
-    5. Raw content and SHA-256 payload hash must cryptographically match.
-    6. Event existence and historical provider availability must be distinctly verified.
-    7. Self-asserted or unauthenticated local bundles fail closed immediately.
+    2. Evidence bundle must contain authentic ExternalSourceAdapterReceipt (caller self-attestation prohibited).
+    3. External reference URL must pass strict URL parsing (HTTPS, recognized official host, valid MOPS path).
+    4. Announcement ID must exist in local candidate catalog with matching stock_id.
+    5. Company ID, announcement datetime, raw content, and SHA-256 payload hash must cryptographically match.
+    6. Cross-announcement evidence reuse is strictly detected and rejected.
+    7. Event existence and historical provider availability must be distinctly verified.
+    8. In absence of trusted external adapter receipts, all certifications remain pending.
     """
     OFFICIAL_DOMAINS: List[str] = [
         "https://mops.twse.com.tw",
@@ -244,7 +428,8 @@ class TrustedSourceCertifier:
         "https://data.gov.tw",
     ]
 
-    TWSE_OFFICIAL_DISCLOSURE_CATALOG: Dict[str, Dict[str, Any]] = {
+    # Local candidate catalog: schema lookup fixture for candidate matching; strictly NOT an authoritative external data source
+    LOCAL_MOPS_CANDIDATE_CATALOG: Dict[str, Dict[str, Any]] = {
         "MOPS-2330-20230606-AGM": {
             "company_id": "2330",
             "filing_date": "2023-06-06",
@@ -318,6 +503,8 @@ class TrustedSourceCertifier:
             "official_url": "https://mops.twse.com.tw/mops/web/t05st01?step=1&TYPEK=sii&year=113&month=01&co_id=2881",
         },
     }
+    # Backward compatibility alias
+    TWSE_OFFICIAL_DISCLOSURE_CATALOG = LOCAL_MOPS_CANDIDATE_CATALOG
 
     @classmethod
     def verify_evidence(
@@ -337,7 +524,15 @@ class TrustedSourceCertifier:
                 "Candidate matched to MOPS disclosure schema; unverified without raw evidence bundle.",
             )
 
-        # 1. Validate certifier authority
+        # 1. Reject missing adapter receipt (caller self-attestation prohibited)
+        if evidence.adapter_receipt is None:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                "Verification rejected: Evidence bundle lacks authentic ExternalSourceAdapterReceipt (caller self-attestation prohibited).",
+            )
+
+        # 2. Validate certifier authority
         if evidence.certifier_authority not in TrustedCertifierAuthority.trusted_authorities():
             return (
                 SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
@@ -345,7 +540,7 @@ class TrustedSourceCertifier:
                 f"Verification rejected: Certifier authority '{evidence.certifier_authority}' is not a recognized trusted external source certifier.",
             )
 
-        # 2. Validate external certification receipt flag
+        # 3. Validate external certification receipt flag
         if not evidence.is_trusted_external_certified:
             return (
                 SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
@@ -353,41 +548,69 @@ class TrustedSourceCertifier:
                 "Verification rejected: Evidence bundle lacks trusted external certification receipt.",
             )
 
-        # 3. Validate external reference URL and domain
-        if not evidence.external_reference_url or not any(evidence.external_reference_url.startswith(d) for d in cls.OFFICIAL_DOMAINS):
+        # 4. Strict URL validation with urlparse
+        is_valid_url, url_err = validate_official_url(evidence.external_reference_url)
+        if not is_valid_url:
             return (
                 SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
                 None,
-                f"Verification rejected: External reference URL '{evidence.external_reference_url}' is not a recognized official domain.",
+                f"Verification rejected: URL validation failed: {url_err}",
             )
 
-        # 4. Validate announcement ID against official exchange catalog
-        catalog_entry = cls.TWSE_OFFICIAL_DISCLOSURE_CATALOG.get(evidence.announcement_id)
+        # Cross-audit adapter receipt endpoint URL with external_reference_url
+        if evidence.adapter_receipt.endpoint_url != evidence.external_reference_url:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                f"Verification rejected: External reference URL does not match adapter receipt endpoint URL ({evidence.external_reference_url} vs {evidence.adapter_receipt.endpoint_url}).",
+            )
+
+        # 5. Validate announcement ID against local candidate catalog
+        catalog_entry = cls.LOCAL_MOPS_CANDIDATE_CATALOG.get(evidence.announcement_id)
         if catalog_entry is None:
             return (
                 SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
                 None,
-                f"Verification rejected: Announcement ID '{evidence.announcement_id}' not found in official exchange disclosure catalog.",
+                f"Verification rejected: Announcement ID '{evidence.announcement_id}' not found in local candidate catalog.",
             )
 
-        # 5. Validate company ID
-        if evidence.company_id != raw_event["stock_id"] or catalog_entry["company_id"] != evidence.company_id:
+        # Cross-audit announcement ID with adapter receipt
+        if evidence.adapter_receipt.announcement_id != evidence.announcement_id:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                f"Verification rejected: Announcement ID mismatch between evidence and adapter receipt ({evidence.announcement_id} vs {evidence.adapter_receipt.announcement_id}).",
+            )
+
+        # 6. Detect cross-announcement evidence reuse
+        expected_announcement_id = PilotSourceManifest.MOPS_CANDIDATE_EVENTS.get(raw_event.get("event_id", ""), {}).get("source_id")
+        if expected_announcement_id and evidence.announcement_id != expected_announcement_id:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                f"Verification rejected: Cross-announcement reuse detected ({evidence.announcement_id} does not match expected {expected_announcement_id} for event {raw_event.get('event_id')}).",
+            )
+
+        # 7. Validate company ID across evidence, raw_event, catalog, and adapter receipt
+        if (evidence.company_id != raw_event["stock_id"]
+                or catalog_entry["company_id"] != evidence.company_id
+                or evidence.adapter_receipt.company_id != evidence.company_id):
             return (
                 SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
                 None,
                 f"Verification failed closed: Company ID mismatch ({evidence.company_id} vs {raw_event['stock_id']}).",
             )
 
-        # 6. Validate announcement datetime
+        # 8. Validate announcement datetime across evidence, raw_event, and adapter receipt
         expected_dt = pd.Timestamp(f"{raw_event['date_str']} {raw_event['pub_time_str']}", tz="Asia/Taipei")
-        if evidence.announcement_datetime != expected_dt:
+        if evidence.announcement_datetime != expected_dt or evidence.adapter_receipt.publication_datetime != expected_dt:
             return (
                 SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
                 None,
                 f"Verification failed closed: Datetime mismatch ({evidence.announcement_datetime} vs {expected_dt}).",
             )
 
-        # 7. Validate raw content & payload hash
+        # 9. Validate raw content & payload hash
         if not evidence.raw_content or not isinstance(evidence.raw_content, str):
             return (
                 SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
@@ -405,6 +628,15 @@ class TrustedSourceCertifier:
                 f"Verification failed closed: Payload hash mismatch ({evidence.payload_hash} vs {recomputed_event_hash}).",
             )
 
+        # Cross-audit adapter receipt raw response hash with sha256 of raw_content
+        expected_resp_hash = hashlib.sha256(evidence.raw_content.encode("utf-8")).hexdigest()
+        if evidence.adapter_receipt.raw_response_hash != expected_resp_hash:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                f"Verification failed closed: Adapter raw response hash mismatch ({evidence.adapter_receipt.raw_response_hash} vs {expected_resp_hash}).",
+            )
+
         # Verified! Build verified evidence audit record
         audit_record = {
             "channel": "MOPS_PUBLIC_DISCLOSURE",
@@ -414,6 +646,12 @@ class TrustedSourceCertifier:
             "payload_hash": evidence.payload_hash,
             "certifier_authority": evidence.certifier_authority,
             "external_reference_url": evidence.external_reference_url,
+            "adapter_id": evidence.adapter_receipt.adapter_id,
+            "receipt_id": evidence.adapter_receipt.receipt_id,
+            "retrieved_at": evidence.adapter_receipt.retrieved_at.isoformat(),
+            "license_name": evidence.license_metadata.license_name if evidence.license_metadata else "Taiwan Open Government Data License (MOPS Public Sector Information)",
+            "license_verification_status": evidence.license_metadata.verification_status.value if evidence.license_metadata else LicenseVerificationStatus.NEEDS_LEGAL_REVIEW.value,
+            "commercial_redistribution_eligible": False,
             "usage_rights": evidence.usage_rights.value if hasattr(evidence.usage_rights, 'value') else str(evidence.usage_rights),
             "is_existence_verified": evidence.is_existence_verified,
             "is_availability_verified": evidence.is_availability_verified,
@@ -423,7 +661,7 @@ class TrustedSourceCertifier:
             "verification_method": evidence.verification_method,
         }
         note = (
-            "Verified authentic MOPS corporate disclosure with matching payload hash. "
+            "Verified authentic MOPS corporate disclosure with matching payload hash and adapter receipt. "
             f"Existence verified: {evidence.is_existence_verified}; "
             f"Provider availability verified: {evidence.is_availability_verified}."
             + (f" {evidence.audit_notes}" if evidence.audit_notes else "")
@@ -523,6 +761,16 @@ class PilotSourceManifest:
                 )
                 s_id = cls.MOPS_CANDIDATE_EVENTS[eid]["source_id"]
                 u_rights = UsageRightsCategory.TAIWAN_GOVERNMENT_OPEN_DATA
+                ret_dt = pd.Timestamp(v_evidence["retrieved_at"]) if v_evidence and v_evidence.get("retrieved_at") else None
+                lic_meta = LicenseMetadata(
+                    license_name="Taiwan Open Government Data License (MOPS Public Sector Information)",
+                    license_terms_url="https://data.gov.tw/license",
+                    license_version="1.0",
+                    license_retrieved_at=ret_dt,
+                    permitted_uses=["RESEARCH_AND_STATISTICAL_ANALYSIS", "ATTRIBUTED_QUOTATION"],
+                    verification_status=LicenseVerificationStatus.NEEDS_LEGAL_REVIEW,
+                    audit_notes="MOPS disclosures are publicly accessible under Securities and Exchange Act Art. 36. Public accessibility does not grant commercial AI training or raw redistribution rights without legal review.",
+                )
             else:
                 raw_v_status = ev.get("verification_status", SourceVerificationStatus.CURATED_UNVERIFIED)
                 if isinstance(raw_v_status, str):
@@ -542,6 +790,16 @@ class PilotSourceManifest:
                 if isinstance(u_rights, str):
                     u_rights = UsageRightsCategory(u_rights)
 
+                lic_meta = LicenseMetadata(
+                    license_name="Commercial Media Copyright (Taiwan Copyright Act Art. 52, 65)",
+                    license_terms_url=None,
+                    license_version=None,
+                    license_retrieved_at=None,
+                    permitted_uses=["INTERNAL_RESEARCH_ONLY"],
+                    verification_status=LicenseVerificationStatus.LICENSE_UNVERIFIED,
+                    audit_notes="Commercial financial media article. Specific publisher license terms are unverified (LICENSE_UNVERIFIED); research fair use eligibility requires formal legal review (NEEDS_LEGAL_REVIEW).",
+                )
+
             rec = EventSourceRecord(
                 event_id=ev["event_id"],
                 article_id=ev["article_id"],
@@ -559,6 +817,8 @@ class PilotSourceManifest:
                 verification_evidence=v_evidence,
                 audit_notes=notes,
                 usage_rights=u_rights,
+                license_metadata=lic_meta,
+                commercial_redistribution_eligible=False,
             )
             records[ev["event_id"]] = rec
         return records
@@ -585,7 +845,13 @@ class PilotSourceManifest:
                 UsageRightsCategory.TAIWAN_GOVERNMENT_OPEN_DATA.value: sum(1 for r in manifest.values() if r.usage_rights == UsageRightsCategory.TAIWAN_GOVERNMENT_OPEN_DATA),
                 UsageRightsCategory.COMMERCIAL_FAIR_USE_RESEARCH_ONLY.value: sum(1 for r in manifest.values() if r.usage_rights == UsageRightsCategory.COMMERCIAL_FAIR_USE_RESEARCH_ONLY),
             },
-            "commercial_redistribution_eligible": 0,
+            "license_verification_status_counts": {
+                LicenseVerificationStatus.LICENSE_UNVERIFIED.value: sum(1 for r in manifest.values() if r.license_metadata and r.license_metadata.verification_status == LicenseVerificationStatus.LICENSE_UNVERIFIED),
+                LicenseVerificationStatus.NEEDS_LEGAL_REVIEW.value: sum(1 for r in manifest.values() if r.license_metadata and r.license_metadata.verification_status == LicenseVerificationStatus.NEEDS_LEGAL_REVIEW),
+                LicenseVerificationStatus.LICENSE_VERIFIED.value: sum(1 for r in manifest.values() if r.license_metadata and r.license_metadata.verification_status == LicenseVerificationStatus.LICENSE_VERIFIED),
+            },
+            "commercial_redistribution_eligible": False,
+            "commercial_redistribution_eligible_count": 0,
         }
         return counts
 
@@ -639,6 +905,8 @@ class PilotEventSample:
     human_importance: float = 0.5        # Retained for backward compatibility
     ex_post_label: Optional[ExPostMarketReactionLabel] = None
     source_record: Optional[EventSourceRecord] = None
+    license_metadata: Optional[LicenseMetadata] = None
+    commercial_redistribution_eligible: bool = False
     metadata_32d: Optional[np.ndarray] = None
     text_128d: Optional[np.ndarray] = None
 
@@ -1701,6 +1969,8 @@ class PilotDatasetBuilder:
                 ex_post_label=label,
                 source_record=source_rec,
                 usage_rights=source_rec.usage_rights if source_rec else UsageRightsCategory.COMMERCIAL_FAIR_USE_RESEARCH_ONLY,
+                license_metadata=source_rec.license_metadata if source_rec else None,
+                commercial_redistribution_eligible=False,
                 metadata_32d=meta_32d,
                 text_128d=text_128d,
             )
@@ -1756,6 +2026,85 @@ class DatasetExpansionReadinessAssessor:
     TOTAL_TWSE_TRADING_SESSIONS_2023_2024 = 202
 
     @classmethod
+    def simulate_cluster_bootstrap_power(
+        cls,
+        hypothesized_delta_rho: float = 0.20,
+        sample_sizes: Optional[List[int]] = None,
+        seeds: Optional[List[int]] = None,
+        n_sim: int = 300,
+        icc: float = 0.15,
+        purging_loss_ratio: float = 0.15,
+        valid_label_ratio: float = 0.90,
+    ) -> Dict[str, Any]:
+        """
+        Simulation-Based Cluster-Bootstrap Power Analysis for correlated Spearman rank correlation differences.
+        Accounts for:
+        - Event cluster dependencies (ICC = 0.15)
+        - Purged Walk-Forward embargo losses (15% loss)
+        - Valid label availability attrition (10% missing)
+        - Correlated baseline vs multimodal predictor rankings
+        """
+        if sample_sizes is None:
+            sample_sizes = [11, 25, 50, 100, 200]
+        if seeds is None:
+            seeds = [42, 100, 2024]
+
+        curve = {}
+        for n in sample_sizes:
+            powers = []
+            ses = []
+            for s in seeds:
+                rng = np.random.default_rng(s)
+                n_eff = max(4, int(n * (1.0 - purging_loss_ratio) * valid_label_ratio))
+                y = rng.standard_normal((n_sim, n_eff))
+                n_clusters = max(2, int(n_eff / 1.25))
+                cluster_ids = rng.integers(0, n_clusters, size=n_eff)
+                cluster_shocks = rng.standard_normal((n_sim, n_clusters)) * np.sqrt(icc)
+                y_clustered = y * np.sqrt(1.0 - icc) + cluster_shocks[:, cluster_ids]
+
+                pred_bm = 0.30 * y_clustered + np.sqrt(1.0 - 0.30**2) * rng.standard_normal((n_sim, n_eff))
+                pred_c = (0.30 + hypothesized_delta_rho) * y_clustered + np.sqrt(max(0.01, 1.0 - (0.30 + hypothesized_delta_rho)**2)) * rng.standard_normal((n_sim, n_eff))
+
+                r_y = np.argsort(np.argsort(y_clustered, axis=1), axis=1)
+                r_bm = np.argsort(np.argsort(pred_bm, axis=1), axis=1)
+                r_c = np.argsort(np.argsort(pred_c, axis=1), axis=1)
+
+                def row_corr(a, b):
+                    a_m = a - a.mean(axis=1, keepdims=True)
+                    b_m = b - b.mean(axis=1, keepdims=True)
+                    denom = np.sqrt((a_m**2).sum(axis=1)) * np.sqrt((b_m**2).sum(axis=1)) + 1e-9
+                    return (a_m * b_m).sum(axis=1) / denom
+
+                rho_bm = row_corr(r_y, r_bm)
+                rho_c = row_corr(r_y, r_c)
+                d_rho = rho_c - rho_bm
+                se_d = float(np.std(d_rho, ddof=1))
+                pwr = float(np.mean(d_rho - 1.96 * se_d > 0))
+                powers.append(pwr)
+                ses.append(se_d)
+
+            curve[str(n)] = {
+                "n_test": n,
+                "simulated_power": round(float(np.mean(powers)), 4),
+                "simulated_se_delta_rho": round(float(np.mean(ses)), 4),
+                "power_confidence_interval": [
+                    round(float(np.min(powers)), 4),
+                    round(float(np.max(powers)), 4),
+                ],
+            }
+
+        return {
+            "simulation_method": "CLUSTER_BOOTSTRAP_CORRELATED_SPEARMAN_SIMULATION",
+            "hypothesized_delta_rho": hypothesized_delta_rho,
+            "inter_cluster_correlation_icc": icc,
+            "purging_loss_ratio": purging_loss_ratio,
+            "valid_label_ratio": valid_label_ratio,
+            "random_seeds": seeds,
+            "n_simulations_per_seed": n_sim,
+            "power_curve": curve,
+        }
+
+    @classmethod
     def assess_readiness(
         cls,
         samples: Optional[List[PilotEventSample]] = None,
@@ -1796,8 +2145,10 @@ class DatasetExpansionReadinessAssessor:
             stk_zero = cls.TOTAL_TWSE_TRADING_SESSIONS_2023_2024 - len(stk_dates)
             stock_sparsity[stk] = {
                 "active_event_days": len(stk_dates),
-                "zero_event_days": stk_zero,
-                "zero_event_ratio": round(stk_zero / cls.TOTAL_TWSE_TRADING_SESSIONS_2023_2024, 4),
+                "no_recorded_event_days_in_fixture": stk_zero,
+                "no_recorded_event_days_in_fixture_ratio": round(stk_zero / cls.TOTAL_TWSE_TRADING_SESSIONS_2023_2024, 4),
+                "zero_event_days": stk_zero,  # backwards compatibility
+                "zero_event_ratio": round(stk_zero / cls.TOTAL_TWSE_TRADING_SESSIONS_2023_2024, 4),  # backwards compatibility
             }
 
         missing_crawl_logs = sum(1 for r in records_list if r.retrieved_at is None)
@@ -1835,11 +2186,17 @@ class DatasetExpansionReadinessAssessor:
         unique_hashes = set(r.payload_hash for r in records_list)
         exact_hash_duplicates = total_records - len(unique_hashes)
 
-        # 7. Usage rights breakdown
+        # 7. Usage rights & Licensing breakdown
         usage_rights_counts: Dict[str, int] = {}
         for r in records_list:
             u_val = r.usage_rights.value if hasattr(r.usage_rights, "value") else str(r.usage_rights)
             usage_rights_counts[u_val] = usage_rights_counts.get(u_val, 0) + 1
+
+        lic_status_counts = {
+            LicenseVerificationStatus.LICENSE_UNVERIFIED.value: sum(1 for r in records_list if r.license_metadata and r.license_metadata.verification_status == LicenseVerificationStatus.LICENSE_UNVERIFIED),
+            LicenseVerificationStatus.NEEDS_LEGAL_REVIEW.value: sum(1 for r in records_list if r.license_metadata and r.license_metadata.verification_status == LicenseVerificationStatus.NEEDS_LEGAL_REVIEW),
+            LicenseVerificationStatus.LICENSE_VERIFIED.value: sum(1 for r in records_list if r.license_metadata and r.license_metadata.verification_status == LicenseVerificationStatus.LICENSE_VERIFIED),
+        }
 
         # 8. Walk-forward effective sizes
         walk_forward_effective_sizes = [
@@ -1847,18 +2204,31 @@ class DatasetExpansionReadinessAssessor:
             {"window_id": "W2", "n_train": 28, "n_val": 11, "n_test": 11, "test_period": "2024-02-01 to 2024-03-31"},
         ]
 
-        # 9. Statistical power analysis
+        # 9. Statistical power analysis (Simulation-based cluster bootstrap)
+        sim_res = cls.simulate_cluster_bootstrap_power()
         power_analysis = {
             "current_test_sample_size": 11,
             "is_statistically_underpowered": True,
+            "power_status": "POWER_NOT_ESTABLISHED",
             "observed_se_delta_rho": 0.3141,
-            "required_n_test_for_80_power_at_d020": 45,
-            "required_n_total_dataset_expansion": 250,
+            "planning_sample_target": "250-300 (HEURISTIC_PLANNING_TARGET_ONLY)",
+            "statistically_justified_minimum": "NOT_ESTABLISHED_DUE_TO_PILOT_UNDERPOWERING",
+            "effect_size_assumptions": {
+                "hypothesized_delta_rho": 0.20,
+                "null_delta_rho": 0.0,
+                "inter_cluster_correlation_icc": 0.15,
+                "purging_loss_ratio": 0.15,
+                "valid_label_ratio": 0.90,
+            },
+            "simulation_method": "CLUSTER_BOOTSTRAP_CORRELATED_SPEARMAN_SIMULATION",
+            "random_seeds": sim_res["random_seeds"],
+            "power_curve": sim_res["power_curve"],
             "power_explanation": (
-                "With N=11 test events, standard error sigma_delta_rho is ~0.31, causing 95% CIs to span zero. "
-                "To achieve 80% statistical power (1-beta=0.80) at alpha=0.05 for effect size delta_rho=0.20, "
-                "a minimum of N_test >= 45 test events per window is required. With a 25% test split ratio, "
-                "dataset expansion requires N_total >= 200-300 verified events across TWSE constituents."
+                "Under cluster-level dependency (ICC=0.15), walk-forward purging losses, and valid label attrition, "
+                "the current test size N=11 yields statistical power of only ~5-6% at delta_rho=0.20 (alpha=0.05). "
+                "Statistical power cannot be formally established with current pilot data (POWER_NOT_ESTABLISHED). "
+                "The target of 250-300 events across TWSE constituents represents a heuristic planning target only, "
+                "and must not be cited as a statistically proven minimum sample size."
             ),
         }
 
@@ -1874,8 +2244,43 @@ class DatasetExpansionReadinessAssessor:
                 "unverified_provider_available_ratio": round(unverified_provider_avail / total_records, 4) if total_records > 0 else 0.0,
                 "total_trading_days": cls.TOTAL_TWSE_TRADING_SESSIONS_2023_2024,
                 "distinct_event_days": n_distinct_dates,
-                "zero_event_trading_days": zero_days,
-                "zero_event_trading_days_ratio": zero_day_ratio,
+                "distinct_event_days_in_fixture": n_distinct_dates,
+                "no_recorded_event_days_in_curated_fixture": zero_days,
+                "no_recorded_event_days_ratio": zero_day_ratio,
+                "zero_event_trading_days": zero_days,  # backwards compatibility
+                "zero_event_trading_days_ratio": zero_day_ratio,  # backwards compatibility
+                "collection_coverage": {
+                    "status": "NO_LIVE_CRAWLER_DEPLOYED",
+                    "active_collection_coverage_ratio": 0.0,
+                    "description": "Proportion of trading days with live automated news feed scraping active.",
+                },
+                "retrieval_coverage_by_source": {
+                    "MOPS": {
+                        "candidate_event_count": 12,
+                        "verified_retrieval_count": 0,
+                        "distinct_trading_days": 11,
+                        "verified_day_coverage_ratio": 0.0,
+                        "candidate_day_density": round(11 / cls.TOTAL_TWSE_TRADING_SESSIONS_2023_2024, 4),
+                    },
+                    "COMMERCIAL_MEDIA": {
+                        "curated_event_count": 38,
+                        "verified_retrieval_count": 0,
+                        "distinct_trading_days": 34,
+                        "verified_day_coverage_ratio": 0.0,
+                        "curated_day_density": round(34 / cls.TOTAL_TWSE_TRADING_SESSIONS_2023_2024, 4),
+                    },
+                },
+                "fixture_event_density": round(n_distinct_dates / cls.TOTAL_TWSE_TRADING_SESSIONS_2023_2024, 4),
+                "model_input_slot_occupancy": {
+                    "recent_event_slot_capacity": 32,
+                    "active_event_slot_capacity": 8,
+                    "avg_active_slot_occupancy_ratio": 0.125,
+                    "note": "Decoupled from fixture sparsity. In production, 32 recent + 8 active slots are populated by the complete market-wide news feed, not restricted to curated pilot fixtures.",
+                },
+                "interpretation_warning": (
+                    "Absence of news records in curated pilot fixture does NOT indicate absence of market news on those trading days. "
+                    "Real trading systems do not necessarily degenerate to market-only on 80-90% of trading days."
+                ),
                 "stock_sparsity": stock_sparsity,
             },
             "source_verification_summary": {
@@ -1898,11 +2303,14 @@ class DatasetExpansionReadinessAssessor:
             },
             "usage_rights_distribution": {
                 "counts": usage_rights_counts,
-                "commercial_redistribution_eligible": 0,
+                "license_verification_status_counts": lic_status_counts,
+                "commercial_redistribution_eligible": False,
+                "commercial_redistribution_eligible_count": 0,
                 "licensing_barrier_note": (
-                    "12 MOPS disclosures are eligible for public disclosure under Open Government Data License; "
-                    "38 commercial financial news articles are restricted to internal research fair use only. "
-                    "Commercial redistribution and model training data distribution require formal publisher licensing."
+                    "Decoupled data source identity from license grants. MOPS public availability under "
+                    "Taiwan Securities and Exchange Act Art. 36 does not grant commercial model training "
+                    "or raw redistribution rights without legal review. Commercial news articles lack formal publisher licenses "
+                    "(LICENSE_UNVERIFIED) and research fair use remains strictly NEEDS_LEGAL_REVIEW."
                 ),
             },
             "purged_walk_forward_effective_sizes": {

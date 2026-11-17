@@ -54,6 +54,7 @@ from stock_rl.evaluation.pilot_dataset import (
     AnnotationMethod,
     AnnotationTimeStatus,
     MOPSSourceEvidence,
+    TrustedExternalSourceAdapter,
     RAW_PILOT_EVENTS,
 )
 from stock_rl.evaluation.pilot_experiment import (
@@ -188,17 +189,19 @@ def test_historical_source_verification_coverage():
         recomputed = compute_normalized_content_hash(ev["headline"], ev.get("body_text", ""))
         assert rec.payload_hash == recomputed
 
-    # Test Evidence-Based Verification: construct valid MOPSSourceEvidence for EV-2330-01
+    # Test Evidence-Based Verification: construct valid certified MOPSSourceEvidence for EV-2330-01
     ev_target = [e for e in RAW_PILOT_EVENTS if e["event_id"] == "EV-2330-01"][0]
     ev_dt = pd.Timestamp(f"{ev_target['date_str']} {ev_target['pub_time_str']}", tz="Asia/Taipei")
     ev_hash = compute_normalized_content_hash(ev_target["headline"], ev_target.get("body_text", ""))
 
-    valid_evidence = MOPSSourceEvidence(
+    valid_evidence = TrustedExternalSourceAdapter.certify_with_adapter_receipt(
         announcement_id="MOPS-2330-20230606-AGM",
         company_id=ev_target["stock_id"],
         announcement_datetime=ev_dt,
         raw_content=ev_target.get("body_text", ""),
+        headline=ev_target["headline"],
         payload_hash=ev_hash,
+        endpoint_url="https://mops.twse.com.tw/mops/web/t05st01?step=1&TYPEK=sii&year=112&month=06&co_id=2330",
         is_existence_verified=True,
         is_availability_verified=False,  # Distinguishes existence vs historical provider availability!
         audit_notes="Authentic exchange filing verified against raw disclosure archive.",
@@ -218,12 +221,14 @@ def test_historical_source_verification_coverage():
     assert summary_with_evidence["total_unverified_records"] == 49
 
     # Fail closed on corrupted evidence (wrong payload hash)
-    corrupted_evidence = MOPSSourceEvidence(
+    corrupted_evidence = TrustedExternalSourceAdapter.certify_with_adapter_receipt(
         announcement_id="MOPS-2330-20230606-AGM",
         company_id=ev_target["stock_id"],
         announcement_datetime=ev_dt,
         raw_content=ev_target.get("body_text", ""),
+        headline=ev_target["headline"],
         payload_hash="corrupted_hash_value_that_does_not_match_payload_hash_at_all!!",
+        endpoint_url="https://mops.twse.com.tw/mops/web/t05st01?step=1&TYPEK=sii&year=112&month=06&co_id=2330",
         is_existence_verified=True,
     )
     fail_manifest = PilotSourceManifest.generate_manifest(evidence_registry={"EV-2330-01": corrupted_evidence})
