@@ -205,6 +205,7 @@ def test_historical_source_verification_coverage():
         is_existence_verified=True,
         is_availability_verified=False,  # Distinguishes existence vs historical provider availability!
         audit_notes="Authentic exchange filing verified against raw disclosure archive.",
+        is_authentic=True,
     )
 
     # Manifest with verified evidence bundle

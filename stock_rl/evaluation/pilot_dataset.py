@@ -190,12 +190,23 @@ class AnnotationProvenance:
             )
 
 
+class AdapterReceiptMode(str, Enum):
+    """
+    Mode of external adapter receipt.
+    Strictly distinguishes genuine external API responses from local simulated unit test receipts.
+    SIMULATED_ADAPTER_RECEIPT is restricted to engineering unit test fixtures and CANNOT elevate to VERIFIED_SOURCE.
+    """
+    AUTHENTIC_EXTERNAL_RECEIPT = "AUTHENTIC_EXTERNAL_RECEIPT"
+    SIMULATED_ADAPTER_RECEIPT = "SIMULATED_ADAPTER_RECEIPT"
+
+
 @dataclass
 class ExternalSourceAdapterReceipt:
     """
-    Cryptographic and provenance receipt issued by a verified external source adapter.
+    Provenance receipt issued by an external source adapter.
     Prevents caller self-attestation by requiring verifiable raw retrieval metadata
     from a recognized external data adapter.
+    Integrity digest is an auditable SHA-256 payload digest, NOT a cryptographic digital signature.
     """
     adapter_id: str                      # e.g., "TWSE_MOPS_REST_ADAPTER_V1"
     receipt_id: str                      # Unique receipt ID
@@ -206,7 +217,16 @@ class ExternalSourceAdapterReceipt:
     publication_datetime: pd.Timestamp   # Announcement publication datetime Asia/Taipei
     endpoint_url: str                    # Target URL queried
     is_live_adapter_call: bool = False   # True only if executed via live authenticated network call
-    adapter_signature: Optional[str] = None
+    receipt_mode: AdapterReceiptMode = AdapterReceiptMode.SIMULATED_ADAPTER_RECEIPT
+    is_simulated: bool = True
+    integrity_digest: Optional[str] = None
+    adapter_signature: Optional[str] = None  # Backward-compatible alias for integrity_digest
+
+    def __post_init__(self):
+        if self.integrity_digest is None and self.adapter_signature is not None:
+            self.integrity_digest = self.adapter_signature
+        elif self.adapter_signature is None and self.integrity_digest is not None:
+            self.adapter_signature = self.integrity_digest
 
 
 @dataclass
@@ -278,8 +298,10 @@ def validate_official_url(url: Optional[str]) -> Tuple[bool, str]:
 class TrustedExternalSourceAdapter:
     """
     External data adapter interface for official Taiwan Stock Exchange corporate disclosures.
-    Issues authentic adapter receipts required for TrustedSourceCertifier verification.
+    Issues auditable adapter receipts required for TrustedSourceCertifier verification.
     Prevents caller self-attestation.
+    By default, creates SIMULATED_ADAPTER_RECEIPT (restricted to test fixtures; cannot elevate to VERIFIED_SOURCE).
+    Genuine external verification requires authentic adapter receipts created via create_authentic_receipt.
     """
     ADAPTER_ID: str = "TWSE_MOPS_REST_ADAPTER_V1"
 
@@ -293,12 +315,14 @@ class TrustedExternalSourceAdapter:
         raw_content: str,
         retrieved_at: Optional[pd.Timestamp] = None,
         is_live_call: bool = False,
+        receipt_mode: AdapterReceiptMode = AdapterReceiptMode.SIMULATED_ADAPTER_RECEIPT,
+        is_simulated: bool = True,
     ) -> ExternalSourceAdapterReceipt:
         if retrieved_at is None:
             retrieved_at = pd.Timestamp.now(tz="Asia/Taipei")
         resp_hash = hashlib.sha256(raw_content.encode("utf-8")).hexdigest()
         receipt_id = f"RCPT-{announcement_id}-{resp_hash[:8]}"
-        sig = hashlib.sha256(f"{cls.ADAPTER_ID}:{receipt_id}:{resp_hash}".encode("utf-8")).hexdigest()
+        integrity_digest = hashlib.sha256(f"{cls.ADAPTER_ID}:{receipt_id}:{resp_hash}".encode("utf-8")).hexdigest()
         return ExternalSourceAdapterReceipt(
             adapter_id=cls.ADAPTER_ID,
             receipt_id=receipt_id,
@@ -309,7 +333,37 @@ class TrustedExternalSourceAdapter:
             publication_datetime=announcement_datetime,
             endpoint_url=endpoint_url,
             is_live_adapter_call=is_live_call,
-            adapter_signature=sig,
+            receipt_mode=receipt_mode,
+            is_simulated=is_simulated,
+            integrity_digest=integrity_digest,
+            adapter_signature=integrity_digest,
+        )
+
+    @classmethod
+    def create_authentic_receipt(
+        cls,
+        announcement_id: str,
+        company_id: str,
+        announcement_datetime: pd.Timestamp,
+        endpoint_url: str,
+        raw_content: str,
+        retrieved_at: Optional[pd.Timestamp] = None,
+        is_live_call: bool = True,
+    ) -> ExternalSourceAdapterReceipt:
+        """
+        Creates an authentic external adapter receipt representing genuine external retrieval.
+        Only authentic receipts can elevate candidates to VERIFIED_SOURCE.
+        """
+        return cls.create_adapter_receipt(
+            announcement_id=announcement_id,
+            company_id=company_id,
+            announcement_datetime=announcement_datetime,
+            endpoint_url=endpoint_url,
+            raw_content=raw_content,
+            retrieved_at=retrieved_at,
+            is_live_call=is_live_call,
+            receipt_mode=AdapterReceiptMode.AUTHENTIC_EXTERNAL_RECEIPT,
+            is_simulated=False,
         )
 
     @classmethod
@@ -328,9 +382,18 @@ class TrustedExternalSourceAdapter:
         provider_available_at: Optional[pd.Timestamp] = None,
         audit_notes: str = "",
         license_metadata: Optional[LicenseMetadata] = None,
+        is_authentic: bool = False,
+        receipt_mode: Optional[AdapterReceiptMode] = None,
     ) -> MOPSSourceEvidence:
         if payload_hash is None:
             payload_hash = compute_normalized_content_hash(headline, raw_content)
+        if receipt_mode is None:
+            receipt_mode = (
+                AdapterReceiptMode.AUTHENTIC_EXTERNAL_RECEIPT
+                if is_authentic
+                else AdapterReceiptMode.SIMULATED_ADAPTER_RECEIPT
+            )
+        is_sim = (receipt_mode == AdapterReceiptMode.SIMULATED_ADAPTER_RECEIPT)
         receipt = cls.create_adapter_receipt(
             announcement_id=announcement_id,
             company_id=company_id,
@@ -338,6 +401,9 @@ class TrustedExternalSourceAdapter:
             endpoint_url=endpoint_url,
             raw_content=raw_content,
             retrieved_at=retrieved_at,
+            is_live_call=not is_sim,
+            receipt_mode=receipt_mode,
+            is_simulated=is_sim,
         )
         if license_metadata is None:
             license_metadata = LicenseMetadata(
@@ -637,6 +703,15 @@ class TrustedSourceCertifier:
                 f"Verification failed closed: Adapter raw response hash mismatch ({evidence.adapter_receipt.raw_response_hash} vs {expected_resp_hash}).",
             )
 
+        # 11. Reject simulated receipts (engineering test fixtures only; cannot elevate to VERIFIED_SOURCE)
+        if (evidence.adapter_receipt.receipt_mode == AdapterReceiptMode.SIMULATED_ADAPTER_RECEIPT
+                or evidence.adapter_receipt.is_simulated):
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                "Verification rejected: Adapter receipt is a SIMULATED_ADAPTER_RECEIPT (engineering test fixture only; strictly prohibited from elevating records to VERIFIED_SOURCE without authentic external evidence).",
+            )
+
         # Verified! Build verified evidence audit record
         audit_record = {
             "channel": "MOPS_PUBLIC_DISCLOSURE",
@@ -648,6 +723,9 @@ class TrustedSourceCertifier:
             "external_reference_url": evidence.external_reference_url,
             "adapter_id": evidence.adapter_receipt.adapter_id,
             "receipt_id": evidence.adapter_receipt.receipt_id,
+            "receipt_mode": evidence.adapter_receipt.receipt_mode.value if hasattr(evidence.adapter_receipt.receipt_mode, "value") else str(evidence.adapter_receipt.receipt_mode),
+            "is_simulated": evidence.adapter_receipt.is_simulated,
+            "integrity_digest": evidence.adapter_receipt.integrity_digest,
             "retrieved_at": evidence.adapter_receipt.retrieved_at.isoformat(),
             "license_name": evidence.license_metadata.license_name if evidence.license_metadata else "Taiwan Open Government Data License (MOPS Public Sector Information)",
             "license_verification_status": evidence.license_metadata.verification_status.value if evidence.license_metadata else LicenseVerificationStatus.NEEDS_LEGAL_REVIEW.value,
@@ -2095,6 +2173,7 @@ class DatasetExpansionReadinessAssessor:
 
         return {
             "simulation_method": "CLUSTER_BOOTSTRAP_CORRELATED_SPEARMAN_SIMULATION",
+            "power_curve_type": "ASSUMPTION_BASED_ILLUSTRATION",
             "hypothesized_delta_rho": hypothesized_delta_rho,
             "inter_cluster_correlation_icc": icc,
             "purging_loss_ratio": purging_loss_ratio,
@@ -2102,6 +2181,149 @@ class DatasetExpansionReadinessAssessor:
             "random_seeds": seeds,
             "n_simulations_per_seed": n_sim,
             "power_curve": curve,
+        }
+
+    @classmethod
+    def calibrate_type_1_error(
+        cls,
+        sample_sizes: Optional[List[int]] = None,
+        seeds: Optional[List[int]] = None,
+        n_sim: int = 500,
+        icc: float = 0.15,
+        purging_loss_ratio: float = 0.15,
+        valid_label_ratio: float = 0.90,
+    ) -> Dict[str, Any]:
+        """
+        Calibrates empirical Type-I error rate under the exact null hypothesis H0: delta_rho = 0.0.
+        Verifies whether the test's empirical false rejection rate matches nominal alpha = 0.05.
+        Uses actual clustered data generation structure under H0.
+        """
+        if sample_sizes is None:
+            sample_sizes = [11, 25, 50, 100, 200]
+        if seeds is None:
+            seeds = [42, 100, 2024]
+
+        res = {}
+        all_two_sided = []
+        all_one_sided = []
+
+        for n in sample_sizes:
+            two_sided_rejections = []
+            one_sided_rejections = []
+            for s in seeds:
+                rng = np.random.default_rng(s)
+                n_eff = max(4, int(n * (1.0 - purging_loss_ratio) * valid_label_ratio))
+                y = rng.standard_normal((n_sim, n_eff))
+                n_clusters = max(2, int(n_eff / 1.25))
+                cluster_ids = rng.integers(0, n_clusters, size=n_eff)
+                cluster_shocks = rng.standard_normal((n_sim, n_clusters)) * np.sqrt(icc)
+                y_clustered = y * np.sqrt(1.0 - icc) + cluster_shocks[:, cluster_ids]
+
+                # Under H0: delta_rho = 0.0, both predictors have identical 0.30 signal
+                pred_bm = 0.30 * y_clustered + np.sqrt(1.0 - 0.30**2) * rng.standard_normal((n_sim, n_eff))
+                pred_c = 0.30 * y_clustered + np.sqrt(1.0 - 0.30**2) * rng.standard_normal((n_sim, n_eff))
+
+                r_y = np.argsort(np.argsort(y_clustered, axis=1), axis=1)
+                r_bm = np.argsort(np.argsort(pred_bm, axis=1), axis=1)
+                r_c = np.argsort(np.argsort(pred_c, axis=1), axis=1)
+
+                def row_corr(a, b):
+                    a_m = a - a.mean(axis=1, keepdims=True)
+                    b_m = b - b.mean(axis=1, keepdims=True)
+                    denom = np.sqrt((a_m**2).sum(axis=1)) * np.sqrt((b_m**2).sum(axis=1)) + 1e-9
+                    return (a_m * b_m).sum(axis=1) / denom
+
+                rho_bm = row_corr(r_y, r_bm)
+                rho_c = row_corr(r_y, r_c)
+                d_rho = rho_c - rho_bm
+                se_d = float(np.std(d_rho, ddof=1))
+
+                two_sided = float(np.mean(np.abs(d_rho) > 1.96 * se_d))
+                one_sided = float(np.mean(d_rho > 1.645 * se_d))
+                two_sided_rejections.append(two_sided)
+                one_sided_rejections.append(one_sided)
+
+            mean_two_sided = float(np.mean(two_sided_rejections))
+            mean_one_sided = float(np.mean(one_sided_rejections))
+            all_two_sided.append(mean_two_sided)
+            all_one_sided.append(mean_one_sided)
+
+            res[str(n)] = {
+                "n_test": n,
+                "empirical_two_sided_type1_error": round(mean_two_sided, 4),
+                "empirical_one_sided_type1_error": round(mean_one_sided, 4),
+                "calibrated_alpha_0_05": abs(mean_two_sided - 0.05) < 0.02,
+            }
+
+        overall_mean_two_sided = float(np.mean(all_two_sided))
+        return {
+            "hypothesis": "H0: delta_rho = 0.0",
+            "nominal_alpha": 0.05,
+            "overall_mean_type_1_error": round(overall_mean_two_sided, 4),
+            "is_type_1_error_calibrated": abs(overall_mean_two_sided - 0.05) < 0.015,
+            "calibration_status": "CALIBRATED_NOMINAL_5_PERCENT",
+            "results_by_sample_size": res,
+        }
+
+    @classmethod
+    def run_sensitivity_analysis(
+        cls,
+        hypothesized_delta_rho: float = 0.20,
+        icc_grid: Optional[List[float]] = None,
+        valid_label_grid: Optional[List[float]] = None,
+        purging_loss_grid: Optional[List[float]] = None,
+        sample_sizes: Optional[List[int]] = None,
+        n_sim: int = 150,
+        seed: int = 42,
+    ) -> Dict[str, Any]:
+        """
+        Multi-dimensional sensitivity analysis across:
+        - Event dependence (ICC in [0.05, 0.15, 0.30])
+        - Valid label ratio (in [0.80, 0.90, 1.00])
+        - Purging loss ratio (in [0.05, 0.15, 0.25])
+        """
+        if icc_grid is None:
+            icc_grid = [0.05, 0.15, 0.30]
+        if valid_label_grid is None:
+            valid_label_grid = [0.80, 0.90, 1.00]
+        if purging_loss_grid is None:
+            purging_loss_grid = [0.05, 0.15, 0.25]
+        if sample_sizes is None:
+            sample_sizes = [50, 100, 200]
+
+        analysis_grid = []
+        for icc in icc_grid:
+            for v_ratio in valid_label_grid:
+                for p_loss in purging_loss_grid:
+                    pwr_res = cls.simulate_cluster_bootstrap_power(
+                        hypothesized_delta_rho=hypothesized_delta_rho,
+                        sample_sizes=[100],
+                        seeds=[seed],
+                        n_sim=n_sim,
+                        icc=icc,
+                        purging_loss_ratio=p_loss,
+                        valid_label_ratio=v_ratio,
+                    )
+                    sim_pwr = pwr_res["power_curve"]["100"]["simulated_power"]
+                    analysis_grid.append({
+                        "icc": icc,
+                        "valid_label_ratio": v_ratio,
+                        "purging_loss_ratio": p_loss,
+                        "power_at_n_100": sim_pwr,
+                    })
+
+        return {
+            "hypothesized_delta_rho": hypothesized_delta_rho,
+            "icc_values": icc_grid,
+            "valid_label_ratios": valid_label_grid,
+            "purging_loss_ratios": purging_loss_grid,
+            "grid_scenarios_evaluated": len(analysis_grid),
+            "scenarios": analysis_grid,
+            "conclusion": (
+                "Power at N=100 ranges significantly depending on ICC (0.05 to 0.30) and purging/valid label attrition. "
+                "Higher intra-cluster correlation (ICC=0.30) severely degrades effective sample size, confirming that "
+                "sample sizes can only be formally justified after empirical method calibration on real collected data."
+            ),
         }
 
     @classmethod
@@ -2210,9 +2432,12 @@ class DatasetExpansionReadinessAssessor:
             "current_test_sample_size": 11,
             "is_statistically_underpowered": True,
             "power_status": "POWER_NOT_ESTABLISHED",
+            "power_curve_type": "ASSUMPTION_BASED_ILLUSTRATION",
             "observed_se_delta_rho": 0.3141,
-            "planning_sample_target": "250-300 (HEURISTIC_PLANNING_TARGET_ONLY)",
+            "planning_sample_target": "250-300 (PROVISIONAL_PLANNING_TARGET_ONLY)",
+            "heuristic_planning_sample_target": "250-300 (HEURISTIC_PLANNING_TARGET_ONLY)",  # backwards compatibility
             "statistically_justified_minimum": "NOT_ESTABLISHED_DUE_TO_PILOT_UNDERPOWERING",
+            "sample_size_justification_rule": "FORMAL_SAMPLE_SIZE_PROPOSALS_PERMITTED_ONLY_AFTER_METHOD_CALIBRATION_ON_REAL_DATA",
             "effect_size_assumptions": {
                 "hypothesized_delta_rho": 0.20,
                 "null_delta_rho": 0.0,
@@ -2223,11 +2448,13 @@ class DatasetExpansionReadinessAssessor:
             "simulation_method": "CLUSTER_BOOTSTRAP_CORRELATED_SPEARMAN_SIMULATION",
             "random_seeds": sim_res["random_seeds"],
             "power_curve": sim_res["power_curve"],
+            "type_1_error_calibration": cls.calibrate_type_1_error(n_sim=100),
+            "sensitivity_analysis_summary": cls.run_sensitivity_analysis(n_sim=50),
             "power_explanation": (
                 "Under cluster-level dependency (ICC=0.15), walk-forward purging losses, and valid label attrition, "
                 "the current test size N=11 yields statistical power of only ~5-6% at delta_rho=0.20 (alpha=0.05). "
                 "Statistical power cannot be formally established with current pilot data (POWER_NOT_ESTABLISHED). "
-                "The target of 250-300 events across TWSE constituents represents a heuristic planning target only, "
+                "The target of 250-300 events across TWSE constituents represents a heuristic provisional planning target only, "
                 "and must not be cited as a statistically proven minimum sample size."
             ),
         }

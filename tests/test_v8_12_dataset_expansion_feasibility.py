@@ -220,13 +220,14 @@ def test_trusted_source_certification_preflight():
         raw_content=ev_target.get("body_text", ""),
         headline=ev_target["headline"],
         endpoint_url="https://mops.twse.com.tw/mops/web/t05st01",
+        is_authentic=True,
     )
     status, evidence_dict, notes = TrustedSourceCertifier.verify_evidence(ev_other, valid_evidence_agm)
     assert status == SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED
     assert "Cross-announcement reuse detected" in notes
 
     # --- Rejection Case 6: Company ID mismatch ---
-    mismatch_co_receipt = TrustedExternalSourceAdapter.create_adapter_receipt(
+    mismatch_co_receipt = TrustedExternalSourceAdapter.create_authentic_receipt(
         announcement_id="MOPS-2330-20230606-AGM",
         company_id="2881",
         announcement_datetime=ev_dt,
@@ -258,7 +259,7 @@ def test_trusted_source_certification_preflight():
     assert "Self-elevation rejected" in test_manifest["EV-MEDIA-FAKE-ELEVATE-01"].notes
 
     # --- Rejection Case 8: Tampered raw response hash in adapter receipt ---
-    tampered_receipt = TrustedExternalSourceAdapter.create_adapter_receipt(
+    tampered_receipt = TrustedExternalSourceAdapter.create_authentic_receipt(
         announcement_id="MOPS-2330-20230606-AGM",
         company_id="2330",
         announcement_datetime=ev_dt,
@@ -307,6 +308,7 @@ def test_event_existence_vs_historical_availability_distinction():
         is_existence_verified=True,
         is_availability_verified=False,  # Segregated! No historical vendor feed receipt
         audit_notes="Authentic exchange filing verified against raw disclosure archive.",
+        is_authentic=True,
     )
 
     manifest = PilotSourceManifest.generate_manifest(evidence_registry={"EV-2330-01": valid_evidence})
@@ -406,7 +408,8 @@ def test_dataset_expansion_readiness_assessment():
     assert power["current_test_sample_size"] == 11
     assert power["is_statistically_underpowered"] is True
     assert power["power_status"] == "POWER_NOT_ESTABLISHED"
-    assert power["planning_sample_target"] == "250-300 (HEURISTIC_PLANNING_TARGET_ONLY)"
+    assert "250-300" in power["planning_sample_target"]
+    assert "PLANNING_TARGET_ONLY" in power["planning_sample_target"]
     assert power["statistically_justified_minimum"] == "NOT_ESTABLISHED_DUE_TO_PILOT_UNDERPOWERING"
     assert power["simulation_method"] == "CLUSTER_BOOTSTRAP_CORRELATED_SPEARMAN_SIMULATION"
     assert "power_curve" in power
