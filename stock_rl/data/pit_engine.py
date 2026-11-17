@@ -312,7 +312,7 @@ class ProvenanceRecord:
         Timezone-aware safe comparison. Naive timestamps raise ValueError in formal mode.
         """
         eff_mode = mode or self.mode
-        if not self.is_audit_verified:
+        if eff_mode == "formal" and not self.is_audit_verified:
             return False
         if self.missing_status not in (
             MissingStatus.AVAILABLE.value,

@@ -834,7 +834,7 @@ def build_audited_stock_context(
     If provenance is not available as of decision_time, fills with neutral fallback values.
     Industry embedding is guaranteed to have been trained strictly prior to decision_time.
     """
-    if not provenance.is_available_as_of(decision_time):
+    if not provenance.is_available_as_of(decision_time, mode=mode):
         return np.array([
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             10.0, 10.0, 0.5, 0.5, 1.0, 0.5, 1.0, 0.0
@@ -879,7 +879,7 @@ def build_audited_event_metadata(
     3. E21 Market Surprise is strictly pre-event prior implied move (ZERO post-event price reaction).
     4. If unverified or future event, returns neutral masked representation.
     """
-    if not provenance.is_available_as_of(decision_time):
+    if not provenance.is_available_as_of(decision_time, mode=mode):
         return np.zeros(EVENT_METADATA_DIM, dtype=np.float32)
 
     t_avail = provenance.available_at
@@ -931,7 +931,7 @@ def build_audited_event_stock_relation(
     Assembles 8D Event-Stock Relation with strict PIT verification of supply chain / relation links.
     If provenance is unverified or future, returns zeroes.
     """
-    if not provenance.is_available_as_of(decision_time):
+    if not provenance.is_available_as_of(decision_time, mode=mode):
         return np.zeros(EVENT_STOCK_RELATION_DIM, dtype=np.float32)
 
     return assemble_event_stock_relation(

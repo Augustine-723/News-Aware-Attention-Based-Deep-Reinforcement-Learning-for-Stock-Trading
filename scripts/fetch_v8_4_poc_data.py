@@ -148,11 +148,22 @@ def run_ingestion():
             df_share.to_csv(os.path.join(DATA_DIR, f"{stock}_shareholding.csv"), index=False)
         time.sleep(0.5)
 
-    # 2. Benchmark TAIEX
+    # 2. Benchmark TAIEX & Sector Indices
     df_taiex = fetch_finmind_dataset("TaiwanStockPrice", "TAIEX")
     if not df_taiex.empty:
         df_taiex.to_csv(os.path.join(DATA_DIR, "taiex.csv"), index=False)
     time.sleep(0.5)
+
+    sector_indices = {
+        "Semiconductor": "semiconductor_sector.csv",
+        "ShippingTransportation": "shipping_sector.csv",
+        "FinancialInsurance": "financial_sector.csv",
+    }
+    for sec_id, sec_fname in sector_indices.items():
+        df_sec = fetch_finmind_dataset("TaiwanStockPrice", sec_id)
+        if not df_sec.empty:
+            df_sec.to_csv(os.path.join(DATA_DIR, sec_fname), index=False)
+        time.sleep(0.5)
 
     # 3. FX USD/TWD
     df_fx = fetch_finmind_dataset("TaiwanExchangeRate", "USD")
@@ -196,7 +207,8 @@ def run_ingestion():
         df_dgs_norm.index = df_dgs10.index.floor("D").tz_localize(None)
         df_us["us_10y_yield"] = df_dgs_norm["DGS10"]
 
-    df_us = df_us.ffill().bfill()
+    # Strictly forward-fill only. Backward-fill (.bfill()) is strictly prohibited to prevent future leakage.
+    df_us = df_us.ffill()
     df_us.to_csv(os.path.join(DATA_DIR, "us_macro.csv"))
     logger.info(f"Saved US macro table with shape {df_us.shape}.")
 
