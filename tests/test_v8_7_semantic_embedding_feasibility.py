@@ -23,6 +23,7 @@ from stock_rl.config.schema import (
 from stock_rl.data.multimodal_pipeline import (
     NewsSourceType,
     EventLifecycleStatus,
+    EvidenceAuditLevel,
     TextEmbeddingType,
     TextEmbeddingEngine,
     RawNewsArticle,
@@ -38,6 +39,7 @@ from stock_rl.data.real_data_poc import (
 from stock_rl.models.full_model import StockRLFullModel
 from stock_rl.evaluation.ablations import (
     TraditionalChineseCharacterTokenizer,
+    UntrainedTraditionalChineseNeuralEncoder,
     TinyTraditionalChineseSemanticEncoder,
     NewsAblationProtocol,
 )
@@ -49,7 +51,7 @@ from stock_rl.evaluation.ablations import (
 
 def test_convert_article_direct_bypass_rejected_in_formal_mode():
     """
-    V8.7 P0-1: Direct calls to convert_article_to_event_record(..., mode="formal")
+    V8.7 P0-1 & P1-3: Direct calls to convert_article_to_event_record(..., mode="formal")
     must fail closed and cannot bypass audit validation.
     """
     t_pub = pd.Timestamp("2024-01-15 10:00:00", tz="Asia/Taipei")
@@ -110,6 +112,53 @@ def test_convert_article_direct_bypass_rejected_in_formal_mode():
     with pytest.raises(ValueError, match="Self-filled evidence strings cannot elevate unauthenticated sources"):
         convert_article_to_event_record(art_self_asserted, mode="formal")
 
+    # 5. P1-3: Article with EVIDENCE_CLAIM_ONLY must fail closed in formal mode
+    art_claim_only = RawNewsArticle(
+        source_type=NewsSourceType.MEDIA_ARCHIVE,
+        source_name="聯合報",
+        stock_id="2330",
+        headline="台積電法說會展望樂觀",
+        source_published_at=t_pub,
+        provider_available_at=t_pub,
+        provider_available_evidence="Terminal wire snapshot",
+        is_audit_verified=True,
+        evidence_audit_level=EvidenceAuditLevel.EVIDENCE_CLAIM_ONLY,
+    )
+    with pytest.raises(ValueError, match="Formal mode accepts ONLY VERIFIED_EVIDENCE"):
+        convert_article_to_event_record(art_claim_only, mode="formal")
+
+    # 6. P1-3: Open source (MEDIA_ARCHIVE) attempting to assert VERIFIED_EVIDENCE must fail closed
+    art_fake_verified = RawNewsArticle(
+        source_type=NewsSourceType.MEDIA_ARCHIVE,
+        source_name="聯合報",
+        stock_id="2330",
+        headline="台積電法說會展望樂觀",
+        source_published_at=t_pub,
+        provider_available_at=t_pub,
+        provider_available_evidence="Official drop copy 999",
+        is_audit_verified=True,
+        evidence_audit_level=EvidenceAuditLevel.VERIFIED_EVIDENCE,
+    )
+    with pytest.raises(ValueError, match="cannot provide VERIFIED_EVIDENCE"):
+        convert_article_to_event_record(art_fake_verified, mode="formal")
+
+    # 7. Valid MOPS filing with VERIFIED_EVIDENCE succeeds in formal mode
+    art_valid_mops = RawNewsArticle(
+        source_type=NewsSourceType.MOPS_OFFICIAL,
+        source_name="MOPS",
+        stock_id="2330",
+        headline="台積電說明媒體報導先進封裝建廠產能與投資規劃",
+        source_published_at=t_pub,
+        provider_available_at=t_pub,
+        provider_available_evidence="TWSE MOPS announcement seq 1042 doc ref 20240115_2330_01",
+        is_audit_verified=True,
+        evidence_audit_level=EvidenceAuditLevel.VERIFIED_EVIDENCE,
+    )
+    rec = convert_article_to_event_record(art_valid_mops, mode="formal")
+    assert rec is not None
+    assert rec["event_id"] == art_valid_mops.event_id
+    assert rec["provenance"].is_audit_verified is True
+
 
 def test_formal_mode_contract_parity():
     """
@@ -138,17 +187,17 @@ def test_formal_mode_contract_parity():
 
 
 # ==============================================================================
-# 2. Pretrained Semantic Embedding with 128D Projection
+# 2. Pretrained Semantic Embedding & Deterministic Inference
 # ==============================================================================
 
-def test_pretrained_embedding_with_genuine_weights_and_128d_projection():
+def test_pretrained_mode_fails_closed_without_genuine_weights():
     """
-    V8.7 Section 2:
+    V8.7 P0-1:
     Validates TextEmbeddingEngine in PRETRAINED mode:
     - Fails without weights/tokenizer.
-    - Executes genuine PyTorch encoder when weights and tokenizer are provided.
+    - Fails with unverified weights (is_verified_pretrained=False).
+    - Executes genuine PyTorch encoder only when is_verified_pretrained=True.
     - Produces authoritative 128D unit vector.
-    - Measures semantic discrimination between related and unrelated financial headlines.
     """
     # 1. Without model_weights or tokenizer -> MUST fail
     engine_no_weights = TextEmbeddingEngine(
@@ -158,61 +207,107 @@ def test_pretrained_embedding_with_genuine_weights_and_128d_projection():
     with pytest.raises(ValueError, match="Strict Embedding Error: PRETRAINED"):
         engine_no_weights.embed_text("測試標題")
 
-    # 2. With genuine lightweight neural encoder and tokenizer
     tok = TraditionalChineseCharacterTokenizer()
-    enc = TinyTraditionalChineseSemanticEncoder(vocab_size=4096, hidden_dim=256, output_dim=EVENT_TEXT_DIM)
+    enc = UntrainedTraditionalChineseNeuralEncoder(vocab_size=4096, hidden_dim=256, output_dim=EVENT_TEXT_DIM)
 
-    engine_pretrained = TextEmbeddingEngine(
+    # 2. With weights but is_verified_pretrained=False -> MUST fail (P0-1)
+    engine_unverified = TextEmbeddingEngine(
         embedding_type=TextEmbeddingType.PRETRAINED,
         model_version="tinytc-financial-v1.0",
         dim=EVENT_TEXT_DIM,
         model_weights=enc,
         tokenizer=tok,
+        is_verified_pretrained=False,
+    )
+    with pytest.raises(ValueError, match="Strict Embedding Error: PRETRAINED .* is not verified"):
+        engine_unverified.embed_text("測試標題")
+
+    # 3. With is_verified_pretrained=True -> executes and produces 128D unit vector
+    engine_verified = TextEmbeddingEngine(
+        embedding_type=TextEmbeddingType.PRETRAINED,
+        model_version="verified-bge-financial-v1.0",
+        dim=EVENT_TEXT_DIM,
+        model_weights=enc,
+        tokenizer=tok,
+        is_verified_pretrained=True,
+    )
+    vec = engine_verified.embed_text("台積電先進製程")
+    assert vec.shape == (EVENT_TEXT_DIM,)
+    assert np.isclose(np.linalg.norm(vec), 1.0, atol=1e-5)
+
+
+def test_deterministic_embedding_inference():
+    """
+    V8.7 P1-2:
+    Validates deterministic inference guarantees:
+    - Model initialization does not mutate global PyTorch RNG state.
+    - Repeated calls produce bitwise identical 128D vectors.
+    - Sequence length truncation at max_seq_len=128.
+    - Model stays in eval() mode.
+    - Model provenance metadata is traceable.
+    """
+    # 1. Global RNG preservation check
+    torch.manual_seed(999)
+    rng_state_before = torch.get_rng_state()
+    enc = UntrainedTraditionalChineseNeuralEncoder(seed=12345)
+    rng_state_after = torch.get_rng_state()
+    assert torch.equal(rng_state_before, rng_state_after), "Model __init__ must not mutate global PyTorch RNG state"
+
+    tok = TraditionalChineseCharacterTokenizer(max_seq_len=128)
+    engine = TextEmbeddingEngine(
+        embedding_type=TextEmbeddingType.UNTRAINED_NEURAL_BASELINE,
+        model_version="untrained-tinytc-v1.0",
+        dim=EVENT_TEXT_DIM,
+        model_weights=enc,
+        tokenizer=tok,
+        max_seq_len=128,
     )
 
-    h_cowos_1 = "台積電嘉義先進封裝廠投資額翻倍，因應輝達CoWoS產能需求"
-    h_cowos_2 = "台積電說明媒體報導先進封裝建廠產能與投資規劃"
-    h_shipping = "紅海危機延燒，長榮等全球航商持續繞道好望角，航運指數大漲"
+    sample_headline = "台積電嘉義先進封裝廠投資額翻倍，因應輝達CoWoS產能擴張需求"
 
-    v1 = engine_pretrained.embed_text(h_cowos_1)
-    v2 = engine_pretrained.embed_text(h_cowos_2)
-    v3 = engine_pretrained.embed_text(h_shipping)
-
-    # Dimensionality & Normalization
+    # 2. Deterministic output bitwise equality across runs
+    v1 = engine.embed_text(sample_headline)
+    v2 = engine.embed_text(sample_headline)
+    assert np.array_equal(v1, v2), "Repeated inference on same input must produce bitwise identical vectors"
     assert v1.shape == (EVENT_TEXT_DIM,)
-    assert v2.shape == (EVENT_TEXT_DIM,)
-    assert v3.shape == (EVENT_TEXT_DIM,)
     assert np.isclose(np.linalg.norm(v1), 1.0, atol=1e-5)
-    assert np.isclose(np.linalg.norm(v2), 1.0, atol=1e-5)
-    assert np.isclose(np.linalg.norm(v3), 1.0, atol=1e-5)
 
-    # Semantic Discrimination
-    sim_semiconductor = float(np.dot(v1, v2))
-    sim_cross_sector = float(np.dot(v1, v3))
+    # 3. Model stays in eval() mode
+    assert enc.training is False, "Encoder must be set to eval() during embedding inference"
 
-    assert sim_semiconductor > sim_cross_sector, (
-        f"Semiconductor headlines should have higher similarity ({sim_semiconductor:.3f}) "
-        f"than cross-sector shipping headline ({sim_cross_sector:.3f})"
-    )
+    # 4. Sequence length truncation (long input > 128 chars)
+    long_text = "台積電" * 100  # 300 characters
+    v_long = engine.embed_text(long_text)
+    assert v_long.shape == (EVENT_TEXT_DIM,)
+    assert np.isclose(np.linalg.norm(v_long), 1.0, atol=1e-5)
+
+    # 5. Model provenance metadata
+    meta = enc.get_provenance_metadata()
+    assert meta["encoder_type"] == "UNTRAINED_NEURAL_BASELINE"
+    assert meta["is_verified_pretrained"] is False
+    assert len(meta["weights_sha256"]) == 64
+    assert meta["max_seq_len"] == 128
 
 
 # ==============================================================================
-# 3. News Ablation Protocol (B0, B1, B2)
+# 3. News Ablation Protocol (B0, B1, DEV-N, B2)
 # ==============================================================================
 
 def test_news_ablation_b0_b1_b2_controlled_experiment():
     """
-    V8.7 Section 3:
+    V8.7 Section 3 & Code Review 1:
     Executes controlled ablation study on 2330:
     - B0: Market-Only (all event slots masked and zeroed)
-    - B1: Market + Deterministic Hash News
-    - B2: Market + Pretrained Semantic News
+    - B1: Market + Deterministic Hash News (Authoritative Reproducible Baseline)
+    - DEV-N: Market + Untrained Neural Baseline (Randomly initialized PyTorch Transformer)
+    - B2: Market + Genuine Pretrained Semantic (PENDING when authentic weights unavailable)
     Verifies:
-    1. Market bitwise parity (100% equal market inputs across all 3 baselines).
-    2. Event occupancy parity between B1 and B2, zero occupancy in B0.
-    3. Model feature sensitivity (state and Q-value divergence).
-    4. Finite gradient flow across all 3 ablation branches.
-    5. Untrained Q-value guardrail disclaimer presence.
+    1. Market bitwise parity (100% equal market inputs across evaluated baselines).
+    2. Event occupancy parity between B1 and DEV-N, zero occupancy in B0.
+    3. B2 reported as PENDING_PRETRAINED_MODEL_UNAVAILABLE when genuine weights not loaded.
+    4. Model feature sensitivity (state and Q-value divergence).
+    5. Finite gradient flow across all evaluated ablation branches.
+    6. Untrained Q-value guardrail disclaimer presence.
     """
     ticker = "2330"
     ohlcv, inst, macro, foreign, ctx, _ = load_real_market_feeds(ticker, mode="estimated", include_micro_news=False)
@@ -222,7 +317,7 @@ def test_news_ablation_b0_b1_b2_controlled_experiment():
     t_dec = pd.Timestamp("2024-01-15 20:00:00", tz="Asia/Taipei")
 
     tok = TraditionalChineseCharacterTokenizer()
-    enc = TinyTraditionalChineseSemanticEncoder(output_dim=EVENT_TEXT_DIM)
+    enc = UntrainedTraditionalChineseNeuralEncoder(output_dim=EVENT_TEXT_DIM)
 
     model = StockRLFullModel()
 
@@ -242,27 +337,32 @@ def test_news_ablation_b0_b1_b2_controlled_experiment():
     )
 
     # 1. Market Bitwise Parity
-    assert res["market_bitwise_equal"] is True, "Market features across B0, B1, B2 must be 100% bitwise equal"
+    assert res["market_bitwise_equal"] is True, "Market features across B0, B1, DEV-N must be 100% bitwise equal"
 
-    # 2. Occupancy Checks
+    # 2. B2 Status Fail Closed
+    assert res["b2_status"] == "PENDING_PRETRAINED_MODEL_UNAVAILABLE", (
+        "Without verified pretrained weights, B2 must report PENDING_PRETRAINED_MODEL_UNAVAILABLE"
+    )
+
+    # 3. Occupancy Checks
     assert res["occupancy"]["B0"] == 0, "B0 (Market-Only) must have zero occupied event slots"
     assert res["occupancy"]["B1"] == 2, "B1 must occupy 2 valid event slots for 2330"
-    assert res["occupancy"]["B2"] == 2, "B2 must occupy 2 valid event slots for 2330"
+    assert res["occupancy"]["DEV_N"] == 2, "DEV-N must occupy 2 valid event slots for 2330"
 
-    # 3. Sensitivity Measurements
+    # 4. Sensitivity Measurements
     assert res["sensitivity"]["delta_state_01"] > 0.0, "Model state must react to event presence (B1 vs B0)"
-    assert res["sensitivity"]["delta_state_12"] > 0.0, "Model state must react to semantic text changes (B2 vs B1)"
+    assert res["sensitivity"]["delta_state_1_devn"] > 0.0, "Model state must react to neural text changes (DEV-N vs B1)"
     assert res["sensitivity"]["delta_q_01"] > 0.0, "Q-values must shift between B1 and B0"
-    assert res["sensitivity"]["delta_q_12"] > 0.0, "Q-values must shift between B2 and B1"
+    assert res["sensitivity"]["delta_q_1_devn"] > 0.0, "Q-values must shift between DEV-N and B1"
 
-    # 4. Gradient Flow
-    for tag in ["B0", "B1", "B2"]:
+    # 5. Gradient Flow
+    for tag in ["B0", "B1", "DEV_N"]:
         assert res["gradient_flow"][tag]["is_finite"] is True, f"Gradient flow for {tag} must be finite"
         assert res["gradient_flow"][tag]["mean_grad_norm"] > 0.0, f"Gradient norm for {tag} must be non-zero"
 
-    # 5. Methodology Disclaimer Guardrail
+    # 6. Methodology Disclaimer Guardrail
     assert res["untrained_model_q_value_is_not_alpha"] is True
-    assert "Untrained or randomly initialized neural network Q-values" in res["methodology_disclaimer"]
+    assert "DEV-N" in res["methodology_disclaimer"]
 
 
 # ==============================================================================
@@ -274,6 +374,7 @@ def test_dataset_evidence_micro_fixture_retention():
     V8.7 Section 4:
     Verifies that the 10 micro news articles are preserved as a reproducible micro fixture:
     - Retains ESTIMATED / UNKNOWN status (is_audit_verified=False).
+    - Retains evidence_audit_level as ESTIMATED or UNKNOWN.
     - Contains human_annotated event clustering.
     - Captures multiple stocks (2330, 2603, 2881) and revision chains.
     """
@@ -284,6 +385,7 @@ def test_dataset_evidence_micro_fixture_retention():
     for a in articles:
         stock_counts[a.stock_id] = stock_counts.get(a.stock_id, 0) + 1
         assert a.is_audit_verified is False, "Open RSS articles must remain unverified (ESTIMATED)"
+        assert a.evidence_audit_level in (EvidenceAuditLevel.ESTIMATED, EvidenceAuditLevel.UNKNOWN)
         assert a.event_clustering_method == "human_annotated"
         assert a.provider_available_evidence is not None
 

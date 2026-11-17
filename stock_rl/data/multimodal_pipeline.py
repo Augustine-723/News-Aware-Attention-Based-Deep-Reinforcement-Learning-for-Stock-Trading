@@ -85,12 +85,21 @@ class EventLifecycleStatus(str, Enum):
     CLOSED = "CLOSED"              # Material event status expired or inactive
 
 
+class EvidenceAuditLevel(str, Enum):
+    """Categorical audit confidence levels for Point-in-Time news availability evidence."""
+    VERIFIED_EVIDENCE = "VERIFIED_EVIDENCE"      # Certified institutional source record (e.g. TWSE MOPS official filing, drop copy, certified vendor feed)
+    EVIDENCE_CLAIM_ONLY = "EVIDENCE_CLAIM_ONLY"  # Plain text description or assertion without institutional cryptographic audit trail
+    ESTIMATED = "ESTIMATED"                      # Estimated availability timestamp (batch crawl / heuristic)
+    UNKNOWN = "UNKNOWN"                          # Missing or unverified evidence
+
+
 class TextEmbeddingType(str, Enum):
     """Classification of text embedding generation mechanisms."""
-    PRETRAINED = "PRETRAINED"                    # Pretrained language model (requires genuine weights)
-    UNTRAINED = "UNTRAINED"                      # Fixed-seed pseudorandom neural projection
-    DETERMINISTIC_HASH = "DETERMINISTIC_HASH"    # SHA-256 stable unit projection (Smoke Test Baseline)
-    SYNTHETIC_PLACEHOLDER = "SYNTHETIC_PLACEHOLDER"  # Masked empty slot unit vector [1, 0, ..., 0]
+    PRETRAINED = "PRETRAINED"                                # Pretrained language model (requires genuine verified weights & tokenizer)
+    UNTRAINED_NEURAL_BASELINE = "UNTRAINED_NEURAL_BASELINE"  # Randomly initialized neural encoder baseline (Micro smoke test / DEV-N)
+    UNTRAINED = "UNTRAINED"                                  # Fixed-seed pseudorandom neural projection
+    DETERMINISTIC_HASH = "DETERMINISTIC_HASH"                # SHA-256 stable unit projection (Smoke Test Baseline)
+    SYNTHETIC_PLACEHOLDER = "SYNTHETIC_PLACEHOLDER"          # Masked empty slot unit vector [1, 0, ..., 0]
 
 
 def normalize_news_headline(headline: str) -> str:
@@ -252,6 +261,7 @@ class RawNewsArticle:
     is_active_candidate: bool = False
     raw_payload_hash: str = ""
     is_audit_verified: bool = False
+    evidence_audit_level: Optional[EvidenceAuditLevel] = None
     missing_status: str = MissingStatus.AVAILABLE.value
     article_id: Optional[str] = None
     event_id: Optional[str] = None
@@ -296,22 +306,72 @@ class RawNewsArticle:
                 self.parent_event_id,
             )
 
+        # Determine / sanitize evidence_audit_level if not explicitly provided
+        if self.evidence_audit_level is None:
+            if not self.is_audit_verified:
+                if self.provider_available_at is not None:
+                    self.evidence_audit_level = EvidenceAuditLevel.ESTIMATED
+                else:
+                    self.evidence_audit_level = EvidenceAuditLevel.UNKNOWN
+            else:
+                official_sources = {
+                    NewsSourceType.MOPS_OFFICIAL,
+                    NewsSourceType.TWSE_OPENAPI,
+                    NewsSourceType.COMMERCIAL_TEJ,
+                    NewsSourceType.COMMERCIAL_GLOBAL,
+                }
+                ev_str = str(self.provider_available_evidence or "").strip()
+                if self.source_type in official_sources and ev_str:
+                    self.evidence_audit_level = EvidenceAuditLevel.VERIFIED_EVIDENCE
+                elif ev_str:
+                    self.evidence_audit_level = EvidenceAuditLevel.EVIDENCE_CLAIM_ONLY
+                else:
+                    self.evidence_audit_level = EvidenceAuditLevel.UNKNOWN
+
 
 @dataclass
 class TextEmbeddingEngine:
     """
-    Versioned text embedding generator conforming to P1-3.
-    Explicitly distinguishes PRETRAINED, UNTRAINED, DETERMINISTIC_HASH, and SYNTHETIC_PLACEHOLDER.
+    Versioned text embedding generator conforming to P0-1, P1-2, and P1-3.
+    Explicitly distinguishes:
+    - PRETRAINED: Genuine verified pretrained weights and tokenizer (requires is_verified_pretrained=True).
+    - UNTRAINED_NEURAL_BASELINE: Lightweight untrained PyTorch neural baseline for Micro Smoke Test & DEV-N.
+    - UNTRAINED: Fixed-seed pseudorandom projection.
+    - DETERMINISTIC_HASH: SHA-256 stable unit projection (Smoke Test Baseline).
+    - SYNTHETIC_PLACEHOLDER: Masked empty slot unit vector [1, 0, ..., 0].
     """
     embedding_type: TextEmbeddingType = TextEmbeddingType.DETERMINISTIC_HASH
     model_version: str = "sha256-projection-v1.0"
     dim: int = EVENT_TEXT_DIM  # Authoritative 128 dimensions
     model_weights: Optional[Any] = None
     tokenizer: Optional[Any] = None
+    is_verified_pretrained: bool = False
+    weights_sha256: Optional[str] = None
+    tokenizer_version: Optional[str] = None
+    projection_version: str = "orthogonal-qr-v1.0"
+    max_seq_len: int = 128
+
+    def get_provenance_metadata(self) -> Dict[str, Any]:
+        """Returns auditable model provenance metadata per P1-2."""
+        return {
+            "embedding_type": self.embedding_type.value,
+            "model_version": self.model_version,
+            "dim": self.dim,
+            "is_verified_pretrained": self.is_verified_pretrained,
+            "weights_sha256": self.weights_sha256 or (
+                getattr(self.model_weights, "weights_sha256", None) if self.model_weights else None
+            ),
+            "tokenizer_version": self.tokenizer_version or (
+                getattr(self.tokenizer, "tokenizer_version", None) if self.tokenizer else None
+            ),
+            "projection_version": self.projection_version,
+            "max_seq_len": self.max_seq_len,
+        }
 
     def embed_text(self, text: str) -> np.ndarray:
         """
         Embeds input text into a normalized float32 vector of dimension self.dim (128).
+        Enforces eval() mode, torch.inference_mode(), sequence truncation, and determinism.
         """
         if self.embedding_type == TextEmbeddingType.SYNTHETIC_PLACEHOLDER or not text.strip():
             v = np.zeros(self.dim, dtype=np.float32)
@@ -319,41 +379,101 @@ class TextEmbeddingEngine:
             return v
 
         if self.embedding_type == TextEmbeddingType.PRETRAINED:
-            # P1-3: Strict failure if genuine weights/tokenizer are not provided
-            if self.model_weights is None or self.tokenizer is None:
+            # P0-1: Strict failure if genuine weights/tokenizer or verification are not provided
+            if self.model_weights is None or self.tokenizer is None or not self.is_verified_pretrained:
                 raise ValueError(
-                    f"Strict Embedding Error: PRETRAINED embedding mode requires genuine pretrained "
-                    f"model_weights and tokenizer. Model '{self.model_version}' is not loaded. "
-                    f"Faking pretrained embeddings via pseudorandom or hash projections is strictly prohibited."
+                    f"Strict Embedding Error: PRETRAINED embedding mode requires genuine verified pretrained "
+                    f"model_weights and tokenizer (is_verified_pretrained=True). Model '{self.model_version}' is not verified. "
+                    f"Faking pretrained embeddings via pseudorandom or unverified neural projections is strictly prohibited."
                 )
 
             # Genuine pretrained execution
             try:
-                tokens = self.tokenizer(text) if callable(self.tokenizer) else self.tokenizer.encode(text)
-                if hasattr(self.model_weights, "forward") or callable(self.model_weights):
-                    emb = self.model_weights(tokens)
-                else:
-                    raise NotImplementedError(f"Model weights of type {type(self.model_weights)} not supported.")
+                if hasattr(self.model_weights, "eval"):
+                    self.model_weights.eval()
+                with torch.inference_mode():
+                    if hasattr(self.tokenizer, "tokenize_with_mask"):
+                        tokens, mask = self.tokenizer.tokenize_with_mask(text, max_seq_len=self.max_seq_len)
+                        if hasattr(self.model_weights, "forward"):
+                            emb = self.model_weights(tokens, attention_mask=mask)
+                        else:
+                            emb = self.model_weights(tokens)
+                    elif callable(self.tokenizer):
+                        tokens = self.tokenizer(text)
+                        if isinstance(tokens, torch.Tensor) and tokens.shape[-1] > self.max_seq_len:
+                            tokens = tokens[..., :self.max_seq_len]
+                        emb = self.model_weights(tokens)
+                    else:
+                        tokens = self.tokenizer.encode(text)
+                        if isinstance(tokens, torch.Tensor) and tokens.shape[-1] > self.max_seq_len:
+                            tokens = tokens[..., :self.max_seq_len]
+                        emb = self.model_weights(tokens)
 
-                if isinstance(emb, torch.Tensor):
-                    emb = emb.detach().cpu().numpy().flatten()
-                emb = np.asarray(emb, dtype=np.float32)
+                    if isinstance(emb, torch.Tensor):
+                        emb = emb.detach().cpu().numpy().flatten()
+                    emb = np.asarray(emb, dtype=np.float32)
 
-                # Project to self.dim (128) if dimension differs
-                if emb.shape[0] != self.dim:
-                    h = hashlib.sha256(f"PROJ_{self.model_version}_{emb.shape[0]}_{self.dim}".encode("utf-8")).digest()
-                    seed = int.from_bytes(h[:8], byteorder="big") % (2**32)
-                    rng = np.random.default_rng(seed)
-                    rand_mat = rng.standard_normal((emb.shape[0], self.dim), dtype=np.float32)
-                    q, _ = np.linalg.qr(rand_mat)
-                    emb = np.dot(emb, q[:, :self.dim])
+                    # Project to self.dim (128) if dimension differs
+                    if emb.shape[0] != self.dim:
+                        h = hashlib.sha256(f"PROJ_{self.model_version}_{emb.shape[0]}_{self.dim}".encode("utf-8")).digest()
+                        seed = int.from_bytes(h[:8], byteorder="big") % (2**32)
+                        rng = np.random.default_rng(seed)
+                        rand_mat = rng.standard_normal((emb.shape[0], self.dim), dtype=np.float32)
+                        q, _ = np.linalg.qr(rand_mat)
+                        emb = np.dot(emb, q[:, :self.dim])
 
-                norm = float(np.linalg.norm(emb))
-                return (emb / norm).astype(np.float32) if norm > 1e-6 else np.zeros(self.dim, dtype=np.float32)
+                    norm = float(np.linalg.norm(emb))
+                    return (emb / norm).astype(np.float32) if norm > 1e-6 else np.zeros(self.dim, dtype=np.float32)
             except Exception as e:
                 if isinstance(e, ValueError):
                     raise
                 raise RuntimeError(f"Error executing pretrained embedding model '{self.model_version}': {e}") from e
+
+        if self.embedding_type == TextEmbeddingType.UNTRAINED_NEURAL_BASELINE:
+            # Lightweight untrained PyTorch neural baseline for Micro Smoke Test & DEV-N
+            if self.model_weights is None or self.tokenizer is None:
+                raise ValueError(
+                    f"Untrained Neural Baseline Error: Requires neural encoder and tokenizer."
+                )
+            try:
+                if hasattr(self.model_weights, "eval"):
+                    self.model_weights.eval()
+                with torch.inference_mode():
+                    if hasattr(self.tokenizer, "tokenize_with_mask"):
+                        tokens, mask = self.tokenizer.tokenize_with_mask(text, max_seq_len=self.max_seq_len)
+                        if hasattr(self.model_weights, "forward"):
+                            emb = self.model_weights(tokens, attention_mask=mask)
+                        else:
+                            emb = self.model_weights(tokens)
+                    elif callable(self.tokenizer):
+                        tokens = self.tokenizer(text)
+                        if isinstance(tokens, torch.Tensor) and tokens.shape[-1] > self.max_seq_len:
+                            tokens = tokens[..., :self.max_seq_len]
+                        emb = self.model_weights(tokens)
+                    else:
+                        tokens = self.tokenizer.encode(text)
+                        if isinstance(tokens, torch.Tensor) and tokens.shape[-1] > self.max_seq_len:
+                            tokens = tokens[..., :self.max_seq_len]
+                        emb = self.model_weights(tokens)
+
+                    if isinstance(emb, torch.Tensor):
+                        emb = emb.detach().cpu().numpy().flatten()
+                    emb = np.asarray(emb, dtype=np.float32)
+
+                    if emb.shape[0] != self.dim:
+                        h = hashlib.sha256(f"PROJ_{self.model_version}_{emb.shape[0]}_{self.dim}".encode("utf-8")).digest()
+                        seed = int.from_bytes(h[:8], byteorder="big") % (2**32)
+                        rng = np.random.default_rng(seed)
+                        rand_mat = rng.standard_normal((emb.shape[0], self.dim), dtype=np.float32)
+                        q, _ = np.linalg.qr(rand_mat)
+                        emb = np.dot(emb, q[:, :self.dim])
+
+                    norm = float(np.linalg.norm(emb))
+                    return (emb / norm).astype(np.float32) if norm > 1e-6 else np.zeros(self.dim, dtype=np.float32)
+            except Exception as e:
+                if isinstance(e, ValueError):
+                    raise
+                raise RuntimeError(f"Error executing untrained neural baseline '{self.model_version}': {e}") from e
 
         if self.embedding_type == TextEmbeddingType.UNTRAINED:
             # Fixed-seed neural projection explicitly isolated from pretrained weights
@@ -575,6 +695,27 @@ def validate_news_article_pit_contract(
             raise ValueError(
                 f"Strict PIT Rejection: Evidence '{article.provider_available_evidence}' indicates an unauthenticated "
                 f"or open web feed. Self-filled evidence strings cannot elevate unauthenticated sources to formal audit verification."
+            )
+
+        # P1-3: Explicit evidence audit level enforcement - Formal PIT accepts ONLY VERIFIED_EVIDENCE
+        if article.evidence_audit_level != EvidenceAuditLevel.VERIFIED_EVIDENCE:
+            level_str = article.evidence_audit_level.value if article.evidence_audit_level else "UNKNOWN"
+            raise ValueError(
+                f"Strict PIT Rejection: Formal mode accepts ONLY VERIFIED_EVIDENCE (got '{level_str}'). "
+                f"Plain text claims (EVIDENCE_CLAIM_ONLY), estimates (ESTIMATED), or missing evidence (UNKNOWN) fail closed."
+            )
+
+        # P1-3: Prohibit fake VERIFIED_EVIDENCE assertions on open / unauthenticated source types
+        official_sources = {
+            NewsSourceType.MOPS_OFFICIAL,
+            NewsSourceType.TWSE_OPENAPI,
+            NewsSourceType.COMMERCIAL_TEJ,
+            NewsSourceType.COMMERCIAL_GLOBAL,
+        }
+        if article.source_type not in official_sources:
+            raise ValueError(
+                f"Strict PIT Rejection: Source type '{article.source_type.value}' cannot provide VERIFIED_EVIDENCE. "
+                f"Open media archives, unauthenticated web feeds, and RSS wrappers cannot be elevated to institutional audit status."
             )
 
         eff_available_at = article.provider_available_at
