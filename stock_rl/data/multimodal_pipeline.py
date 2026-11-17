@@ -94,24 +94,99 @@ class EvidenceAuditLevel(str, Enum):
 
 
 @dataclass
+class SourceEvidenceRecord:
+    """An audited, authenticated provenance record deposited in an authoritative source registry."""
+    record_id: str
+    source_type: NewsSourceType
+    source_id: str
+    accession_number: str
+    stock_id: str
+    provider_available_at: pd.Timestamp
+    payload_sha256: str
+    official_filing_url: Optional[str] = None
+    is_audit_verified: bool = True
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+class TrustedSourceRegistry:
+    """
+    Authoritative registry of audited institutional regulatory filings & announcements.
+    Guarantees that SourceAuditCertificate can only be issued for announcements
+    that demonstrably exist in verified institutional ledgers.
+    """
+    _registry: Dict[str, SourceEvidenceRecord] = {}
+
+    @classmethod
+    def register_record(cls, record: SourceEvidenceRecord) -> None:
+        cls._registry[record.accession_number] = record
+
+    @classmethod
+    def get_record(cls, accession_number: str) -> Optional[SourceEvidenceRecord]:
+        return cls._registry.get(accession_number)
+
+    @classmethod
+    def has_record(cls, accession_number: str) -> bool:
+        return accession_number in cls._registry
+
+    @classmethod
+    def clear(cls) -> None:
+        cls._registry.clear()
+
+
+@dataclass
 class SourceAuditCertificate:
-    """Cryptographic or regulatory audit certificate issued by TrustedNewsSourceVerifier."""
+    """
+    Cryptographic and regulatory audit certificate issued by TrustedNewsSourceVerifier.
+    Explicitly binds to an authentic, pre-registered record in TrustedSourceRegistry.
+    """
     verifier_id: str
     source_type: NewsSourceType
     source_id: str
     accession_number: str
-    available_at: pd.Timestamp
-    payload_hash: str
+    stock_id: str
+    provider_available_at: pd.Timestamp
+    payload_sha256: str
+    evidence_record_identifier: str
     evidence_text: str
     certified_at: pd.Timestamp
-    certificate_signature: str
+    composite_integrity_digest: str
+    certificate_signature: str = ""  # Kept as alias for composite_integrity_digest
+    is_asymmetric_digital_signature: bool = False  # Explicitly False: this is a cryptographic SHA-256 integrity digest
 
-    def verify(self, article: "RawNewsArticle") -> bool:
-        if self.payload_hash != article.raw_payload_hash:
-            return False
+    def __post_init__(self):
+        if not self.certificate_signature and self.composite_integrity_digest:
+            self.certificate_signature = self.composite_integrity_digest
+        elif not self.composite_integrity_digest and self.certificate_signature:
+            self.composite_integrity_digest = self.certificate_signature
+
+    def verify(self, article: "RawNewsArticle") -> Tuple[bool, str]:
+        """
+        Validates complete consistency between the certificate and the candidate article.
+        Returns (is_valid, failure_reason).
+        """
+        if self.payload_sha256 != article.raw_payload_hash:
+            return False, (
+                f"Payload hash mismatch! Certificate payload_sha256 '{self.payload_sha256[:12]}...' "
+                f"does not match article raw_payload_hash '{article.raw_payload_hash[:12]}...'. Article content was modified."
+            )
         if self.source_type != article.source_type:
-            return False
-        return True
+            return False, f"Source type mismatch: cert '{self.source_type.value}' != article '{article.source_type.value}'"
+        if self.stock_id != article.stock_id:
+            return False, f"Stock ID mismatch: cert '{self.stock_id}' != article '{article.stock_id}'"
+        if self.provider_available_at != article.provider_available_at:
+            return False, (
+                f"Timestamp mismatch: cert available_at '{self.provider_available_at}' != "
+                f"article available_at '{article.provider_available_at}'"
+            )
+
+        # Verify composite integrity digest
+        expected_digest = hashlib.sha256(
+            f"{self.verifier_id}|{self.source_type.value}|{self.stock_id}|{self.accession_number}|{self.payload_sha256}|{self.evidence_record_identifier}".encode("utf-8")
+        ).hexdigest()
+        if self.composite_integrity_digest != expected_digest:
+            return False, "Certificate composite integrity digest mismatch (tampered certificate)"
+
+        return True, "PASSED"
 
 
 class TrustedNewsSourceVerifier:
@@ -121,6 +196,7 @@ class TrustedNewsSourceVerifier:
     - Only official regulatory feeds (MOPS, TWSE) or certified financial vendors (TEJ, Bloomberg, Reuters)
       can be verified.
     - Strict validation of accession numbers, sequence numbers, filing IDs, or cryptographic drop-copy tokens.
+    - Must verify existence against authoritative TrustedSourceRegistry (eliminating self-issued fake certificates).
     - Rejects self-filled notes, draft memos, or unauthenticated feeds even if originating from official source types.
     - Issues SourceAuditCertificate and sets EvidenceAuditLevel.VERIFIED_EVIDENCE.
     """
@@ -155,8 +231,9 @@ class TrustedNewsSourceVerifier:
         accession_number: Optional[str] = None,
     ) -> "RawNewsArticle":
         """
-        Audits and certifies a RawNewsArticle. If verified, grants VERIFIED_EVIDENCE.
-        If verification fails, raises ValueError with detailed audit reason.
+        Audits and certifies a RawNewsArticle against TrustedSourceRegistry.
+        If verified against an authoritative source record, grants VERIFIED_EVIDENCE.
+        Fails closed if the announcement cannot be proven to exist in the trusted registry.
         """
         if article.source_type not in cls.OFFICIAL_SOURCES:
             raise ValueError(
@@ -190,19 +267,55 @@ class TrustedNewsSourceVerifier:
                 f"Arbitrary strings from official sources without verifiable filing sequence are rejected."
             )
 
-        cert_key = f"{cls.VERIFIER_ID}|{article.source_type.value}|{article.stock_id}|{acc}|{article.raw_payload_hash}"
-        sig = hashlib.sha256(cert_key.encode("utf-8")).hexdigest()
+        # P0-2: Verify announcement exists in authoritative TrustedSourceRegistry
+        # Format matching alone is NOT sufficient proof of authentic existence
+        registry_record = TrustedSourceRegistry.get_record(acc)
+        if registry_record is None:
+            raise ValueError(
+                f"Trusted Source Rejection: Accession number '{acc}' is not registered in the authoritative "
+                f"trusted source registry. Self-fabricated accession numbers or unverified filings fail closed. "
+                f"Formal certification remains Pending until trusted source records are deposited."
+            )
+
+        # Cross-verify article with registered provenance record
+        if registry_record.stock_id != article.stock_id:
+            raise ValueError(
+                f"Trusted Source Rejection: Stock ID mismatch between registry ('{registry_record.stock_id}') "
+                f"and article ('{article.stock_id}')."
+            )
+        if registry_record.payload_sha256 != article.raw_payload_hash:
+            raise ValueError(
+                f"Trusted Source Rejection: Payload SHA-256 mismatch between registry ('{registry_record.payload_sha256[:12]}...') "
+                f"and article ('{article.raw_payload_hash[:12]}...'). Modified content fails certification."
+            )
+        if registry_record.provider_available_at != article.provider_available_at:
+            raise ValueError(
+                f"Trusted Source Rejection: Timestamp mismatch between registry ('{registry_record.provider_available_at}') "
+                f"and article ('{article.provider_available_at}')."
+            )
+        if registry_record.source_type != article.source_type:
+            raise ValueError(
+                f"Trusted Source Rejection: Source type mismatch between registry ('{registry_record.source_type.value}') "
+                f"and article ('{article.source_type.value}')."
+            )
+
+        cert_key = f"{cls.VERIFIER_ID}|{article.source_type.value}|{article.stock_id}|{acc}|{article.raw_payload_hash}|{registry_record.record_id}"
+        composite_digest = hashlib.sha256(cert_key.encode("utf-8")).hexdigest()
 
         cert = SourceAuditCertificate(
             verifier_id=cls.VERIFIER_ID,
             source_type=article.source_type,
             source_id=f"{article.source_name}_{article.article_id}",
             accession_number=acc,
-            available_at=article.provider_available_at,
-            payload_hash=article.raw_payload_hash,
+            stock_id=article.stock_id,
+            provider_available_at=article.provider_available_at,
+            payload_sha256=article.raw_payload_hash,
+            evidence_record_identifier=registry_record.record_id,
             evidence_text=ev_str,
             certified_at=pd.Timestamp.now(tz="UTC"),
-            certificate_signature=sig,
+            composite_integrity_digest=composite_digest,
+            certificate_signature=composite_digest,
+            is_asymmetric_digital_signature=False,
         )
 
         article.is_audit_verified = True
@@ -214,6 +327,11 @@ class TrustedNewsSourceVerifier:
     def validate_audit_evidence(cls, article: "RawNewsArticle") -> bool:
         """
         Validates whether an article legitimately holds VERIFIED_EVIDENCE.
+        Requires:
+        - evidence_audit_level is VERIFIED_EVIDENCE and is_audit_verified is True.
+        - Official source type and valid accession format.
+        - Complete consistency check on attached SourceAuditCertificate.
+        - Backing record in TrustedSourceRegistry matching the certificate and article.
         """
         if article.evidence_audit_level != EvidenceAuditLevel.VERIFIED_EVIDENCE:
             return False
@@ -221,6 +339,7 @@ class TrustedNewsSourceVerifier:
             return False
         if not article.is_audit_verified:
             return False
+
         ev_str = str(article.provider_available_evidence or "").strip()
         if not ev_str:
             return False
@@ -230,6 +349,31 @@ class TrustedNewsSourceVerifier:
         has_valid_pattern = any(re.search(pat, ev_str, re.IGNORECASE) is not None for pat in cls.VALID_FILING_PATTERNS)
         if not has_valid_pattern:
             return False
+
+        # Validate attached certificate
+        cert = article.metadata.get("source_audit_certificate")
+        if cert is None or not isinstance(cert, SourceAuditCertificate):
+            return False
+
+        is_valid, _ = cert.verify(article)
+        if not is_valid:
+            return False
+
+        # Validate backing record in TrustedSourceRegistry
+        reg_record = TrustedSourceRegistry.get_record(cert.accession_number)
+        if reg_record is None:
+            return False
+        if reg_record.record_id != cert.evidence_record_identifier:
+            return False
+        if reg_record.payload_sha256 != article.raw_payload_hash:
+            return False
+        if reg_record.stock_id != article.stock_id:
+            return False
+        if reg_record.provider_available_at != article.provider_available_at:
+            return False
+        if reg_record.source_type != article.source_type:
+            return False
+
         return True
 
 
@@ -461,6 +605,13 @@ class RawNewsArticle:
                     self.evidence_audit_level = EvidenceAuditLevel.EVIDENCE_CLAIM_ONLY
                 else:
                     self.evidence_audit_level = EvidenceAuditLevel.UNKNOWN
+        elif self.evidence_audit_level == EvidenceAuditLevel.VERIFIED_EVIDENCE:
+            # V8.8 P0-2: Never allow direct self-issuance of VERIFIED_EVIDENCE without a valid SourceAuditCertificate in metadata.
+            # Direct self-declarations without TrustedNewsSourceVerifier certification are downgraded to EVIDENCE_CLAIM_ONLY.
+            cert = self.metadata.get("source_audit_certificate")
+            if not cert or not isinstance(cert, SourceAuditCertificate) or not cert.verify(self)[0]:
+                self.evidence_audit_level = EvidenceAuditLevel.EVIDENCE_CLAIM_ONLY
+                self.is_audit_verified = False
 
 
 @dataclass

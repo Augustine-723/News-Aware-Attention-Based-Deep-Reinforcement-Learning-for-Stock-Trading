@@ -31,6 +31,9 @@ from stock_rl.data.multimodal_pipeline import (
     HistoricalMultimodalPipeline,
     validate_news_article_pit_contract,
     convert_article_to_event_record,
+    TrustedSourceRegistry,
+    SourceEvidenceRecord,
+    TrustedNewsSourceVerifier,
 )
 from stock_rl.data.real_data_poc import (
     load_real_market_feeds,
@@ -139,24 +142,34 @@ def test_convert_article_direct_bypass_rejected_in_formal_mode():
         is_audit_verified=True,
         evidence_audit_level=EvidenceAuditLevel.VERIFIED_EVIDENCE,
     )
-    with pytest.raises(ValueError, match="cannot provide VERIFIED_EVIDENCE"):
+    with pytest.raises(ValueError, match=r"(cannot provide VERIFIED_EVIDENCE|Cannot ingest unverified article)"):
         convert_article_to_event_record(art_fake_verified, mode="formal")
 
-    # 7. Valid MOPS filing with VERIFIED_EVIDENCE succeeds in formal mode
+    # 7. Valid MOPS filing with registry-backed VERIFIED_EVIDENCE succeeds in formal mode
     art_valid_mops = RawNewsArticle(
         source_type=NewsSourceType.MOPS_OFFICIAL,
         source_name="MOPS",
         stock_id="2330",
         headline="台積電說明媒體報導先進封裝建廠產能與投資規劃",
+        body_text="說明媒體報導先進封裝建廠產能與投資規劃",
         source_published_at=t_pub,
         provider_available_at=t_pub,
         provider_available_evidence="TWSE MOPS announcement seq 1042 doc ref 20240115_2330_01",
-        is_audit_verified=True,
-        evidence_audit_level=EvidenceAuditLevel.VERIFIED_EVIDENCE,
     )
-    rec = convert_article_to_event_record(art_valid_mops, mode="formal")
+    acc = "TWSE MOPS announcement seq 1042 doc ref 20240115_2330_01"
+    TrustedSourceRegistry.register_record(SourceEvidenceRecord(
+        record_id="REC_MOPS_20240115_001",
+        source_type=NewsSourceType.MOPS_OFFICIAL,
+        source_id=f"MOPS_{art_valid_mops.article_id}",
+        accession_number=acc,
+        stock_id="2330",
+        provider_available_at=t_pub,
+        payload_sha256=art_valid_mops.raw_payload_hash,
+    ))
+    certified_art = TrustedNewsSourceVerifier.certify_article(art_valid_mops, accession_number=acc)
+    rec = convert_article_to_event_record(certified_art, mode="formal")
     assert rec is not None
-    assert rec["event_id"] == art_valid_mops.event_id
+    assert rec["event_id"] == certified_art.event_id
     assert rec["provenance"].is_audit_verified is True
 
 
