@@ -150,6 +150,7 @@ def test_simulated_receipt_rejection_and_fail_closed():
         parsed_summary={"announcement_count": 1},
         source_identity="OFFICIAL_MOPS_HTTPS_CLIENT",
         announcement_ids=["MOPS-2330-20230606-AGM"],
+        allow_legacy_fixture=True,
     )
 
     authentic_evidence = TrustedExternalSourceAdapter.certify_with_live_retrieval_evidence(

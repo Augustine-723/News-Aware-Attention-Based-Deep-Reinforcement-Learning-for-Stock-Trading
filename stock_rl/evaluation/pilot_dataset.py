@@ -59,9 +59,20 @@ class SourceVerificationStatus(str, Enum):
     Formal categorization of event source authenticity.
     """
     VERIFIED_SOURCE = "VERIFIED_SOURCE"                      # Formally verified with verified external evidence bundle
+    SOURCE_EXISTENCE_VERIFIED = "SOURCE_EXISTENCE_VERIFIED"  # Acquired from trusted official source and content validated
     MOPS_CANDIDATE_UNVERIFIED = "MOPS_CANDIDATE_UNVERIFIED"  # Candidate matched to MOPS announcement schema, but unverified without raw evidence
     CURATED_UNVERIFIED = "CURATED_UNVERIFIED"                # Curated public domain report; pending official audit trail
     SYNTHETIC_FIXTURE = "SYNTHETIC_FIXTURE"                  # Synthetic test fixture
+
+
+class DisclosurePITStatus(str, Enum):
+    """
+    Formal point-in-time eligibility status for historical disclosures.
+    Separates source existence verification from provider availability verification.
+    """
+    UNVERIFIED_CANDIDATE = "UNVERIFIED_CANDIDATE"              # Source existence not verified
+    ESTIMATED_PIT_ONLY = "ESTIMATED_PIT_ONLY"                  # Source existence verified, but provider arrival time is estimated without feed logs
+    FORMAL_PIT_ELIGIBLE = "FORMAL_PIT_ELIGIBLE"                # Formally verified existence AND verified historical vendor feed log availability
 
 
 class LicenseVerificationStatus(str, Enum):
@@ -253,6 +264,10 @@ class RetrievalSessionRecord:
     source_identity: str = "OFFICIAL_EXCHANGE_HTTPS_CLIENT"
     is_genuine_network_retrieval: bool = True
     announcement_ids: List[str] = field(default_factory=list)
+    query_parameters: Dict[str, Any] = field(default_factory=dict)
+    service_provenance: str = "GENUINE_HTTPS_RETRIEVAL_SERVICE"
+    session_token: str = ""
+    transport_protocol: str = "HTTPS/1.1"
 
 
 class RetrievalSessionRegistry:
@@ -261,6 +276,47 @@ class RetrievalSessionRegistry:
     Prohibits caller self-attestation by requiring valid session registration from actual network calls.
     """
     _sessions: Dict[str, RetrievalSessionRecord] = {}
+    _known_fixture_hashes: Optional[Set[str]] = None
+
+    @classmethod
+    def _get_known_fixture_hashes(cls) -> Set[str]:
+        if cls._known_fixture_hashes is None:
+            hashes: Set[str] = set()
+            try:
+                events = RAW_PILOT_EVENTS
+            except NameError:
+                events = []
+            for ev in events:
+                headline = ev.get("headline", "")
+                body = ev.get("body_text", "")
+                if headline:
+                    hashes.add(hashlib.sha256(headline.encode("utf-8")).hexdigest())
+                if body:
+                    hashes.add(hashlib.sha256(body.encode("utf-8")).hexdigest())
+                if headline and body:
+                    combo = f"{headline} {body}"
+                    hashes.add(hashlib.sha256(combo.encode("utf-8")).hexdigest())
+                    norm_h = compute_normalized_content_hash(headline, body)
+                    hashes.add(norm_h)
+            cls._known_fixture_hashes = hashes
+        return cls._known_fixture_hashes
+
+    @classmethod
+    def is_known_fixture_payload(cls, raw_bytes: bytes) -> bool:
+        if not raw_bytes:
+            return False
+        h = hashlib.sha256(raw_bytes).hexdigest()
+        fixture_hashes = cls._get_known_fixture_hashes()
+        if h in fixture_hashes:
+            return True
+        try:
+            text = raw_bytes.decode("utf-8", errors="ignore").strip()
+            text_h = hashlib.sha256(text.encode("utf-8")).hexdigest()
+            if text_h in fixture_hashes:
+                return True
+        except Exception:
+            pass
+        return False
 
     @classmethod
     def register_genuine_session(
@@ -274,6 +330,11 @@ class RetrievalSessionRegistry:
         parsed_summary: Optional[Dict[str, Any]] = None,
         source_identity: str = "OFFICIAL_EXCHANGE_HTTPS_CLIENT",
         announcement_ids: Optional[List[str]] = None,
+        query_parameters: Optional[Dict[str, Any]] = None,
+        service_provenance: str = "GENUINE_HTTPS_RETRIEVAL_SERVICE",
+        transport_protocol: str = "HTTPS/1.1",
+        allow_legacy_fixture: bool = False,
+        session_token: Optional[str] = None,
     ) -> RetrievalSessionRecord:
         """
         Registers an auditable HTTPS retrieval session.
@@ -283,6 +344,13 @@ class RetrievalSessionRegistry:
             raise ValueError("raw_response_bytes must be non-empty bytes.")
         if http_status != 200:
             raise ValueError(f"HTTP status must be 200 for genuine registered session, got {http_status}.")
+
+        if cls.is_known_fixture_payload(raw_response_bytes) and not allow_legacy_fixture:
+            raise ValueError(
+                "Counterexample rejected: Passing RAW_PILOT_EVENTS local fixture bytes to "
+                "register_genuine_session() is strictly prohibited. Production sessions "
+                "must originate from genuine HTTPS retrieval."
+            )
 
         raw_hash = hashlib.sha256(raw_response_bytes).hexdigest()
         session_id = f"REG-SESS-{pd.Timestamp.now(tz='Asia/Taipei').strftime('%Y%m%d%H%M%S')}-{raw_hash[:8]}"
@@ -301,6 +369,10 @@ class RetrievalSessionRegistry:
             source_identity=source_identity,
             is_genuine_network_retrieval=True,
             announcement_ids=announcement_ids or [],
+            query_parameters=query_parameters or {},
+            service_provenance=service_provenance,
+            session_token=session_token or f"TOK-{session_id}",
+            transport_protocol=transport_protocol,
         )
         cls._sessions[session_id] = rec
         return rec
@@ -342,6 +414,8 @@ class MOPSSourceEvidence:
     usage_rights: UsageRightsCategory = UsageRightsCategory.RESTRICTED_NO_RIGHTS
     is_existence_verified: bool = False           # Default False: requires external verification!
     is_availability_verified: bool = False        # Default False: requires historical provider receipt!
+    is_formal_pit_eligible: bool = False          # Default False: requires complete As-Of timestamp contract!
+    pit_status: DisclosurePITStatus = DisclosurePITStatus.UNVERIFIED_CANDIDATE
     provider_available_at: Optional[pd.Timestamp] = None
     verification_method: str = "OFFICIAL_EXCHANGE_REGISTRY_AUDIT"
     audit_notes: str = ""
@@ -1016,7 +1090,30 @@ class TrustedSourceCertifier:
                 "Verification rejected: Adapter receipt lacks valid raw response byte length.",
             )
 
+        # Service provenance validation (P0-1)
+        sess_provenance = getattr(session, "service_provenance", "GENUINE_HTTPS_RETRIEVAL_SERVICE")
+        if sess_provenance not in ("GENUINE_HTTPS_RETRIEVAL_SERVICE", "OFFICIAL_EXCHANGE_HTTPS_CLIENT"):
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                f"Verification rejected: Session service provenance '{sess_provenance}' is untrusted or self-attested.",
+            )
+
+        # Formal PIT eligibility vs Provider Availability segregation (Section 4)
+        if getattr(evidence, "is_formal_pit_eligible", False):
+            if not evidence.is_availability_verified or evidence.provider_available_at is None:
+                return (
+                    SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                    None,
+                    "Verification rejected: Evidence claims is_formal_pit_eligible=True but lacks verified historical provider availability timestamp (ESTIMATED_PIT_ONLY cannot elevate to FORMAL_PIT_ELIGIBLE).",
+                )
+
         # Verified! Build verified evidence audit record
+        pit_status_val = (
+            DisclosurePITStatus.FORMAL_PIT_ELIGIBLE.value
+            if (evidence.is_availability_verified and evidence.provider_available_at is not None)
+            else DisclosurePITStatus.ESTIMATED_PIT_ONLY.value
+        )
         audit_record = {
             "channel": "MOPS_PUBLIC_DISCLOSURE",
             "announcement_id": evidence.announcement_id,
@@ -1043,6 +1140,9 @@ class TrustedSourceCertifier:
             "is_availability_verified": evidence.is_availability_verified,
             "existence_verified": evidence.is_existence_verified,
             "availability_verified": evidence.is_availability_verified,
+            "is_formal_pit_eligible": getattr(evidence, "is_formal_pit_eligible", False),
+            "pit_status": pit_status_val,
+            "service_provenance": sess_provenance,
             "provider_available_at": evidence.provider_available_at.isoformat() if evidence.provider_available_at else None,
             "verification_method": evidence.verification_method,
         }
