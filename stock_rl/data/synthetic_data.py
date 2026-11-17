@@ -449,7 +449,7 @@ def generate_temporally_consistent_synthetic_batch(
         p_feat = compute_price_features(df_ohlcv, shares_outstanding=shares_outstanding, schema_version=target_schema)
         t_feat = compute_technical_features(df_ohlcv, schema_version=target_schema)
         i_feat = compute_institutional_features(df_inst, df_ohlcv['volume'], shares_outstanding=shares_outstanding, schema_version=target_schema)
-        m_feat = compute_macro_features(df_macro, schema_version=target_schema)
+        m_feat = compute_macro_features(df_macro, schema_version=target_schema, mode="synthetic")
 
         # Slice the last MARKET_WINDOW_LENGTH (60) days
         batch_prices.append(p_feat[-MARKET_WINDOW_LENGTH:])
@@ -470,6 +470,7 @@ def generate_temporally_consistent_synthetic_batch(
             days_since_ipo=int(rng.integers(500, 5000)),
             had_trading_suspension_20d=bool(rng.uniform() < 0.05),
             schema_version=target_schema,
+            mode="synthetic",
         )
         batch_contexts.append(ctx)
 

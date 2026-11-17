@@ -180,7 +180,7 @@ def test_feature_engineering_100_columns_calculation():
         "vix": np.random.uniform(13.0, 28.0, n_days),
         "us_10y_yield": np.random.uniform(3.8, 4.6, n_days),
     })
-    macro_feats = compute_macro_features(df_macro, schema_version="v8.0-original")
+    macro_feats = compute_macro_features(df_macro, schema_version="v8.0-original", mode="synthetic")
     assert macro_feats.shape == (n_days, 12)
     assert np.isfinite(macro_feats).all()
 
@@ -366,7 +366,7 @@ def test_feature_normalizer_train_only_fit():
     train_batch = generate_synthetic_batch(batch_size=32, seed=10, schema_version="v8.0-original")
     val_batch = generate_synthetic_batch(batch_size=16, seed=20, schema_version="v8.0-original")
 
-    normalizer = FeatureNormalizer(schema_version="v8.0-original")
+    normalizer = FeatureNormalizer(schema_version="v8.0-original", mode="synthetic")
     assert normalizer.is_fitted is False
 
     # Attempting to transform before fitting raises RuntimeError
@@ -501,6 +501,6 @@ def test_ablation_framework_dual_pipeline():
     agent_b = DuelingDoubleDQNAgent(model=model_b, schema_version="v8.0-original")
     agent_c = DuelingDoubleDQNAgent(model=model_c, schema_version="v8.1-candidate")
 
-    comp = run_schema_comparison_study(agent_b, agent_c, env_b, env_c)
+    comp = run_schema_comparison_study(agent_b, agent_c, env_b, env_c, mode="synthetic")
     assert comp["baseline"]["schema_version"] == "v8.0-original"
     assert comp["candidate_ablation"]["schema_version"] == "v8.1-candidate"

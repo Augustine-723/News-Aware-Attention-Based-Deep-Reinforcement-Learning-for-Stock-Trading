@@ -24,6 +24,7 @@ def run_stage3_joint_finetuning(
     episodes: int = 5,
     aux_weight: float = 0.2,
     batch_size: int = 32,
+    min_buffer_size: int = 64,
     lr: float = 5e-5,
     agent: Optional[DuelingDoubleDQNAgent] = None,
     buffer: Optional[MultimodalReplayBuffer] = None,
@@ -69,7 +70,7 @@ def run_stage3_joint_finetuning(
             buffer.push(obs, action, reward, next_obs, terminated=terminated, truncated=truncated)
             obs = next_obs
 
-            if len(buffer) >= 64:
+            if len(buffer) >= min_buffer_size:
                 b_obs, b_act, b_rew, b_next_obs, b_term, b_trunc = buffer.sample(batch_size)
                 b_obs = b_obs.to(device)
                 b_next_obs = b_next_obs.to(device)

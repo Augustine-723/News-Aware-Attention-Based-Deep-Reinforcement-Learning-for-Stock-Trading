@@ -626,3 +626,147 @@ class FeatureDimensions:
     rl_state: int = RL_STATE_DIM
     num_horizons: int = NUM_HORIZONS
     num_actions: int = NUM_ACTIONS
+
+
+# ==============================================================================
+# Candidate Feature Calculation Contract & Formal Ablation Readiness (P1-4)
+# ==============================================================================
+
+class FeatureImplementationStatus(str, Enum):
+    IMPLEMENTED = "IMPLEMENTED"
+    UNSUPPORTED_DATA_SOURCE = "UNSUPPORTED_DATA_SOURCE"
+    MISSING_FEED = "MISSING_FEED"
+
+
+@dataclass(frozen=True)
+class CandidateFeatureContract:
+    feature_id: str
+    name: str
+    status: FeatureImplementationStatus
+    calculation_source: str
+    reason: str
+
+
+# Authoritative Itemization of Candidate (v8.1-candidate) 100-Feature Implementability
+CANDIDATE_100_FEATURE_CONTRACT: Dict[str, CandidateFeatureContract] = {
+    # 1. Price (12 dims) - 12/12 IMPLEMENTED
+    "PRC_01": CandidateFeatureContract("PRC_01", "open_norm", FeatureImplementationStatus.IMPLEMENTED, "TWSE OHLCV 60D Rolling Normalizer", "Fully implemented"),
+    "PRC_02": CandidateFeatureContract("PRC_02", "high_norm", FeatureImplementationStatus.IMPLEMENTED, "TWSE OHLCV 60D Rolling Normalizer", "Fully implemented"),
+    "PRC_03": CandidateFeatureContract("PRC_03", "low_norm", FeatureImplementationStatus.IMPLEMENTED, "TWSE OHLCV 60D Rolling Normalizer", "Fully implemented"),
+    "PRC_04": CandidateFeatureContract("PRC_04", "close_norm", FeatureImplementationStatus.IMPLEMENTED, "TWSE OHLCV 60D Rolling Normalizer", "Fully implemented"),
+    "PRC_05": CandidateFeatureContract("PRC_05", "volume_norm", FeatureImplementationStatus.IMPLEMENTED, "TWSE OHLCV 60D Rolling Log-Normalizer", "Fully implemented"),
+    "PRC_06": CandidateFeatureContract("PRC_06", "turnover_norm", FeatureImplementationStatus.IMPLEMENTED, "TWSE Turnover 60D Rolling Normalizer", "Fully implemented"),
+    "PRC_07": CandidateFeatureContract("PRC_07", "vwap_norm", FeatureImplementationStatus.IMPLEMENTED, "TWSE Trading Value / Volume Ratio", "Fully implemented"),
+    "PRC_08": CandidateFeatureContract("PRC_08", "daily_return", FeatureImplementationStatus.IMPLEMENTED, "TWSE Close 1D Percent Change", "Fully implemented"),
+    "PRC_09": CandidateFeatureContract("PRC_09", "intraday_range", FeatureImplementationStatus.IMPLEMENTED, "TWSE (High - Low) / Open", "Fully implemented"),
+    "PRC_10": CandidateFeatureContract("PRC_10", "shadow_upper", FeatureImplementationStatus.IMPLEMENTED, "TWSE Upper Shadow / Close", "Fully implemented"),
+    "PRC_11": CandidateFeatureContract("PRC_11", "shadow_lower", FeatureImplementationStatus.IMPLEMENTED, "TWSE Lower Shadow / Close", "Fully implemented"),
+    "PRC_12": CandidateFeatureContract("PRC_12", "effective_spread_proxy", FeatureImplementationStatus.IMPLEMENTED, "Roll (1984) Serial Autocovariance Spread", "Fully implemented"),
+
+    # 2. Technical (16 dims) - 16/16 IMPLEMENTED
+    "TECH_01": CandidateFeatureContract("TECH_01", "rsi_14", FeatureImplementationStatus.IMPLEMENTED, "Wilder RSI 14D", "Fully implemented"),
+    "TECH_02": CandidateFeatureContract("TECH_02", "macd_line", FeatureImplementationStatus.IMPLEMENTED, "EMA12 - EMA26", "Fully implemented"),
+    "TECH_03": CandidateFeatureContract("TECH_03", "macd_signal", FeatureImplementationStatus.IMPLEMENTED, "EMA9(MACD)", "Fully implemented"),
+    "TECH_04": CandidateFeatureContract("TECH_04", "macd_hist", FeatureImplementationStatus.IMPLEMENTED, "MACD - Signal", "Fully implemented"),
+    "TECH_05": CandidateFeatureContract("TECH_05", "bb_upper_dist", FeatureImplementationStatus.IMPLEMENTED, "Bollinger Upper Distance", "Fully implemented"),
+    "TECH_06": CandidateFeatureContract("TECH_06", "bb_lower_dist", FeatureImplementationStatus.IMPLEMENTED, "Bollinger Lower Distance", "Fully implemented"),
+    "TECH_07": CandidateFeatureContract("TECH_07", "bb_width", FeatureImplementationStatus.IMPLEMENTED, "Bollinger Bandwidth / MA20", "Fully implemented"),
+    "TECH_08": CandidateFeatureContract("TECH_08", "atr_14_norm", FeatureImplementationStatus.IMPLEMENTED, "Wilder ATR 14D / Close", "Fully implemented"),
+    "TECH_09": CandidateFeatureContract("TECH_09", "obv_slope", FeatureImplementationStatus.IMPLEMENTED, "10-Day Normalized OBV Slope", "Fully implemented"),
+    "TECH_10": CandidateFeatureContract("TECH_10", "kdj_k", FeatureImplementationStatus.IMPLEMENTED, "Stochastic %K 9D", "Fully implemented"),
+    "TECH_11": CandidateFeatureContract("TECH_11", "kdj_d", FeatureImplementationStatus.IMPLEMENTED, "Stochastic %D 3D", "Fully implemented"),
+    "TECH_12": CandidateFeatureContract("TECH_12", "kdj_j", FeatureImplementationStatus.IMPLEMENTED, "Stochastic %J = 3K - 2D", "Fully implemented"),
+    "TECH_13": CandidateFeatureContract("TECH_13", "mfi_14", FeatureImplementationStatus.IMPLEMENTED, "Money Flow Index 14D", "Fully implemented"),
+    "TECH_14": CandidateFeatureContract("TECH_14", "cci_14", FeatureImplementationStatus.IMPLEMENTED, "Commodity Channel Index 14D", "Fully implemented"),
+    "TECH_15": CandidateFeatureContract("TECH_15", "roc_10", FeatureImplementationStatus.IMPLEMENTED, "Price Rate of Change 10D", "Fully implemented"),
+    "TECH_16": CandidateFeatureContract("TECH_16", "adx_14", FeatureImplementationStatus.IMPLEMENTED, "Wilder ADX 14D", "Fully implemented"),
+
+    # 3. Institutional (8 dims) - 8/8 IMPLEMENTED
+    "INST_01": CandidateFeatureContract("INST_01", "foreign_net_buy_shares_norm", FeatureImplementationStatus.IMPLEMENTED, "TWSE Foreign Buy / Shares Outstanding", "Fully implemented"),
+    "INST_02": CandidateFeatureContract("INST_02", "trust_net_buy_shares_norm", FeatureImplementationStatus.IMPLEMENTED, "TWSE Trust Buy / Shares Outstanding", "Fully implemented"),
+    "INST_03": CandidateFeatureContract("INST_03", "dealer_net_buy_shares_norm", FeatureImplementationStatus.IMPLEMENTED, "TWSE Dealer Buy / Shares Outstanding", "Fully implemented"),
+    "INST_04": CandidateFeatureContract("INST_04", "total_institutional_flow_norm", FeatureImplementationStatus.IMPLEMENTED, "TWSE 3-Inst Buy / Shares Outstanding", "Fully implemented"),
+    "INST_05": CandidateFeatureContract("INST_05", "margin_long_change_norm", FeatureImplementationStatus.IMPLEMENTED, "TWSE Delta Margin / Shares Outstanding", "Fully implemented"),
+    "INST_06": CandidateFeatureContract("INST_06", "margin_short_change_norm", FeatureImplementationStatus.IMPLEMENTED, "TWSE Delta Short / Shares Outstanding", "Fully implemented"),
+    "INST_07": CandidateFeatureContract("INST_07", "foreign_holding_ratio", FeatureImplementationStatus.IMPLEMENTED, "TWSE Foreign Holding / Total Shares", "Fully implemented"),
+    "INST_08": CandidateFeatureContract("INST_08", "margin_utilization_ratio", FeatureImplementationStatus.IMPLEMENTED, "TWSE Margin / Quota Ratio", "Fully implemented"),
+
+    # 4. Macro (12 dims) - 8 IMPLEMENTED, 4 UNSUPPORTED
+    "MACRO_01": CandidateFeatureContract("MACRO_01", "taiex_return", FeatureImplementationStatus.IMPLEMENTED, "Delta ln(TAIEX)", "Fully implemented"),
+    "MACRO_02": CandidateFeatureContract("MACRO_02", "taiex_vol_20", FeatureImplementationStatus.IMPLEMENTED, "TAIEX 20D Annualized Realized Vol", "Fully implemented"),
+    "MACRO_03": CandidateFeatureContract("MACRO_03", "usdtwd_fx_return", FeatureImplementationStatus.IMPLEMENTED, "Delta ln(USD/TWD Spot)", "Fully implemented"),
+    "MACRO_04": CandidateFeatureContract("MACRO_04", "tw_10y_yield_diff", FeatureImplementationStatus.IMPLEMENTED, "Delta Taiwan 10Y Sovereign Yield", "Fully implemented"),
+    "MACRO_05": CandidateFeatureContract("MACRO_05", "us_10y_yield_diff", FeatureImplementationStatus.IMPLEMENTED, "Delta US 10Y Sovereign Yield", "Fully implemented"),
+    "MACRO_06": CandidateFeatureContract("MACRO_06", "sox_semiconductor_return", FeatureImplementationStatus.IMPLEMENTED, "SOX Index Daily Return", "Fully implemented"),
+    "MACRO_07": CandidateFeatureContract("MACRO_07", "sp500_return", FeatureImplementationStatus.IMPLEMENTED, "S&P 500 Daily Return", "Fully implemented"),
+    "MACRO_08": CandidateFeatureContract("MACRO_08", "brent_crude_return", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "ICE Brent Crude Feed", "External commodities data feed not integrated"),
+    "MACRO_09": CandidateFeatureContract("MACRO_09", "taiwan_interbank_rate", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "CBC Taiwan Interbank CP Feed", "Central Bank daily fixing feed not integrated"),
+    "MACRO_10": CandidateFeatureContract("MACRO_10", "macro_economic_leading_indicator", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "NDC Taiwan Monthly Composite Leading Indicator", "NDC monthly macroeconomic release feed not integrated"),
+    "MACRO_11": CandidateFeatureContract("MACRO_11", "tsmc_adr_premium", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "NYSE/TWSE Dual Listing Spread", "Real-time ADR FX parity calculation feed not integrated"),
+    "MACRO_12": CandidateFeatureContract("MACRO_12", "vix_tw_proxy", FeatureImplementationStatus.IMPLEMENTED, "Cboe VIX Level / 100", "Fully implemented"),
+
+    # 5. Stock Context (16 dims) - 5 IMPLEMENTED, 11 UNSUPPORTED
+    "CTX_01": CandidateFeatureContract("CTX_01", "industry_sector_id", FeatureImplementationStatus.IMPLEMENTED, "TWSE Sector Categorization", "Fully implemented"),
+    "CTX_02": CandidateFeatureContract("CTX_02", "market_cap_tier", FeatureImplementationStatus.IMPLEMENTED, "Cross-Sectional Market Cap Rank", "Fully implemented"),
+    "CTX_03": CandidateFeatureContract("CTX_03", "historical_beta_1y", FeatureImplementationStatus.IMPLEMENTED, "1-Year Rolling Beta vs TAIEX", "Fully implemented"),
+    "CTX_04": CandidateFeatureContract("CTX_04", "annualized_vol_1y", FeatureImplementationStatus.IMPLEMENTED, "1-Year Annualized Return Volatility", "Fully implemented"),
+    "CTX_05": CandidateFeatureContract("CTX_05", "avg_daily_turnover_ratio", FeatureImplementationStatus.IMPLEMENTED, "60-Day Median Turnover Ratio", "Fully implemented"),
+    "CTX_06": CandidateFeatureContract("CTX_06", "pb_ratio_scaled", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "MOPS Quarterly Financial Statements", "MOPS balance sheet book value parser not integrated"),
+    "CTX_07": CandidateFeatureContract("CTX_07", "pe_ratio_scaled", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "MOPS Quarterly Financial Statements", "MOPS trailing 12M earnings parser not integrated"),
+    "CTX_08": CandidateFeatureContract("CTX_08", "dividend_yield_scaled", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "TWSE Annual Dividend Feed", "TWSE dividend announcement registry not integrated"),
+    "CTX_09": CandidateFeatureContract("CTX_09", "debt_to_equity_scaled", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "MOPS Quarterly Financial Statements", "MOPS total debt parser not integrated"),
+    "CTX_10": CandidateFeatureContract("CTX_10", "roe_ttm_scaled", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "MOPS Quarterly Financial Statements", "MOPS return on equity parser not integrated"),
+    "CTX_11": CandidateFeatureContract("CTX_11", "supply_chain_role", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "Semiconductor Knowledge Graph", "Industry supply chain categorical database not integrated"),
+    "CTX_12": CandidateFeatureContract("CTX_12", "foreign_ownership_cap", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "TWSE Statutory Regulations", "Foreign statutory investment cap feed not integrated"),
+    "CTX_13": CandidateFeatureContract("CTX_13", "margin_tradable_flag", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "TWSE Credit Trading List", "Daily margin eligibility registry not integrated"),
+    "CTX_14": CandidateFeatureContract("CTX_14", "day_trading_eligible_flag", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "TWSE Day Trading List", "Daily day trading eligibility registry not integrated"),
+    "CTX_15": CandidateFeatureContract("CTX_15", "weight_in_taiex", FeatureImplementationStatus.IMPLEMENTED, "TWSE Market Cap Share", "Fully implemented"),
+    "CTX_16": CandidateFeatureContract("CTX_16", "governance_score_scaled", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "TWSE Corporate Governance Evaluation", "Annual corporate governance percentile registry not integrated"),
+
+    # 6. Event Metadata (24 dims) - 10 IMPLEMENTED, 14 UNSUPPORTED
+    "EV_META_01": CandidateFeatureContract("EV_META_01", "category_earnings", FeatureImplementationStatus.IMPLEMENTED, "LLM Category Parser", "Fully implemented"),
+    "EV_META_02": CandidateFeatureContract("EV_META_02", "category_revenue_guidance", FeatureImplementationStatus.IMPLEMENTED, "LLM Category Parser", "Fully implemented"),
+    "EV_META_03": CandidateFeatureContract("EV_META_03", "category_order_contract", FeatureImplementationStatus.IMPLEMENTED, "LLM Category Parser", "Fully implemented"),
+    "EV_META_04": CandidateFeatureContract("EV_META_04", "category_capacity_expansion", FeatureImplementationStatus.IMPLEMENTED, "LLM Category Parser", "Fully implemented"),
+    "EV_META_05": CandidateFeatureContract("EV_META_05", "category_merger_acquisition", FeatureImplementationStatus.IMPLEMENTED, "LLM Category Parser", "Fully implemented"),
+    "EV_META_06": CandidateFeatureContract("EV_META_06", "category_litigation_regulatory", FeatureImplementationStatus.IMPLEMENTED, "LLM Category Parser", "Fully implemented"),
+    "EV_META_07": CandidateFeatureContract("EV_META_07", "category_management_governance", FeatureImplementationStatus.IMPLEMENTED, "LLM Category Parser", "Fully implemented"),
+    "EV_META_08": CandidateFeatureContract("EV_META_08", "category_macro_industry", FeatureImplementationStatus.IMPLEMENTED, "LLM Category Parser", "Fully implemented"),
+    "EV_META_09": CandidateFeatureContract("EV_META_09", "source_credibility_tier", FeatureImplementationStatus.IMPLEMENTED, "Metadata Source Tier Registry", "Fully implemented"),
+    "EV_META_10": CandidateFeatureContract("EV_META_10", "event_sentiment_score", FeatureImplementationStatus.IMPLEMENTED, "LLM Sentiment Extraction", "Fully implemented"),
+    "EV_META_11": CandidateFeatureContract("EV_META_11", "sentiment_confidence", FeatureImplementationStatus.IMPLEMENTED, "LLM Confidence Extraction", "Fully implemented"),
+    "EV_META_12": CandidateFeatureContract("EV_META_12", "event_scope_tier", FeatureImplementationStatus.IMPLEMENTED, "LLM Scope Classifier", "Fully implemented"),
+    "EV_META_13": CandidateFeatureContract("EV_META_13", "event_age_fractional_days", FeatureImplementationStatus.IMPLEMENTED, "PIT Engine Decision Offset", "Fully implemented"),
+    "EV_META_14": CandidateFeatureContract("EV_META_14", "historical_source_accuracy", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "Historical Analytics Engine", "Media outlet historical accuracy database not integrated"),
+    "EV_META_15": CandidateFeatureContract("EV_META_15", "title_body_consistency", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "LLM Span Similarity", "Headline vs evidence embedding similarity parser not integrated"),
+    "EV_META_16": CandidateFeatureContract("EV_META_16", "verified_entity_count", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "Entity Linker", "Entity count extraction parser not integrated"),
+    "EV_META_17": CandidateFeatureContract("EV_META_17", "is_breaking_news", FeatureImplementationStatus.IMPLEMENTED, "PIT Trading Hour Check", "Fully implemented"),
+    "EV_META_18": CandidateFeatureContract("EV_META_18", "revision_count", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "PIT Document Versioning", "MOPS amendment count feed not integrated"),
+    "EV_META_19": CandidateFeatureContract("EV_META_19", "urgency_flag", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "News Vendor Priority Tag", "Vendor wire urgency flag feed not integrated"),
+    "EV_META_20": CandidateFeatureContract("EV_META_20", "vendor_ingestion_delay_min", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "PIT Ingestion Telemetry", "Millisecond vendor latency logger not integrated"),
+    "EV_META_21": CandidateFeatureContract("EV_META_21", "document_word_count_bucket", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "Document Parser", "Article token length bucketing feed not integrated"),
+    "EV_META_22": CandidateFeatureContract("EV_META_22", "evidence_span_count", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "LLM Span Extraction", "Extracted evidence sentence count parser not integrated"),
+    "EV_META_23": CandidateFeatureContract("EV_META_23", "is_regulatory_filing", FeatureImplementationStatus.IMPLEMENTED, "Exchange Filing Tag", "Fully implemented"),
+    "EV_META_24": CandidateFeatureContract("EV_META_24", "active_flag", FeatureImplementationStatus.IMPLEMENTED, "Event State Machine", "Fully implemented"),
+
+    # 7. Event-Stock Relation (8 dims) - 2 IMPLEMENTED, 6 UNSUPPORTED
+    "EV_REL_01": CandidateFeatureContract("EV_REL_01", "entity_role_primary", FeatureImplementationStatus.IMPLEMENTED, "Entity Linker Symbol Match", "Fully implemented"),
+    "EV_REL_02": CandidateFeatureContract("EV_REL_02", "entity_role_supplier", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "Supply Chain Knowledge Graph", "Tier 1 supplier link feed not integrated"),
+    "EV_REL_03": CandidateFeatureContract("EV_REL_03", "entity_role_customer", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "Supply Chain Knowledge Graph", "Tier 1 customer link feed not integrated"),
+    "EV_REL_04": CandidateFeatureContract("EV_REL_04", "entity_role_competitor", FeatureImplementationStatus.IMPLEMENTED, "Sector Peer Lookup", "Fully implemented"),
+    "EV_REL_05": CandidateFeatureContract("EV_REL_05", "co_occurrence_frequency_norm", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "News Co-Occurrence DB", "Rolling 1Y news co-mention database not integrated"),
+    "EV_REL_06": CandidateFeatureContract("EV_REL_06", "supply_chain_tier_distance", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "Knowledge Graph Shortest Path", "Multi-hop graph distance engine not integrated"),
+    "EV_REL_07": CandidateFeatureContract("EV_REL_07", "revenue_exposure_percentage", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "Supply Chain Revenue Exposure DB", "Segment reporting customer revenue share not integrated"),
+    "EV_REL_08": CandidateFeatureContract("EV_REL_08", "relation_confidence", FeatureImplementationStatus.UNSUPPORTED_DATA_SOURCE, "Knowledge Graph Link Confidence", "Graph edge confidence model not integrated"),
+
+    # 8. Position State (4 dims) - 4/4 IMPLEMENTED
+    "POS_01": CandidateFeatureContract("POS_01", "current_target_position", FeatureImplementationStatus.IMPLEMENTED, "Trading Environment State", "Fully implemented"),
+    "POS_02": CandidateFeatureContract("POS_02", "unrealized_pnl_pct", FeatureImplementationStatus.IMPLEMENTED, "Trading Environment State", "Fully implemented"),
+    "POS_03": CandidateFeatureContract("POS_03", "holding_duration_days", FeatureImplementationStatus.IMPLEMENTED, "Trading Environment State", "Fully implemented"),
+    "POS_04": CandidateFeatureContract("POS_04", "time_since_last_trade", FeatureImplementationStatus.IMPLEMENTED, "Trading Environment State", "Fully implemented"),
+}
+
+# Formal Ablation Readiness: strictly False because 43/100 candidate features require feeds not yet connected.
+# Prohibits publishing formal comparative benchmark claims between Baseline and Candidate (P1-4).
+CANDIDATE_FORMAL_ABLATION_READY: bool = False
+

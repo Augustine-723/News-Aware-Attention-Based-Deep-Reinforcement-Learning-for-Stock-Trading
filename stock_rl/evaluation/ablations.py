@@ -86,13 +86,23 @@ def run_schema_comparison_study(
     agent_candidate,
     env_baseline: PointInTimeStockEnv,
     env_candidate: PointInTimeStockEnv,
+    mode: str = "formal",
 ) -> Dict[str, Any]:
     """
     Executes comparative evaluation across Baseline ('v8.0-original')
     and Candidate ('v8.1-candidate') pipelines.
-    Returns:
-        comparison_results: Dict containing metrics tagged with schema_version.
+    Enforces P1-4: Formal candidate comparison is strictly blocked if CANDIDATE_FORMAL_ABLATION_READY is False.
     """
+    from stock_rl.config.schema import CANDIDATE_FORMAL_ABLATION_READY
+
+    if mode == "formal" and not CANDIDATE_FORMAL_ABLATION_READY:
+        raise RuntimeError(
+            "Candidate Formal Ablation Blocked: Candidate schema (v8.1-candidate) has incomplete feature calculations "
+            "(28/100 candidate features require external fundamental/regulatory feeds marked UNSUPPORTED). "
+            "Formal performance comparison against Baseline v8.0 is prohibited per Review 2 (P1-4). "
+            "Use mode='synthetic' for synthetic smoke testing only."
+        )
+
     metrics_baseline = evaluate_policy_on_env(agent_baseline.online_model, env_baseline)
     metrics_candidate = evaluate_policy_on_env(agent_candidate.online_model, env_candidate)
 
@@ -104,6 +114,8 @@ def run_schema_comparison_study(
         "candidate_ablation": {
             "schema_version": FeatureSchemaVersion.ALTERNATIVE_V8_1_CANDIDATE.value,
             "metrics": metrics_candidate,
+            "mode": mode,
+            "status": "FORMAL_EVALUATION" if mode == "formal" else "SYNTHETIC_SMOKE_TEST_ONLY",
         },
     }
 

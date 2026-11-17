@@ -122,16 +122,18 @@ class FeatureNormalizer:
     Stateful point-in-time feature normalizer.
     Guarantees that normalization statistics (mean, std) are computed exclusively
     on training data and frozen thereafter.
-    Enforces SplitManifest boundary provenance checks (P1-5).
+    Enforces SplitManifest boundary provenance checks and timestamp alignment (P1-3, P1-5).
     """
     def __init__(
         self,
         schema_version: Optional[str] = None,
         split_manifest: Optional[SplitManifest] = None,
+        mode: str = "formal",
     ):
         self.schema_version = schema_version or CURRENT_ACTIVE_SCHEMA_VERSION
         validate_schema_version(self.schema_version)
         self.split_manifest = split_manifest
+        self.mode = mode
         if self.split_manifest is not None and self.split_manifest.schema_version != self.schema_version:
             raise ValueError(
                 f"SplitManifest schema mismatch: manifest configured for '{self.split_manifest.schema_version}', "
@@ -139,6 +141,9 @@ class FeatureNormalizer:
             )
         self.is_fitted: bool = False
         self.stats: Dict[str, Dict[str, torch.Tensor]] = {}
+        self.fitted_dataset_id: Optional[str] = None
+        self.fitted_manifest_hash: Optional[str] = None
+        self.fitted_train_window: Optional[tuple] = None
 
     def fit(
         self,
@@ -146,13 +151,27 @@ class FeatureNormalizer:
         is_train_split: bool = True,
         sample_timestamps: Optional[Union[pd.DatetimeIndex, List[pd.Timestamp]]] = None,
         split_manifest: Optional[SplitManifest] = None,
+        mode: Optional[str] = None,
     ) -> "FeatureNormalizer":
         """
         Computes mean and std statistics exclusively on the Training Split.
         Raises ValueError if attempted on Validation or Test splits.
-        If sample_timestamps and manifest are available, rejects fitting if any timestamps
-        fall outside train_start..train_end even if is_train_split=True (P1-5).
+
+        Formal Mode (mode='formal', default):
+        Mandates all five provenance items (P1-3):
+        1. SplitManifest
+        2. sample_timestamps
+        3. dataset_id / hash
+        4. schema_version alignment
+        5. train_fitting_window
+        Also verifies len(sample_timestamps) == batch.price.shape[0].
+        Missing any item strictly rejects fitting.
+
+        Isolated Test Mode (mode='test' or 'synthetic'):
+        Permits synthetic smoke tests without manifest, but validates if provided.
         """
+        effective_mode = mode or self.mode
+
         if not is_train_split:
             raise ValueError(
                 "PIT Violation: FeatureNormalizer can ONLY be fitted on the Training Split! "
@@ -164,9 +183,65 @@ class FeatureNormalizer:
                 "Re-fitting a frozen normalizer is prohibited to prevent statistical leakage."
             )
 
+        # Determine batch count B
+        if isinstance(batch_or_list, list):
+            b_count = sum(b.price.shape[0] for b in batch_or_list)
+        else:
+            b_count = batch_or_list.price.shape[0]
+
         manifest = split_manifest or self.split_manifest
-        if manifest is not None and sample_timestamps is not None:
+
+        if effective_mode == "formal":
+            if manifest is None:
+                raise ValueError(
+                    "Formal Normalizer Provenance Error (P1-3): SplitManifest is mandatory in formal mode. "
+                    "Cannot fit FeatureNormalizer without an audited SplitManifest."
+                )
+            if sample_timestamps is None:
+                raise ValueError(
+                    "Formal Normalizer Provenance Error (P1-3): sample_timestamps is mandatory in formal mode. "
+                    "Cannot fit FeatureNormalizer without sample decision timestamps."
+                )
+            if not manifest.dataset_id or not manifest.manifest_hash:
+                raise ValueError(
+                    "Formal Normalizer Provenance Error (P1-3): SplitManifest must contain non-empty "
+                    "dataset_id and manifest_hash."
+                )
+            if manifest.schema_version != self.schema_version:
+                raise ValueError(
+                    f"Formal Normalizer Provenance Error (P1-3): SplitManifest schema_version '{manifest.schema_version}' "
+                    f"does not match normalizer schema_version '{self.schema_version}'."
+                )
+            if manifest.train_start is None or manifest.train_end is None:
+                raise ValueError(
+                    "Formal Normalizer Provenance Error (P1-3): SplitManifest must contain valid train_start "
+                    "and train_end fitting window boundaries."
+                )
+            if len(sample_timestamps) != b_count:
+                raise ValueError(
+                    f"Formal Normalizer Provenance Error (P1-3): Length of sample_timestamps ({len(sample_timestamps)}) "
+                    f"does not match total batch size ({b_count})."
+                )
             manifest.validate_sample_timestamps(sample_timestamps, split_name="train")
+            self.fitted_dataset_id = manifest.dataset_id
+            self.fitted_manifest_hash = manifest.manifest_hash
+            self.fitted_train_window = (manifest.train_start, manifest.train_end)
+        elif effective_mode in ("synthetic", "test"):
+            # Isolated test/synthetic mode
+            if manifest is not None and sample_timestamps is not None:
+                if len(sample_timestamps) != b_count:
+                    raise ValueError(
+                        f"Normalizer timestamp length mismatch: len(sample_timestamps) ({len(sample_timestamps)}) != {b_count}"
+                    )
+                manifest.validate_sample_timestamps(sample_timestamps, split_name="train")
+            if manifest is not None:
+                self.fitted_dataset_id = manifest.dataset_id
+                self.fitted_manifest_hash = manifest.manifest_hash
+                self.fitted_train_window = (manifest.train_start, manifest.train_end)
+        else:
+            raise ValueError(
+                f"Unknown FeatureNormalizer mode: {effective_mode}. Expected 'formal', 'synthetic', or 'test'."
+            )
 
         if isinstance(batch_or_list, list):
             price = torch.cat([b.price for b in batch_or_list], dim=0)
@@ -257,19 +332,28 @@ class FeatureNormalizer:
         is_train_split: bool = True,
         sample_timestamps: Optional[Union[pd.DatetimeIndex, List[pd.Timestamp]]] = None,
         split_manifest: Optional[SplitManifest] = None,
+        mode: Optional[str] = None,
     ) -> MultimodalBatch:
         """Fits on training batch and returns the transformed batch."""
-        self.fit(train_batch, is_train_split=is_train_split, sample_timestamps=sample_timestamps, split_manifest=split_manifest)
+        self.fit(
+            train_batch,
+            is_train_split=is_train_split,
+            sample_timestamps=sample_timestamps,
+            split_manifest=split_manifest,
+            mode=mode,
+        )
         return self.transform(train_batch)
 
     def state_dict(self) -> Dict[str, Any]:
-        """Exports normalizer statistics."""
+        """Exports normalizer statistics and provenance."""
         if not self.is_fitted:
             raise RuntimeError("Cannot export state_dict of an unfitted normalizer.")
         return {
             "schema_version": self.schema_version,
-            "manifest_hash": self.split_manifest.manifest_hash if self.split_manifest else None,
+            "manifest_hash": self.fitted_manifest_hash or (self.split_manifest.manifest_hash if self.split_manifest else None),
+            "dataset_id": self.fitted_dataset_id or (self.split_manifest.dataset_id if self.split_manifest else None),
             "stats": copy.deepcopy(self.stats),
+            "mode": self.mode,
         }
 
     def load_state_dict(self, state: Dict[str, Any]):

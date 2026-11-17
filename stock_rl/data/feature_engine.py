@@ -465,13 +465,15 @@ def compute_macro_features(
     df_macro: pd.DataFrame,
     df_foreign: Optional[pd.DataFrame] = None,
     schema_version: str = CURRENT_ACTIVE_SCHEMA_VERSION,
+    mode: str = "formal",
 ) -> np.ndarray:
     """
     Computes 12 Macro and cross-market indicators.
     Expected columns in df_macro:
         ['taiex', 'sector_index', 'usdtwd', 'sp500', 'nasdaq', 'sox', 'vix', 'us_10y_yield']
     Zero lookahead:
-    - All bfill calls strictly eliminated (P0-1).
+    - In formal mode (mode="formal"): requires explicit df_foreign with verified available_at.
+      Fails closed if df_foreign is missing (P0-2).
     - If df_foreign is provided, utilizes timezone-aware As-Of Join (asof_join_cross_market).
     - M05 Sector Relative Strength 20D = SectorReturn20D - TAIEX_Return20D (P0-2).
     Returns:
@@ -499,12 +501,25 @@ def compute_macro_features(
 
     m06 = usdtwd.pct_change(1).fillna(0.0)
 
-    # US Cross-market data alignment (P0-1: ZERO bfill)
-    if df_foreign is not None and isinstance(df_macro.index, pd.DatetimeIndex):
+    # US Cross-market data alignment (Fail-Closed in formal mode per P0-2)
+    if mode == "formal":
+        if df_foreign is None:
+            raise ValueError(
+                "Formal PIT Error: compute_macro_features requires an explicit df_foreign DataFrame "
+                "with verified 'available_at' timestamps in formal mode. "
+                "Simple shift(1).ffill() bypass is strictly prohibited in formal evaluation."
+            )
+        if not isinstance(df_macro.index, pd.DatetimeIndex) or df_macro.index.tz is None:
+            raise ValueError(
+                "Formal PIT Error: df_macro must have a timezone-aware DatetimeIndex (Asia/Taipei) "
+                "representing decision timestamps in formal mode."
+            )
         foreign_aligned = asof_join_cross_market(
             taiwan_decision_times=df_macro.index,
             foreign_market_df=df_foreign,
             missing_policy="forward_fill",
+            allow_estimated_availability=False,
+            mode="formal",
         )
         sp500 = foreign_aligned['sp500'].astype(float)
         nasdaq = foreign_aligned['nasdaq'].astype(float)
@@ -512,12 +527,26 @@ def compute_macro_features(
         vix = foreign_aligned['vix'].astype(float)
         us_10y = foreign_aligned['us_10y_yield'].astype(float)
     else:
-        # Lagged by 1 day and forward-filled strictly forward in time
-        sp500 = df_macro['sp500'].astype(float).shift(1).ffill()
-        nasdaq = df_macro['nasdaq'].astype(float).shift(1).ffill()
-        sox = df_macro['sox'].astype(float).shift(1).ffill()
-        vix = df_macro['vix'].astype(float).shift(1).ffill()
-        us_10y = df_macro['us_10y_yield'].astype(float).shift(1).ffill()
+        # Synthetic / Smoke test path with explicit isolation
+        if df_foreign is not None and isinstance(df_macro.index, pd.DatetimeIndex):
+            foreign_aligned = asof_join_cross_market(
+                taiwan_decision_times=df_macro.index,
+                foreign_market_df=df_foreign,
+                missing_policy="forward_fill",
+                allow_estimated_availability=True,
+                mode="synthetic",
+            )
+            sp500 = foreign_aligned['sp500'].astype(float)
+            nasdaq = foreign_aligned['nasdaq'].astype(float)
+            sox = foreign_aligned['sox'].astype(float)
+            vix = foreign_aligned['vix'].astype(float)
+            us_10y = foreign_aligned['us_10y_yield'].astype(float)
+        else:
+            sp500 = df_macro['sp500'].astype(float).shift(1).ffill()
+            nasdaq = df_macro['nasdaq'].astype(float).shift(1).ffill()
+            sox = df_macro['sox'].astype(float).shift(1).ffill()
+            vix = df_macro['vix'].astype(float).shift(1).ffill()
+            us_10y = df_macro['us_10y_yield'].astype(float).shift(1).ffill()
 
     if schema_version in (FeatureSchemaVersion.BASELINE_V8_0_ORIGINAL.value, "v8.0-original", "v8.0"):
         # M07: S&P 500 Return (T-1)
@@ -576,6 +605,7 @@ def assemble_stock_context_features(
     days_since_ipo: int,
     had_trading_suspension_20d: bool,
     schema_version: str = CURRENT_ACTIVE_SCHEMA_VERSION,
+    mode: str = "formal",
 ) -> np.ndarray:
     """
     Assembles the 16 Stock Context features for a single stock decision step.
@@ -607,17 +637,35 @@ def assemble_stock_context_features(
         c03 = float(beta_120d)
         c04 = np.clip(volatility_percentile, 0.0, 1.0)
         c05 = np.clip(liquidity_percentile, 0.0, 1.0)
-        c06 = 1.0
-        c07 = 1.0
-        c08 = 0.03
-        c09 = 0.5
-        c10 = 0.15
-        c11 = 1.0
-        c12 = 1.0
-        c13 = 1.0
-        c14 = 1.0
         c15 = min(max(market_cap / 1e12, 0.0), 1.0)
-        c16 = 0.8
+
+        if mode == "formal":
+            # P1-4: In formal evaluation, unsupported external fields (MOPS fundamentals, TWSE regulations)
+            # must be marked as np.nan (Missing / Unsupported), strictly prohibiting hardcoded magic numbers.
+            unsupported_val = np.nan
+            c06 = unsupported_val  # pb_ratio_scaled
+            c07 = unsupported_val  # pe_ratio_scaled
+            c08 = unsupported_val  # dividend_yield_scaled
+            c09 = unsupported_val  # debt_to_equity_scaled
+            c10 = unsupported_val  # roe_ttm_scaled
+            c11 = unsupported_val  # supply_chain_role
+            c12 = unsupported_val  # foreign_ownership_cap
+            c13 = unsupported_val  # margin_tradable_flag
+            c14 = unsupported_val  # day_trading_eligible_flag
+            c16 = unsupported_val  # governance_score_scaled
+        else:
+            # Synthetic smoke testing mode ONLY
+            c06 = 1.0
+            c07 = 1.0
+            c08 = 0.03
+            c09 = 0.5
+            c10 = 0.15
+            c11 = 1.0
+            c12 = 1.0
+            c13 = 1.0
+            c14 = 1.0
+            c16 = 0.8
+
         return np.array([c01, c02, c03, c04, c05, c06, c07, c08,
                          c09, c10, c11, c12, c13, c14, c15, c16], dtype=np.float32)
 
@@ -639,6 +687,7 @@ def assemble_event_metadata(
     event_age_days: float,
     timestamp_reliability: float,
     schema_version: str = CURRENT_ACTIVE_SCHEMA_VERSION,
+    mode: str = "formal",
 ) -> np.ndarray:
     """
     Assembles the 24 Event Metadata features strictly per V8.0 specification layout:
@@ -682,19 +731,32 @@ def assemble_event_metadata(
         res[8] = np.clip(source_reliability, 0.0, 1.0)
         res[9] = float(market_surprise_preevent)
         res[10] = np.clip(evidence_traceability, 0.0, 1.0)
-        res[11] = 1.0
         res[12] = max(float(event_age_days), 0.0)  # EV_META_13
         res[13] = np.clip(source_reliability, 0.0, 1.0)
         res[14] = np.clip(source_independence, 0.0, 1.0)
-        res[15] = 1.0
-        res[16] = 0.0
-        res[17] = 0.0
-        res[18] = 0.0
-        res[19] = 0.0
-        res[20] = 2.0
-        res[21] = 1.0
-        res[22] = 0.0
-        res[23] = 1.0
+        if mode == "formal":
+            unsupported_val = np.nan
+            res[11] = unsupported_val  # EV_META_12 source_reputation_score
+            res[15] = unsupported_val  # EV_META_16 verified_entity_count
+            res[16] = 1.0              # EV_META_17 is_breaking_news
+            res[17] = unsupported_val  # EV_META_18 revision_count
+            res[18] = unsupported_val  # EV_META_19 urgency_flag
+            res[19] = unsupported_val  # EV_META_20 vendor_ingestion_delay_min
+            res[20] = unsupported_val  # EV_META_21 document_word_count_bucket
+            res[21] = unsupported_val  # EV_META_22 evidence_span_count
+            res[22] = 1.0              # EV_META_23 is_regulatory_filing
+            res[23] = 1.0              # EV_META_24 active_flag
+        else:
+            res[11] = 1.0
+            res[15] = 1.0
+            res[16] = 0.0
+            res[17] = 0.0
+            res[18] = 0.0
+            res[19] = 0.0
+            res[20] = 2.0
+            res[21] = 1.0
+            res[22] = 0.0
+            res[23] = 1.0
         return res
 
 
@@ -765,6 +827,7 @@ def build_audited_stock_context(
     provenance: ProvenanceRecord,
     decision_time: pd.Timestamp,
     schema_version: str = CURRENT_ACTIVE_SCHEMA_VERSION,
+    mode: str = "formal",
 ) -> np.ndarray:
     """
     Assembles Stock Context with strict PIT verification of ProvenanceRecord.
@@ -788,6 +851,7 @@ def build_audited_stock_context(
         days_since_ipo=days_since_ipo,
         had_trading_suspension_20d=had_trading_suspension_20d,
         schema_version=schema_version,
+        mode=mode,
     )
 
 
@@ -805,6 +869,7 @@ def build_audited_event_metadata(
     provenance: ProvenanceRecord,
     decision_time: pd.Timestamp,
     schema_version: str = CURRENT_ACTIVE_SCHEMA_VERSION,
+    mode: str = "formal",
 ) -> np.ndarray:
     """
     Assembles 24D Event Metadata with strict PIT verification.
@@ -845,6 +910,7 @@ def build_audited_event_metadata(
         event_age_days=event_age_days,
         timestamp_reliability=timestamp_reliability,
         schema_version=schema_version,
+        mode=mode,
     )
 
 

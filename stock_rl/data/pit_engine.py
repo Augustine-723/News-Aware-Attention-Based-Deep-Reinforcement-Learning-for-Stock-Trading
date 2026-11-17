@@ -6,6 +6,7 @@ Enforces strict historical availability, document versioning, and dynamic label 
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
+import warnings
 import pandas as pd
 import numpy as np
 
@@ -275,14 +276,15 @@ class ProvenanceRecord:
     """
     Cryptographically and chronologically auditable feature provenance record.
     Tracks primary source publishing, vendor dissemination, local ingestion,
-    and historical availability status per V8.3 Code Review 1 (P1-7).
+    and historical availability status per V8.3 Code Review 1 & 2 (P0-1, P1-7).
     """
     source_id: str
-    source_published_at: pd.Timestamp
-    provider_available_at: Optional[pd.Timestamp]
-    available_at: Optional[pd.Timestamp]
-    ingested_at: Optional[pd.Timestamp]
+    source_published_at: Optional[pd.Timestamp] = None
+    provider_available_at: Optional[pd.Timestamp] = None
+    available_at: Optional[pd.Timestamp] = None
+    ingested_at: Optional[pd.Timestamp] = None
     revision_id: int = 1
+    version: str = "1.0"
     is_audit_verified: bool = True
     missing_status: str = "AVAILABLE"  # "AVAILABLE", "UNKNOWN", "MISSING"
 
@@ -318,23 +320,31 @@ def asof_join_cross_market(
     foreign_market_df: pd.DataFrame,
     foreign_available_col: str = "available_at",
     missing_policy: str = "forward_fill",
+    allow_estimated_availability: bool = False,
+    mode: str = "formal",
 ) -> pd.DataFrame:
     """
     Timezone-aware Historical As-Of Join for overseas market data (US S&P 500, NASDAQ, SOX, VIX, US 10Y).
     Strictly aligns foreign data whose `available_at <= decision_time` as of Taiwan 20:00:00 (P0-1).
 
-    Rules:
-    1. ZERO lookahead: direction is strictly 'backward' (no bfill).
-    2. Respects US trading calendars, holidays, and US Daylight Saving Time (DST, EDT vs EST).
-    3. Unverified or missing available_at records remain Unknown / Missing.
-    4. If no historical record is available before the decision time, fills with NaN or declared policy,
-       strictly NEVER backfilling from future rows.
+    Formal Historical PIT Rules (mode="formal"):
+    1. Requires explicit, verified `available_at` column.
+    2. Prohibits treating Trading Date, DataFrame Index, or Source Date automatically as Historical Availability.
+    3. Unknown or timezone-naive timestamps are strictly rejected (raises ValueError).
+    4. If synthetic/estimated availability is requested, it must be explicitly declared via allow_estimated_availability=True.
+    5. Backward-only join: available_at <= decision_timestamp (ZERO future lookahead, ZERO bfill).
+    6. Respects US trading calendars, holidays, Daylight Saving Time (EDT UTC-4 vs EST UTC-5), and future revision exclusion.
     """
     if not isinstance(taiwan_decision_times, pd.DatetimeIndex):
         taiwan_decision_times = pd.DatetimeIndex(taiwan_decision_times)
 
-    # Ensure timezone awareness on Taiwan decision times (Asia/Taipei)
+    # 1. Decision times timezone verification
     if taiwan_decision_times.tz is None:
+        if mode == "formal" and not allow_estimated_availability:
+            raise ValueError(
+                "Strict PIT Error: taiwan_decision_times must have a timezone (e.g. Asia/Taipei). "
+                "Naive decision timestamps are prohibited in formal mode."
+            )
         dec_times_taipei = taiwan_decision_times.tz_localize("Asia/Taipei")
     else:
         dec_times_taipei = taiwan_decision_times.tz_convert("Asia/Taipei")
@@ -342,42 +352,73 @@ def asof_join_cross_market(
     dec_df = pd.DataFrame({"decision_time": dec_times_taipei}).sort_values("decision_time").reset_index(drop=True)
     dec_df["decision_time_utc"] = dec_df["decision_time"].dt.tz_convert("UTC")
 
-    # Prepare foreign DataFrame
+    # 2. Foreign DataFrame availability column verification
     foreign_clean = foreign_market_df.copy()
     if foreign_available_col not in foreign_clean.columns:
+        if mode == "formal" and not allow_estimated_availability:
+            raise ValueError(
+                f"Strict PIT Error: foreign_market_df missing required explicit '{foreign_available_col}' column. "
+                "Automatic fallback to DataFrame index or trade date is strictly prohibited in formal mode."
+            )
         if isinstance(foreign_clean.index, pd.DatetimeIndex):
+            warnings.warn(
+                f"Estimated Availability Fallback: using DataFrame index as '{foreign_available_col}'. "
+                "DO NOT use in formal production evaluation.",
+                UserWarning,
+            )
             foreign_clean[foreign_available_col] = foreign_clean.index
         else:
             raise KeyError(f"foreign_market_df missing available time column '{foreign_available_col}'")
 
-    # Normalize foreign available_at to UTC
+    # 3. Timezone validation on foreign available_at
     avail_series = pd.to_datetime(foreign_clean[foreign_available_col])
     if avail_series.dt.tz is None:
-        # Default foreign market timestamp without timezone to America/New_York close (16:00 ET)
+        if mode == "formal" and not allow_estimated_availability:
+            raise ValueError(
+                f"Strict PIT Error: foreign_market_df['{foreign_available_col}'] column must be timezone-aware. "
+                "Naive timestamps cannot be presumed available without timezone specification in formal mode."
+            )
+        warnings.warn(
+            f"Estimated Availability Fallback: localizing naive timestamps to America/New_York (16:00 close). "
+            "DO NOT use in formal production evaluation.",
+            UserWarning,
+        )
         avail_utc = avail_series.dt.tz_localize("America/New_York", ambiguous="NaT", nonexistent="NaT").dt.tz_convert("UTC")
     else:
         avail_utc = avail_series.dt.tz_convert("UTC")
 
     foreign_clean["_avail_utc"] = avail_utc
-    # Filter out unverified or invalid timestamps
+
+    # 4. Audit verification filter
+    if "is_audit_verified" in foreign_clean.columns:
+        if mode == "formal":
+            foreign_clean = foreign_clean[foreign_clean["is_audit_verified"] == True]
+
+    # Filter out NaT or invalid timestamps
     foreign_valid = foreign_clean.dropna(subset=["_avail_utc"]).sort_values("_avail_utc").reset_index(drop=True)
 
-    # Perform backward-only As-Of Join
+    # 5. Backward-only As-Of Join
     feature_cols = [c for c in foreign_clean.columns if c not in (foreign_available_col, "_avail_utc")]
-    merged = pd.merge_asof(
-        dec_df,
-        foreign_valid[["_avail_utc"] + feature_cols],
-        left_on="decision_time_utc",
-        right_on="_avail_utc",
-        direction="backward",
-    )
-
-    result_df = merged[feature_cols].copy()
-    result_df.index = taiwan_decision_times
+    if len(foreign_valid) == 0:
+        # No valid foreign records available
+        result_df = pd.DataFrame(np.nan, index=taiwan_decision_times, columns=feature_cols)
+    else:
+        merged = pd.merge_asof(
+            dec_df,
+            foreign_valid[["_avail_utc"] + feature_cols],
+            left_on="decision_time_utc",
+            right_on="_avail_utc",
+            direction="backward",
+        )
+        result_df = merged[feature_cols].copy()
+        result_df.index = taiwan_decision_times
 
     if missing_policy == "forward_fill":
-        # Forward fill only forward in time from past valid observations
+        # Forward fill only forward in time from past valid observations (ZERO bfill)
         result_df = result_df.ffill()
+
+    # Tag estimated availability status
+    result_df.attrs["estimated_availability"] = bool(allow_estimated_availability or (mode == "synthetic"))
 
     return result_df
 

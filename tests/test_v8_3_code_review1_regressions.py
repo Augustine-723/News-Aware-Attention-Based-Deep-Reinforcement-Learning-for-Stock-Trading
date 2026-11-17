@@ -169,7 +169,7 @@ def test_m05_sector_relative_strength_horizon_oracle():
         "us_10y_yield": 4.1,
     })
 
-    features = compute_macro_features(df_macro, schema_version="v8.0-original")
+    features = compute_macro_features(df_macro, schema_version="v8.0-original", mode="synthetic")
     # M05 is at column index 4
     m05_computed = features[24, 4]
     expected_m05 = 0.30 - 0.20  # Exactly 0.10

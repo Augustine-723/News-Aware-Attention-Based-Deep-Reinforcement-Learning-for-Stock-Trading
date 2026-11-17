@@ -22,6 +22,7 @@ def train_stage1_epoch(
     batch_size: int = 64,
     device: torch.device = torch.device("cpu"),
     schema_version: Optional[str] = None,
+    batches: Optional[List[MultimodalBatch]] = None,
 ) -> Dict[str, float]:
     """Runs a single epoch of Stage 1 representation pretraining."""
     model.train()
@@ -35,10 +36,18 @@ def train_stage1_epoch(
         "loss_risk": 0.0,
     }
 
-    for b in range(num_batches):
-        batch = generate_synthetic_batch(
+    batch_list = batches if batches is not None else [
+        generate_synthetic_batch(
             batch_size=batch_size, seed=100 + b, schema_version=schema_version
-        ).to(device)
+        )
+        for b in range(num_batches)
+    ]
+    effective_num_batches = len(batch_list)
+    if effective_num_batches == 0:
+        return epoch_metrics
+
+    for batch in batch_list:
+        batch = batch.to(device)
 
         _, predictions, _ = model(batch)
 
@@ -63,7 +72,7 @@ def train_stage1_epoch(
         for k, v in loss_dict.items():
             if k not in epoch_metrics:
                 epoch_metrics[k] = 0.0
-            epoch_metrics[k] += float(v) / num_batches
+            epoch_metrics[k] += float(v) / effective_num_batches
 
     return epoch_metrics
 
@@ -75,6 +84,7 @@ def run_stage1_pretraining(
     lr: float = 3e-4,
     device: torch.device = torch.device("cpu"),
     schema_version: Optional[str] = None,
+    batches: Optional[List[MultimodalBatch]] = None,
 ) -> List[Dict[str, float]]:
     """Executes full Stage 1 training schedule."""
     loss_module = MultiTaskLoss(use_uncertainty_weighting=True, novelty_loss_type="huber").to(device)
@@ -90,6 +100,7 @@ def run_stage1_pretraining(
             num_batches=num_batches,
             device=device,
             schema_version=schema_version,
+            batches=batches,
         )
         history.append(metrics)
 
