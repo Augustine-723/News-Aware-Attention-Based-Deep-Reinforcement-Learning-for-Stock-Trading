@@ -22,7 +22,9 @@ from dataclasses import dataclass, field
 import hashlib
 import json
 import math
+import re
 from typing import Dict, Any, List, Optional, Tuple, Set
+import unicodedata
 import numpy as np
 import torch
 import scipy.stats
@@ -454,20 +456,208 @@ SEMANTIC_EVALUATION_BENCHMARK: List[Dict[str, Any]] = [
 
 
 # ==============================================================================
-# Auditable Semantic Benchmark Manifest (V8.9 P1-3)
+# V8.10 Preflight B: Text Normalization & Holdout Contamination Verification
+# ==============================================================================
+
+def normalize_financial_text(text: str) -> str:
+    """
+    Standardizes headline, body, whitespace, and Unicode normalization (NFKC).
+    - Applies unicodedata NFKC normalization.
+    - Strips zero-width characters (\\u200B-\\u200D, \\uFEFF).
+    - Collapses all whitespace (fullwidth \\u3000, tabs, newlines, spaces) to single space.
+    - Strips leading and trailing whitespace.
+    """
+    if not text:
+        return ""
+    norm = unicodedata.normalize("NFKC", str(text))
+    norm = re.sub(r"[\u200b-\u200d\ufeff]", "", norm)
+    norm = re.sub(r"\s+", " ", norm).strip()
+    return norm
+
+
+def compute_normalized_content_hash(headline: str, body: str = "") -> str:
+    """
+    Computes deterministic SHA-256 hash from canonical normalized financial text.
+    If body is non-empty, computes from canonical 'norm_headline|||norm_body'.
+    """
+    norm_h = normalize_financial_text(headline)
+    norm_b = normalize_financial_text(body)
+    canonical = f"{norm_h}|||{norm_b}" if norm_b else norm_h
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def compute_text_jaccard_similarity(text_a: str, text_b: str, n: int = 2) -> float:
+    """
+    Computes character n-gram (default bigram) Jaccard similarity between two texts.
+    Standardized for near-duplicate and syndicated paraphrased reprint detection.
+    """
+    norm_a = normalize_financial_text(text_a).replace(" ", "")
+    norm_b = normalize_financial_text(text_b).replace(" ", "")
+    if not norm_a or not norm_b:
+        return 1.0 if norm_a == norm_b else 0.0
+    if len(norm_a) < n or len(norm_b) < n:
+        set_a = set(norm_a)
+        set_b = set(norm_b)
+    else:
+        set_a = {norm_a[i : i + n] for i in range(len(norm_a) - n + 1)}
+        set_b = {norm_b[i : i + n] for i in range(len(norm_b) - n + 1)}
+    union = len(set_a | set_b)
+    if union == 0:
+        return 1.0 if norm_a == norm_b else 0.0
+    return len(set_a & set_b) / union
+
+
+def verify_holdout_contamination(
+    candidate_articles: List[Any],
+    benchmark_data: Optional[List[Dict[str, Any]]] = None,
+    near_duplicate_threshold: float = 0.70,
+) -> Dict[str, Any]:
+    """
+    V8.10 Preflight B Holdout Contamination Audit:
+    Performs 4-layer contamination detection between candidate dataset articles and benchmark:
+    1. Exact SHA-256 Hash Overlap (both raw and normalized)
+    2. Headline-Only Overlap
+    3. Near-Duplicate Syndicated Paraphrase Overlap (Character Bigram Jaccard >= near_duplicate_threshold)
+    4. Event Cluster ID Overlap
+    """
+    data = benchmark_data or SEMANTIC_EVALUATION_BENCHMARK
+    exact_violations = []
+    headline_violations = []
+    near_dup_violations = []
+    cluster_violations = []
+
+    bench_records = []
+    for item in data:
+        t_a = item["text_a"]
+        t_b = item["text_b"]
+        desc = item.get("description", "")
+        norm_a = normalize_financial_text(t_a)
+        norm_b = normalize_financial_text(t_b)
+        norm_desc = normalize_financial_text(desc)
+        h_a = hashlib.sha256(t_a.encode("utf-8")).hexdigest()
+        h_b = hashlib.sha256(t_b.encode("utf-8")).hexdigest()
+        norm_h_a = hashlib.sha256(norm_a.encode("utf-8")).hexdigest()
+        norm_h_b = hashlib.sha256(norm_b.encode("utf-8")).hexdigest()
+        cid = item.get("cluster_id")
+        bench_records.append({
+            "pair_id": item["pair_id"],
+            "cluster_id": cid,
+            "text_a": t_a,
+            "text_b": t_b,
+            "description": desc,
+            "norm_a": norm_a,
+            "norm_b": norm_b,
+            "norm_desc": norm_desc,
+            "hash_a": h_a,
+            "hash_b": h_b,
+            "norm_hash_a": norm_h_a,
+            "norm_hash_b": norm_h_b,
+        })
+
+    for cand in candidate_articles:
+        if isinstance(cand, dict):
+            h = cand.get("headline", "")
+            b = cand.get("body_text", cand.get("body", ""))
+            txt = cand.get("text", f"{h} {b}".strip())
+            cid = cand.get("cluster_id", cand.get("event_id", None))
+            cand_id = cand.get("article_id", cand.get("id", str(hash(txt))))
+        elif hasattr(cand, "headline"):
+            h = getattr(cand, "headline", "")
+            b = getattr(cand, "body_text", "")
+            txt = f"{h} {b}".strip()
+            cid = getattr(cand, "cluster_id", getattr(cand, "event_id", None))
+            cand_id = getattr(cand, "article_id", str(hash(txt)))
+        else:
+            txt = str(cand)
+            h = txt
+            b = ""
+            cid = None
+            cand_id = str(hash(txt))
+
+        norm_txt = normalize_financial_text(txt)
+        norm_h = normalize_financial_text(h)
+        raw_hash = hashlib.sha256(txt.encode("utf-8")).hexdigest()
+        norm_hash = hashlib.sha256(norm_txt.encode("utf-8")).hexdigest()
+        norm_content_hash = compute_normalized_content_hash(h, b)
+
+        for b_rec in bench_records:
+            # 1. Exact Hash
+            if (raw_hash in (b_rec["hash_a"], b_rec["hash_b"]) or 
+                norm_hash in (b_rec["norm_hash_a"], b_rec["norm_hash_b"]) or
+                norm_content_hash in (b_rec["norm_hash_a"], b_rec["norm_hash_b"])):
+                exact_violations.append({
+                    "candidate_id": cand_id,
+                    "benchmark_pair_id": b_rec["pair_id"],
+                    "violation_type": "EXACT_HASH_MATCH",
+                })
+
+            # 2. Headline Match
+            if norm_h and len(norm_h) >= 8 and (norm_h == b_rec["norm_a"] or norm_h == b_rec["norm_b"] or
+                                                norm_h in b_rec["norm_a"] or b_rec["norm_a"] in norm_h or
+                                                (b_rec["norm_desc"] and (norm_h == b_rec["norm_desc"] or norm_h in b_rec["norm_desc"] or b_rec["norm_desc"] in norm_h))):
+                headline_violations.append({
+                    "candidate_id": cand_id,
+                    "benchmark_pair_id": b_rec["pair_id"],
+                    "violation_type": "HEADLINE_MATCH",
+                })
+
+            # 3. Near-Duplicate Jaccard
+            j_a = compute_text_jaccard_similarity(norm_txt, b_rec["norm_a"])
+            j_b = compute_text_jaccard_similarity(norm_txt, b_rec["norm_b"])
+            max_j = max(j_a, j_b)
+            if max_j >= near_duplicate_threshold:
+                near_dup_violations.append({
+                    "candidate_id": cand_id,
+                    "benchmark_pair_id": b_rec["pair_id"],
+                    "jaccard_similarity": round(max_j, 4),
+                    "violation_type": "NEAR_DUPLICATE_PARAPHRASE",
+                })
+
+            # 4. Cluster Overlap
+            if cid is not None and b_rec["cluster_id"] is not None and cid == b_rec["cluster_id"]:
+                cluster_violations.append({
+                    "candidate_id": cand_id,
+                    "cluster_id": cid,
+                    "benchmark_pair_id": b_rec["pair_id"],
+                    "violation_type": "CLUSTER_ID_OVERLAP",
+                })
+
+    total_violations = len(exact_violations) + len(headline_violations) + len(near_dup_violations) + len(cluster_violations)
+    is_contaminated = (total_violations > 0)
+    details = (
+        f"Contamination Audit: {total_violations} violations found "
+        f"(Exact={len(exact_violations)}, Headline={len(headline_violations)}, "
+        f"NearDup={len(near_dup_violations)}, Cluster={len(cluster_violations)})."
+        if is_contaminated else
+        "Contamination Audit Passed: Zero exact hash, headline, near-duplicate (Jaccard >= 0.70), or cluster overlap detected."
+    )
+
+    return {
+        "is_contaminated": is_contaminated,
+        "exact_violations": exact_violations,
+        "headline_violations": headline_violations,
+        "near_duplicate_violations": near_dup_violations,
+        "cluster_violations": cluster_violations,
+        "total_violations": total_violations,
+        "details": details,
+    }
+
+
+# ==============================================================================
+# Auditable Semantic Benchmark Manifest (V8.9 P1-3 & V8.10 Preflight B)
 # ==============================================================================
 
 @dataclass
 class SemanticBenchmarkManifest:
     """
     Auditable Manifest for the Human-Annotated Traditional Chinese Financial Semantic Benchmark.
-    Conforms to V8.9 P1-3:
-    - Tracks article content SHA-256 hashes
+    Conforms to V8.9 P1-3 & V8.10 Preflight B:
+    - Tracks article content SHA-256 hashes (raw and normalized)
     - Records pair IDs, categories, split assignments, and creation timestamps
     - Provides actual data matching to verify holdout isolation against training datasets
     """
     manifest_version: str = "v8.9-manifest-v1.0"
-    created_at: str = "2026-11-17T16:00:00+08:00"
+    created_at: str = "2026-11-17T18:00:00+08:00"
     split_assignment: str = "holdout_evaluation"
     num_pairs: int = len(SEMANTIC_EVALUATION_BENCHMARK)
     manifest_hash: str = ""
@@ -485,6 +675,10 @@ class SemanticBenchmarkManifest:
         for item in data:
             h_a = hashlib.sha256(item["text_a"].encode("utf-8")).hexdigest()
             h_b = hashlib.sha256(item["text_b"].encode("utf-8")).hexdigest()
+            norm_a = normalize_financial_text(item["text_a"])
+            norm_b = normalize_financial_text(item["text_b"])
+            norm_h_a = hashlib.sha256(norm_a.encode("utf-8")).hexdigest()
+            norm_h_b = hashlib.sha256(norm_b.encode("utf-8")).hexdigest()
             pair_hash = hashlib.sha256(f"{h_a}|{h_b}".encode("utf-8")).hexdigest()
 
             entry = {
@@ -492,6 +686,8 @@ class SemanticBenchmarkManifest:
                 "category": item["category"],
                 "content_sha256_a": h_a,
                 "content_sha256_b": h_b,
+                "normalized_sha256_a": norm_h_a,
+                "normalized_sha256_b": norm_h_b,
                 "pair_hash": pair_hash,
                 "is_positive_pair": item["is_positive_pair"],
                 "hard_negative_type": item.get("hard_negative_type"),
@@ -515,12 +711,16 @@ class SemanticBenchmarkManifest:
     ) -> Tuple[bool, int, str]:
         """
         Verifies that no benchmark article content exists in training datasets or micro fixtures.
-        Conforms to V8.9 P1-3 (eliminating static string checks in favor of actual data matching).
+        Conforms to V8.9 P1-3 & V8.10 Preflight B.
         """
         benchmark_hashes: Set[str] = set()
         for p in self.pairs_manifest:
             benchmark_hashes.add(p["content_sha256_a"])
             benchmark_hashes.add(p["content_sha256_b"])
+            if "normalized_sha256_a" in p:
+                benchmark_hashes.add(p["normalized_sha256_a"])
+            if "normalized_sha256_b" in p:
+                benchmark_hashes.add(p["normalized_sha256_b"])
 
         leaked_hashes = benchmark_hashes.intersection(training_article_hashes)
         is_isolated = len(leaked_hashes) == 0

@@ -71,6 +71,7 @@ class TWSETradingCalendar:
         "2023-04-03", "2023-04-04", "2023-04-05",  # 兒童節及清明節連假
         "2023-05-01",  # 勞動節 (TWSE休市)
         "2023-06-22", "2023-06-23",  # 端午節連假
+        "2023-08-03",  # 卡努颱風休市 (Typhoon Khanun)
         "2023-09-29",  # 中秋節
         "2023-10-09", "2023-10-10",  # 國慶日連假
         
@@ -109,9 +110,52 @@ class TWSETradingCalendar:
         "2026-10-09",  # 國慶日
     }
 
+    # Verified date range (V8.10 Preflight A): Fails closed if queried outside
+    VERIFIED_START_DATE: str = "2023-01-01"
+    VERIFIED_END_DATE: str = "2026-12-31"
+
+    @classmethod
+    def validate_date_in_range(cls, dt: pd.Timestamp) -> None:
+        """Fails closed if queried date is outside the reconciled TWSE date range."""
+        d_str = dt.strftime("%Y-%m-%d")
+        if d_str < cls.VERIFIED_START_DATE or d_str > cls.VERIFIED_END_DATE:
+            raise ValueError(
+                f"Fail Closed (V8.10 Preflight A): Date '{d_str}' falls outside the verified "
+                f"TWSE trading calendar range [{cls.VERIFIED_START_DATE}, {cls.VERIFIED_END_DATE}]."
+            )
+
+    @classmethod
+    def reconcile_with_market_index(cls, market_index: pd.DatetimeIndex) -> Dict[str, Any]:
+        """
+        Reconciles calendar trading sessions against authentic market index trading dates.
+        Asserts 100% agreement within index date range.
+        """
+        idx_dates = {d.strftime("%Y-%m-%d") for d in market_index}
+        min_date = market_index.min().floor("D")
+        max_date = market_index.max().floor("D")
+
+        cal_dates = set()
+        cur = min_date
+        while cur <= max_date:
+            if cls.is_trading_day(cur):
+                cal_dates.add(cur.strftime("%Y-%m-%d"))
+            cur += pd.Timedelta(days=1)
+
+        diff_cal_not_market = cal_dates - idx_dates
+        diff_market_not_cal = idx_dates - cal_dates
+        is_reconciled = (len(diff_cal_not_market) == 0 and len(diff_market_not_cal) == 0)
+        return {
+            "is_reconciled": is_reconciled,
+            "num_market_sessions": len(idx_dates),
+            "num_calendar_sessions": len(cal_dates),
+            "diff_calendar_not_market": sorted(list(diff_cal_not_market)),
+            "diff_market_not_calendar": sorted(list(diff_market_not_cal)),
+        }
+
     @classmethod
     def is_trading_day(cls, dt: pd.Timestamp) -> bool:
         """Determines if a given date is an active TWSE trading session."""
+        cls.validate_date_in_range(dt)
         if dt.weekday() >= 5:  # Saturday=5, Sunday=6
             return False
         date_str = dt.strftime("%Y-%m-%d")
@@ -311,6 +355,21 @@ class RuleBasedEventImportanceScorer:
         return final_score
 
 
+def extract_event_metadata_vector(
+    article: RawNewsArticle,
+    target_stock_id: str,
+    decision_timestamp: pd.Timestamp,
+) -> torch.Tensor:
+    """
+    Extracts 32D event metadata vector (24D metadata + 8D event-stock relation)
+    strictly Point-in-Time as of decision_timestamp.
+    """
+    meta_24 = extract_event_metadata(article, decision_timestamp)
+    rel_8 = extract_event_stock_relation(article, target_stock_id)
+    combined_32 = np.concatenate([meta_24, rel_8], axis=0).astype(np.float32)
+    return torch.from_numpy(combined_32)
+
+
 # ==============================================================================
 # 2. Method B: Metadata-Based Neural Importance Scorer (I_meta)
 # ==============================================================================
@@ -478,6 +537,11 @@ class ExPostMarketReactionLabel:
         return comp.value if comp else None
 
     @property
+    def interval_abnormal_return(self) -> Optional[float]:
+        comp = self.components.get("interval_abnormal_return")
+        return comp.value if comp else None
+
+    @property
     def normalized_volume_surprise(self) -> Optional[float]:
         comp = self.components.get("t1_volume_surprise")
         return comp.value if comp else None
@@ -581,6 +645,19 @@ class ExPostMarketReactionLabel:
             missing_status="AVAILABLE",
         )
 
+        # 4. 2-Day Interval Abnormal Return (T+1 Open to T+2 Close)
+        stock_ret_interval = (1.0 + stock_ret_t1) * (1.0 + stock_return_t2) - 1.0
+        market_ret_interval = (1.0 + market_return_t1) * (1.0 + market_return_t2) - 1.0
+        ar_interval = abs(stock_ret_interval - beta * market_ret_interval)
+        comp_ar_interval = MarketReactionComponentLabel(
+            component_name="interval_abnormal_return",
+            value=round(ar_interval, 6),
+            source_time=t2_close,
+            estimated_available_at=t2_avail,
+            provenance=provenance,
+            missing_status="AVAILABLE",
+        )
+
         # Composite target impact score in [0, 1]
         composite = float(np.clip(abs_ret * 15.0 + car_2d * 10.0 + max(vol_surp, 0.0) * 0.1, 0.0, 1.0))
 
@@ -591,6 +668,7 @@ class ExPostMarketReactionLabel:
             "t1_abs_return": comp_abs_ret,
             "t1_volume_surprise": comp_vol_surp,
             "t2_cumulative_abnormal_return": comp_car_2d,
+            "interval_abnormal_return": comp_ar_interval,
         }
 
         return cls(
@@ -612,7 +690,7 @@ class ExPostMarketReactionLabel:
         t_decision: pd.Timestamp,
         stock_df: pd.DataFrame,
         market_df: pd.DataFrame,
-        beta120: float = 1.0,
+        beta120: Optional[float] = None,
         volume_sma20: Optional[float] = None,
         volume_std20: Optional[float] = None,
         calendar: Optional[TWSETradingCalendar] = None,
@@ -621,6 +699,11 @@ class ExPostMarketReactionLabel:
         Authentic computation of Ex-Post Market Reaction Labels from historical DataFrames.
         If any session (T+1 or T+2) is missing, marks component as MISSING_DATA and value=None.
         Never imputes missing data with synthetic assumptions (P0-1 compliant).
+        
+        V8.10 Preflight C:
+        - beta120, volume_sma20, volume_std20 are strictly computed from observations <= T.
+        - Distinguishes daily cumulative CAR (sum of daily abnormal returns) from
+          interval abnormal return (holding period abnormal return across T+1 Open to T+2 Close).
         """
         cal = calendar or TWSETradingCalendar
         tz = t_decision.tz or "Asia/Taipei"
@@ -639,25 +722,82 @@ class ExPostMarketReactionLabel:
             t2_close = t2_close.tz_localize(tz) if t2_close.tz is None else t2_close.tz_convert(tz)
             t2_avail = t2_avail.tz_localize(tz) if t2_avail.tz is None else t2_avail.tz_convert(tz)
 
-        # Lookup T+1 stock data
+        # Helper to extract date string mappings
+        def _get_row_map(df: pd.DataFrame) -> Dict[str, pd.Series]:
+            m = {}
+            if isinstance(df.index, pd.DatetimeIndex):
+                for idx in range(len(df)):
+                    m[df.index[idx].strftime("%Y-%m-%d")] = df.iloc[idx]
+            elif "date" in df.columns or "Date" in df.columns:
+                col = "date" if "date" in df.columns else "Date"
+                for idx in range(len(df)):
+                    row = df.iloc[idx]
+                    m[str(row[col])[:10]] = row
+            else:
+                for idx in range(len(df)):
+                    m[str(df.index[idx])[:10]] = df.iloc[idx]
+            return m
+
+        stock_row_map = _get_row_map(stock_df)
+        market_row_map = _get_row_map(market_df)
+
+        t_dec_date_str = t_decision.strftime("%Y-%m-%d")
+
+        # Pre-T Metric Computation (Preflight C)
+        # 1. Volume SMA20 and STD20 strictly <= t_decision
+        if volume_sma20 is None or volume_std20 is None:
+            pre_t_stock_dates = sorted([d for d in stock_row_map.keys() if d <= t_dec_date_str])
+            if len(pre_t_stock_dates) >= 20:
+                recent_20_dates = pre_t_stock_dates[-20:]
+                vols = []
+                for d in recent_20_dates:
+                    r = stock_row_map[d]
+                    v_val = float(r.get("Trading_Volume", r.get("volume", r.get("Volume", 0.0))))
+                    vols.append(v_val)
+                v_arr = np.array(vols, dtype=np.float64)
+                if volume_sma20 is None:
+                    volume_sma20 = float(np.mean(v_arr))
+                if volume_std20 is None:
+                    volume_std20 = float(np.std(v_arr, ddof=1))
+                    if volume_std20 <= 1e-6:
+                        volume_std20 = 1.0
+
+        # 2. Beta120 strictly <= t_decision
+        if beta120 is None:
+            common_pre_t = sorted(list(set(stock_row_map.keys()) & set(market_row_map.keys())))
+            common_pre_t = [d for d in common_pre_t if d <= t_dec_date_str]
+            if len(common_pre_t) >= 20:
+                eval_dates = common_pre_t[-120:]
+                s_closes = [float(stock_row_map[d].get("close", stock_row_map[d].get("Close", 0.0))) for d in eval_dates]
+                m_closes = [float(market_row_map[d].get("close", market_row_map[d].get("Close", 0.0))) for d in eval_dates]
+                s_rets = np.diff(np.log(np.maximum(s_closes, 1e-4)))
+                m_rets = np.diff(np.log(np.maximum(m_closes, 1e-4)))
+                var_m = float(np.var(m_rets, ddof=1))
+                if var_m > 1e-8:
+                    cov_sm = float(np.cov(s_rets, m_rets, ddof=1)[0, 1])
+                    beta120 = float(cov_sm / var_m)
+                else:
+                    beta120 = 1.0
+            else:
+                beta120 = 1.0
+
+        # Lookup T+1 and T+2 sessions
         t1_date_key = t1_day.strftime("%Y-%m-%d")
         t2_date_key = t2_day.strftime("%Y-%m-%d")
 
-        stock_dates = {d.strftime("%Y-%m-%d"): idx for idx, d in enumerate(stock_df.index)}
-        market_dates = {d.strftime("%Y-%m-%d"): idx for idx, d in enumerate(market_df.index)}
+        has_t1_stock = t1_date_key in stock_row_map
+        has_t2_stock = t2_date_key in stock_row_map
+        has_t1_market = t1_date_key in market_row_map
+        has_t2_market = t2_date_key in market_row_map
 
         components: Dict[str, MarketReactionComponentLabel] = {}
-        has_t1_stock = t1_date_key in stock_dates
-        has_t2_stock = t2_date_key in stock_dates
-        has_t1_market = t1_date_key in market_dates
-        has_t2_market = t2_date_key in market_dates
 
         # 1. T+1 Return
         if has_t1_stock:
-            row_t1 = stock_df.iloc[stock_dates[t1_date_key]]
+            row_t1 = stock_row_map[t1_date_key]
             p_open = float(row_t1.get("open", row_t1.get("Open", 0.0)))
             p_close = float(row_t1.get("close", row_t1.get("Close", 0.0)))
-            vol_t1 = float(row_t1.get("volume", row_t1.get("Volume", 0.0)))
+            vol_t1 = float(row_t1.get("Trading_Volume", row_t1.get("volume", row_t1.get("Volume", 0.0))))
             if p_open > 0 and p_close > 0:
                 abs_ret = abs(math.log(p_close / p_open))
                 components["t1_abs_return"] = MarketReactionComponentLabel(
@@ -716,27 +856,54 @@ class ExPostMarketReactionLabel:
                 missing_status="MISSING_DATA",
             )
 
-        # 2. T+2 Cumulative Abnormal Return (CAR) - Requires both T+1 and T+2 in stock and market!
+        # 2. T+2 Cumulative Abnormal Return (CAR) & Interval Abnormal Return
+        # Both require 2 full trading sessions across both stock and market
         if has_t1_stock and has_t2_stock and has_t1_market and has_t2_market:
-            row_t1_stock = stock_df.iloc[stock_dates[t1_date_key]]
-            row_t2_stock = stock_df.iloc[stock_dates[t2_date_key]]
-            row_t1_mkt = market_df.iloc[market_dates[t1_date_key]]
-            row_t2_mkt = market_df.iloc[market_dates[t2_date_key]]
+            row_t1_stock = stock_row_map[t1_date_key]
+            row_t2_stock = stock_row_map[t2_date_key]
+            row_t1_mkt = market_row_map[t1_date_key]
+            row_t2_mkt = market_row_map[t2_date_key]
 
             p_t1_open = float(row_t1_stock.get("open", row_t1_stock.get("Open", 0.0)))
+            p_t1_close = float(row_t1_stock.get("close", row_t1_stock.get("Close", 0.0)))
+            p_t2_open = float(row_t2_stock.get("open", row_t2_stock.get("Open", 0.0)))
             p_t2_close = float(row_t2_stock.get("close", row_t2_stock.get("Close", 0.0)))
 
             m_t1_open = float(row_t1_mkt.get("open", row_t1_mkt.get("Open", 0.0)))
+            m_t1_close = float(row_t1_mkt.get("close", row_t1_mkt.get("Close", 0.0)))
+            m_t2_open = float(row_t2_mkt.get("open", row_t2_mkt.get("Open", 0.0)))
             m_t2_close = float(row_t2_mkt.get("close", row_t2_mkt.get("Close", 0.0)))
 
-            if p_t1_open > 0 and p_t2_close > 0 and m_t1_open > 0 and m_t2_close > 0:
-                stock_2d_ret = (p_t2_close - p_t1_open) / p_t1_open
-                market_2d_ret = (m_t2_close - m_t1_open) / m_t1_open
-                car_2d = abs(stock_2d_ret - beta120 * market_2d_ret)
+            if (p_t1_open > 0 and p_t1_close > 0 and p_t2_open > 0 and p_t2_close > 0 and
+                m_t1_open > 0 and m_t1_close > 0 and m_t2_open > 0 and m_t2_close > 0):
+                
+                # Daily cumulative CAR: AR_T1 + AR_T2
+                ret_s_t1 = (p_t1_close - p_t1_open) / p_t1_open
+                ret_m_t1 = (m_t1_close - m_t1_open) / m_t1_open
+                ar_t1 = ret_s_t1 - beta120 * ret_m_t1
+
+                ret_s_t2 = (p_t2_close - p_t2_open) / p_t2_open
+                ret_m_t2 = (m_t2_close - m_t2_open) / m_t2_open
+                ar_t2 = ret_s_t2 - beta120 * ret_m_t2
+
+                car_daily = abs(ar_t1 + ar_t2)
+
+                # 2-Day Interval Abnormal Return: T+1 open to T+2 close
+                ret_s_2d = (p_t2_close - p_t1_open) / p_t1_open
+                ret_m_2d = (m_t2_close - m_t1_open) / m_t1_open
+                ar_interval = abs(ret_s_2d - beta120 * ret_m_2d)
 
                 components["t2_cumulative_abnormal_return"] = MarketReactionComponentLabel(
                     component_name="t2_cumulative_abnormal_return",
-                    value=round(car_2d, 6),
+                    value=round(car_daily, 6),
+                    source_time=t2_close,
+                    estimated_available_at=t2_avail,
+                    provenance="HISTORICAL_MARKET_DF",
+                    missing_status="AVAILABLE",
+                )
+                components["interval_abnormal_return"] = MarketReactionComponentLabel(
+                    component_name="interval_abnormal_return",
+                    value=round(ar_interval, 6),
                     source_time=t2_close,
                     estimated_available_at=t2_avail,
                     provenance="HISTORICAL_MARKET_DF",
@@ -745,6 +912,14 @@ class ExPostMarketReactionLabel:
             else:
                 components["t2_cumulative_abnormal_return"] = MarketReactionComponentLabel(
                     component_name="t2_cumulative_abnormal_return",
+                    value=None,
+                    source_time=t2_close,
+                    estimated_available_at=t2_avail,
+                    provenance="HISTORICAL_MARKET_DF",
+                    missing_status="MISSING_DATA",
+                )
+                components["interval_abnormal_return"] = MarketReactionComponentLabel(
+                    component_name="interval_abnormal_return",
                     value=None,
                     source_time=t2_close,
                     estimated_available_at=t2_avail,
@@ -760,10 +935,19 @@ class ExPostMarketReactionLabel:
                 provenance="HISTORICAL_MARKET_DF",
                 missing_status="MISSING_DATA",
             )
+            components["interval_abnormal_return"] = MarketReactionComponentLabel(
+                component_name="interval_abnormal_return",
+                value=None,
+                source_time=t2_close,
+                estimated_available_at=t2_avail,
+                provenance="HISTORICAL_MARKET_DF",
+                missing_status="MISSING_DATA",
+            )
 
         # Composite target impact score
         all_available = all(c.missing_status == "AVAILABLE" for c in components.values())
-        if all_available and components["t1_abs_return"].value is not None and components["t2_cumulative_abnormal_return"].value is not None:
+        if (all_available and components["t1_abs_return"].value is not None and 
+            components["t2_cumulative_abnormal_return"].value is not None):
             ret_val = components["t1_abs_return"].value
             car_val = components["t2_cumulative_abnormal_return"].value
             surp_val = components["t1_volume_surprise"].value or 0.0
@@ -776,6 +960,12 @@ class ExPostMarketReactionLabel:
 
         composite_avail = max(t1_avail, t2_avail)
 
+        meta = {
+            "pre_t_beta120": beta120,
+            "pre_t_volume_sma20": volume_sma20,
+            "pre_t_volume_std20": volume_std20,
+        }
+
         return cls(
             stock_id=stock_id,
             decision_date=t_decision,
@@ -786,6 +976,7 @@ class ExPostMarketReactionLabel:
             provenance="HISTORICAL_MARKET_DF",
             missing_status=overall_status,
             composite_market_impact_score=composite_score,
+            metadata=meta,
         )
 
 
