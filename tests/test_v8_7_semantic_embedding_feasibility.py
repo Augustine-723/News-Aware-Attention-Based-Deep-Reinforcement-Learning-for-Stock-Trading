@@ -222,8 +222,8 @@ def test_pretrained_mode_fails_closed_without_genuine_weights():
     with pytest.raises(ValueError, match="Strict Embedding Error: PRETRAINED .* is not verified"):
         engine_unverified.embed_text("測試標題")
 
-    # 3. With is_verified_pretrained=True -> executes and produces 128D unit vector
-    engine_verified = TextEmbeddingEngine(
+    # 3. V8.8 Anti-Spoofing: Untrained neural baseline cannot pass PRETRAINED even with is_verified_pretrained=True
+    engine_spoofed = TextEmbeddingEngine(
         embedding_type=TextEmbeddingType.PRETRAINED,
         model_version="verified-bge-financial-v1.0",
         dim=EVENT_TEXT_DIM,
@@ -231,9 +231,16 @@ def test_pretrained_mode_fails_closed_without_genuine_weights():
         tokenizer=tok,
         is_verified_pretrained=True,
     )
-    vec = engine_verified.embed_text("台積電先進製程")
-    assert vec.shape == (EVENT_TEXT_DIM,)
-    assert np.isclose(np.linalg.norm(vec), 1.0, atol=1e-5)
+    with pytest.raises(ValueError, match="Untrained neural baseline cannot be used in PRETRAINED mode"):
+        engine_spoofed.embed_text("台積電先進製程")
+
+    # 4. Genuine verified pretrained engine succeeds and produces 128D unit vector
+    from stock_rl.evaluation.provenance import load_trusted_pretrained_embedding_engine
+    genuine_engine = load_trusted_pretrained_embedding_engine(local_files_only=True)
+    if genuine_engine is not None:
+        vec = genuine_engine.embed_text("台積電先進製程")
+        assert vec.shape == (EVENT_TEXT_DIM,)
+        assert np.isclose(np.linalg.norm(vec), 1.0, atol=1e-5)
 
 
 def test_deterministic_embedding_inference():

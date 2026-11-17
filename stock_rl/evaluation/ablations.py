@@ -34,6 +34,10 @@ from stock_rl.data.multimodal_pipeline import (
     RawNewsArticle,
     convert_article_to_event_record,
 )
+from stock_rl.evaluation.provenance import (
+    ModelProvenanceVerifier,
+    load_trusted_pretrained_embedding_engine,
+)
 
 
 class AblationMasker:
@@ -338,6 +342,7 @@ class NewsAblationProtocol:
         semantic_encoder: Optional[nn.Module] = None,
         semantic_tokenizer: Optional[Any] = None,
         pretrained_engine: Optional[TextEmbeddingEngine] = None,
+        auto_load_pretrained: bool = False,
         mode: str = "estimated",
     ) -> Dict[str, Any]:
         """
@@ -409,14 +414,17 @@ class NewsAblationProtocol:
         # Check genuine pretrained B2 availability
         snap_b2 = None
         b2_status = "PENDING_PRETRAINED_MODEL_UNAVAILABLE"
+        target_engine = pretrained_engine
+        if target_engine is None and auto_load_pretrained:
+            target_engine = load_trusted_pretrained_embedding_engine(local_files_only=True)
+
         if (
-            pretrained_engine is not None
-            and getattr(pretrained_engine, "is_verified_pretrained", False)
-            and pretrained_engine.embedding_type == TextEmbeddingType.PRETRAINED
+            target_engine is not None
+            and ModelProvenanceVerifier.is_verified_engine(target_engine)
         ):
             evs_b2 = []
             for a in raw_articles:
-                rec = convert_article_to_event_record(a, embedding_engine=pretrained_engine, mode=mode)
+                rec = convert_article_to_event_record(a, embedding_engine=target_engine, mode=mode)
                 if rec is not None:
                     evs_b2.append(rec)
             builder_b2 = HistoricalSnapshotBuilder(
@@ -454,6 +462,7 @@ class NewsAblationProtocol:
         semantic_encoder: Optional[nn.Module] = None,
         semantic_tokenizer: Optional[Any] = None,
         pretrained_engine: Optional[TextEmbeddingEngine] = None,
+        auto_load_pretrained: bool = False,
         mode: str = "estimated",
     ) -> Dict[str, Any]:
         """
@@ -473,6 +482,7 @@ class NewsAblationProtocol:
             semantic_encoder=semantic_encoder,
             semantic_tokenizer=semantic_tokenizer,
             pretrained_engine=pretrained_engine,
+            auto_load_pretrained=auto_load_pretrained,
             mode=mode,
         )
 
@@ -521,6 +531,12 @@ class NewsAblationProtocol:
         delta_state_12 = float(torch.norm(state2 - state1).item()) if b2 is not None else delta_state_1_devn
         delta_q_12 = float(torch.norm(q2 - q1).item()) if b2 is not None else delta_q_1_devn
 
+        delta_state_02 = float(torch.norm(state2 - state0).item()) if b2 is not None else 0.0
+        delta_q_02 = float(torch.norm(q2 - q0).item()) if b2 is not None else 0.0
+
+        delta_state_devn_2 = float(torch.norm(state2 - state_devn).item()) if b2 is not None else 0.0
+        delta_q_devn_2 = float(torch.norm(q2 - q_devn).item()) if b2 is not None else 0.0
+
         # 4. Backward Gradient Flow Test
         model.train()
         grad_norms = {}
@@ -558,12 +574,16 @@ class NewsAblationProtocol:
                 "delta_q_0_devn": delta_q_0_devn,
                 "delta_state_12": delta_state_12,
                 "delta_q_12": delta_q_12,
+                "delta_state_02": delta_state_02,
+                "delta_q_02": delta_q_02,
+                "delta_state_devn_2": delta_state_devn_2,
+                "delta_q_devn_2": delta_q_devn_2,
             },
             "gradient_flow": grad_norms,
             "untrained_model_q_value_is_not_alpha": True,
             "methodology_disclaimer": (
-                "Strict Methodology Guardrail: Q-value differences between B1 and DEV-N (or randomly initialized "
-                "neural encoders) reflect engineering feature sensitivity and backpropagation gradient flow only. "
+                "Strict Methodology Guardrail: Q-value differences between B1, DEV-N, and B2 reflect "
+                "engineering feature sensitivity and backpropagation gradient flow only. "
                 "They MUST NOT be interpreted as alpha, investment performance, or research trading edge."
             ),
         }

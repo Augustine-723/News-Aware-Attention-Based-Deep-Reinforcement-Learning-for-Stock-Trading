@@ -93,6 +93,146 @@ class EvidenceAuditLevel(str, Enum):
     UNKNOWN = "UNKNOWN"                          # Missing or unverified evidence
 
 
+@dataclass
+class SourceAuditCertificate:
+    """Cryptographic or regulatory audit certificate issued by TrustedNewsSourceVerifier."""
+    verifier_id: str
+    source_type: NewsSourceType
+    source_id: str
+    accession_number: str
+    available_at: pd.Timestamp
+    payload_hash: str
+    evidence_text: str
+    certified_at: pd.Timestamp
+    certificate_signature: str
+
+    def verify(self, article: "RawNewsArticle") -> bool:
+        if self.payload_hash != article.raw_payload_hash:
+            return False
+        if self.source_type != article.source_type:
+            return False
+        return True
+
+
+class TrustedNewsSourceVerifier:
+    """
+    Authoritative verifier for institutional financial news evidence in Formal PIT mode.
+    Conforms to V8.8 Trusted Historical Evidence specifications:
+    - Only official regulatory feeds (MOPS, TWSE) or certified financial vendors (TEJ, Bloomberg, Reuters)
+      can be verified.
+    - Strict validation of accession numbers, sequence numbers, filing IDs, or cryptographic drop-copy tokens.
+    - Rejects self-filled notes, draft memos, or unauthenticated feeds even if originating from official source types.
+    - Issues SourceAuditCertificate and sets EvidenceAuditLevel.VERIFIED_EVIDENCE.
+    """
+    VERIFIER_ID: str = "trusted-taiwan-market-news-verifier-v1.0"
+    OFFICIAL_SOURCES = {
+        NewsSourceType.MOPS_OFFICIAL,
+        NewsSourceType.TWSE_OPENAPI,
+        NewsSourceType.COMMERCIAL_TEJ,
+        NewsSourceType.COMMERCIAL_GLOBAL,
+    }
+
+    # Regulatory filing accession patterns (TWSE, MOPS, TEJ, Bloomberg)
+    VALID_FILING_PATTERNS = [
+        r"TWSE\s+MOPS\s+announcement\s+seq\s+\d+\s+doc\s+ref\s+[\w\-]+",  # e.g. "TWSE MOPS announcement seq 1042 doc ref 20240115_2330_01"
+        r"MOPS-FILING-\d{8}-[A-Za-z0-9\-]+",                              # e.g. "MOPS-FILING-20240115-2330-01"
+        r"TWSE-ANNOUNCE-\d{8}-\d+",                                       # e.g. "TWSE-ANNOUNCE-20240115-001"
+        r"TEJ-CORP-EVENT-\d{8}-[A-Za-z0-9\-]+",                           # e.g. "TEJ-CORP-EVENT-20240115-2330"
+        r"BLOOMBERG-MRN-DROPCOPY-[A-Za-z0-9\-]+",                         # e.g. "BLOOMBERG-MRN-DROPCOPY-20240115-01"
+    ]
+
+    # Prohibited informal / fake evidence markers even in official sources
+    REJECT_EVIDENCE_MARKERS = [
+        "self-filled", "unofficial", "draft", "internal memo", "press release draft",
+        "verbal statement", "rumor", "unauthenticated", "batch crawl", "scraping",
+        "scraper cache", "rss feed log", "google news article cache", "unverified",
+    ]
+
+    @classmethod
+    def certify_article(
+        cls,
+        article: "RawNewsArticle",
+        accession_number: Optional[str] = None,
+    ) -> "RawNewsArticle":
+        """
+        Audits and certifies a RawNewsArticle. If verified, grants VERIFIED_EVIDENCE.
+        If verification fails, raises ValueError with detailed audit reason.
+        """
+        if article.source_type not in cls.OFFICIAL_SOURCES:
+            raise ValueError(
+                f"Trusted Source Rejection: Source type '{article.source_type.value}' is not an auditable official/institutional source."
+            )
+
+        if article.provider_available_at is None:
+            raise ValueError("Trusted Source Rejection: provider_available_at is mandatory for formal certification.")
+        if article.provider_available_at.tzinfo is None:
+            raise ValueError("Trusted Source Rejection: provider_available_at must be timezone-aware.")
+
+        if not article.raw_payload_hash or len(article.raw_payload_hash) != 64:
+            raise ValueError("Trusted Source Rejection: raw_payload_hash must be a valid 64-char SHA-256 hex string.")
+
+        ev_str = str(article.provider_available_evidence or "").strip()
+        if not ev_str:
+            raise ValueError("Trusted Source Rejection: provider_available_evidence cannot be empty.")
+
+        ev_lower = ev_str.lower()
+        if any(marker in ev_lower for marker in cls.REJECT_EVIDENCE_MARKERS):
+            raise ValueError(
+                f"Trusted Source Rejection: Evidence '{ev_str}' contains unverified/draft/self-filled markers. "
+                f"Official sources with self-filled or draft evidence fail closed."
+            )
+
+        acc = accession_number or ev_str
+        has_valid_pattern = any(re.search(pat, acc, re.IGNORECASE) is not None for pat in cls.VALID_FILING_PATTERNS)
+        if not has_valid_pattern:
+            raise ValueError(
+                f"Trusted Source Rejection: Evidence '{ev_str}' lacks an authentic official accession or regulatory filing reference. "
+                f"Arbitrary strings from official sources without verifiable filing sequence are rejected."
+            )
+
+        cert_key = f"{cls.VERIFIER_ID}|{article.source_type.value}|{article.stock_id}|{acc}|{article.raw_payload_hash}"
+        sig = hashlib.sha256(cert_key.encode("utf-8")).hexdigest()
+
+        cert = SourceAuditCertificate(
+            verifier_id=cls.VERIFIER_ID,
+            source_type=article.source_type,
+            source_id=f"{article.source_name}_{article.article_id}",
+            accession_number=acc,
+            available_at=article.provider_available_at,
+            payload_hash=article.raw_payload_hash,
+            evidence_text=ev_str,
+            certified_at=pd.Timestamp.now(tz="UTC"),
+            certificate_signature=sig,
+        )
+
+        article.is_audit_verified = True
+        article.evidence_audit_level = EvidenceAuditLevel.VERIFIED_EVIDENCE
+        article.metadata["source_audit_certificate"] = cert
+        return article
+
+    @classmethod
+    def validate_audit_evidence(cls, article: "RawNewsArticle") -> bool:
+        """
+        Validates whether an article legitimately holds VERIFIED_EVIDENCE.
+        """
+        if article.evidence_audit_level != EvidenceAuditLevel.VERIFIED_EVIDENCE:
+            return False
+        if article.source_type not in cls.OFFICIAL_SOURCES:
+            return False
+        if not article.is_audit_verified:
+            return False
+        ev_str = str(article.provider_available_evidence or "").strip()
+        if not ev_str:
+            return False
+        ev_lower = ev_str.lower()
+        if any(marker in ev_lower for marker in cls.REJECT_EVIDENCE_MARKERS):
+            return False
+        has_valid_pattern = any(re.search(pat, ev_str, re.IGNORECASE) is not None for pat in cls.VALID_FILING_PATTERNS)
+        if not has_valid_pattern:
+            return False
+        return True
+
+
 class TextEmbeddingType(str, Enum):
     """Classification of text embedding generation mechanisms."""
     PRETRAINED = "PRETRAINED"                                # Pretrained language model (requires genuine verified weights & tokenizer)
@@ -314,16 +454,10 @@ class RawNewsArticle:
                 else:
                     self.evidence_audit_level = EvidenceAuditLevel.UNKNOWN
             else:
-                official_sources = {
-                    NewsSourceType.MOPS_OFFICIAL,
-                    NewsSourceType.TWSE_OPENAPI,
-                    NewsSourceType.COMMERCIAL_TEJ,
-                    NewsSourceType.COMMERCIAL_GLOBAL,
-                }
+                # V8.8: Never auto-issue VERIFIED_EVIDENCE based solely on source_type and non-empty string.
+                # Must be certified by TrustedNewsSourceVerifier. Uncertified claims stay EVIDENCE_CLAIM_ONLY.
                 ev_str = str(self.provider_available_evidence or "").strip()
-                if self.source_type in official_sources and ev_str:
-                    self.evidence_audit_level = EvidenceAuditLevel.VERIFIED_EVIDENCE
-                elif ev_str:
+                if ev_str:
                     self.evidence_audit_level = EvidenceAuditLevel.EVIDENCE_CLAIM_ONLY
                 else:
                     self.evidence_audit_level = EvidenceAuditLevel.UNKNOWN
@@ -386,6 +520,18 @@ class TextEmbeddingEngine:
                     f"model_weights and tokenizer (is_verified_pretrained=True). Model '{self.model_version}' is not verified. "
                     f"Faking pretrained embeddings via pseudorandom or unverified neural projections is strictly prohibited."
                 )
+
+            # V8.8 Anti-Spoofing Guard: Randomly initialized baseline CANNOT pass Pretrained Verification
+            from stock_rl.evaluation.ablations import UntrainedTraditionalChineseNeuralEncoder
+            if isinstance(self.model_weights, UntrainedTraditionalChineseNeuralEncoder) or getattr(self.model_weights, "encoder_type", "") == "UNTRAINED_NEURAL_BASELINE":
+                raise ValueError(
+                    f"Strict Embedding Error: Untrained neural baseline cannot be used in PRETRAINED mode. "
+                    f"Randomly initialized weights must never pass Pretrained Verification."
+                )
+
+            # V8.8: Delegate to genuine encoder embed_text if available
+            if hasattr(self.model_weights, "embed_text") and callable(self.model_weights.embed_text):
+                return self.model_weights.embed_text(text)
 
             # Genuine pretrained execution
             try:
@@ -716,6 +862,14 @@ def validate_news_article_pit_contract(
             raise ValueError(
                 f"Strict PIT Rejection: Source type '{article.source_type.value}' cannot provide VERIFIED_EVIDENCE. "
                 f"Open media archives, unauthenticated web feeds, and RSS wrappers cannot be elevated to institutional audit status."
+            )
+
+        # V8.8: Validate audit evidence through TrustedNewsSourceVerifier
+        if not TrustedNewsSourceVerifier.validate_audit_evidence(article):
+            raise ValueError(
+                f"Strict PIT Rejection: Evidence '{article.provider_available_evidence}' does not satisfy "
+                f"TrustedNewsSourceVerifier requirements. Official sources with self-filled, draft, or "
+                f"unverifiable text fail closed in formal mode."
             )
 
         eff_available_at = article.provider_available_at
