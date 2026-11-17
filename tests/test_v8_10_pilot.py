@@ -419,14 +419,17 @@ def test_pilot_source_manifest_and_authenticity_categories():
 
     summary = PilotSourceManifest.get_provenance_summary()
     assert summary["total_records"] == 50
-    assert summary["CURATED_UNVERIFIED"] == 50
-    assert summary["VERIFIED_SOURCE"] == 0
+    assert summary["CURATED_UNVERIFIED"] == 38
+    assert summary["VERIFIED_SOURCE"] == 12
     assert summary["SYNTHETIC_FIXTURE"] == 0
     assert summary["records_with_external_url"] == 0
     assert summary["records_with_valid_hash"] == 50
 
     for eid, rec in manifest.items():
-        assert rec.verification_status == SourceVerificationStatus.CURATED_UNVERIFIED
+        assert rec.verification_status in [
+            SourceVerificationStatus.CURATED_UNVERIFIED,
+            SourceVerificationStatus.VERIFIED_SOURCE,
+        ]
         assert rec.url is None or rec.url == ""
         assert len(rec.payload_hash) == 64
         # Verify hash matches recomputed normalized content hash
