@@ -45,6 +45,7 @@ import re
 from typing import Dict, List, Optional, Set, Tuple, Any
 import numpy as np
 import pandas as pd
+import torch
 
 from stock_rl.config.schema import (
     RECENT_EVENT_SLOTS,
@@ -325,7 +326,34 @@ class TextEmbeddingEngine:
                     f"model_weights and tokenizer. Model '{self.model_version}' is not loaded. "
                     f"Faking pretrained embeddings via pseudorandom or hash projections is strictly prohibited."
                 )
-            raise NotImplementedError("Genuine pretrained model execution requires external weights file.")
+
+            # Genuine pretrained execution
+            try:
+                tokens = self.tokenizer(text) if callable(self.tokenizer) else self.tokenizer.encode(text)
+                if hasattr(self.model_weights, "forward") or callable(self.model_weights):
+                    emb = self.model_weights(tokens)
+                else:
+                    raise NotImplementedError(f"Model weights of type {type(self.model_weights)} not supported.")
+
+                if isinstance(emb, torch.Tensor):
+                    emb = emb.detach().cpu().numpy().flatten()
+                emb = np.asarray(emb, dtype=np.float32)
+
+                # Project to self.dim (128) if dimension differs
+                if emb.shape[0] != self.dim:
+                    h = hashlib.sha256(f"PROJ_{self.model_version}_{emb.shape[0]}_{self.dim}".encode("utf-8")).digest()
+                    seed = int.from_bytes(h[:8], byteorder="big") % (2**32)
+                    rng = np.random.default_rng(seed)
+                    rand_mat = rng.standard_normal((emb.shape[0], self.dim), dtype=np.float32)
+                    q, _ = np.linalg.qr(rand_mat)
+                    emb = np.dot(emb, q[:, :self.dim])
+
+                norm = float(np.linalg.norm(emb))
+                return (emb / norm).astype(np.float32) if norm > 1e-6 else np.zeros(self.dim, dtype=np.float32)
+            except Exception as e:
+                if isinstance(e, ValueError):
+                    raise
+                raise RuntimeError(f"Error executing pretrained embedding model '{self.model_version}': {e}") from e
 
         if self.embedding_type == TextEmbeddingType.UNTRAINED:
             # Fixed-seed neural projection explicitly isolated from pretrained weights
@@ -488,6 +516,74 @@ def extract_event_stock_relation(
     return vec
 
 
+def validate_news_article_pit_contract(
+    article: RawNewsArticle,
+    mode: str = "formal",
+) -> pd.Timestamp:
+    """
+    Unified Point-in-Time validation contract for news articles conforming to V8.7 P0-1.
+    Shared identically by HistoricalMultimodalPipeline.ingest_article() and convert_article_to_event_record().
+
+    Enforces:
+    1. Availability timestamp presence and timezone awareness.
+    2. Timezone trap anomaly rejection in formal mode.
+    3. In formal mode:
+       - is_audit_verified must be True. Unverified articles are strictly rejected (Fail Closed).
+       - provider_available_at is mandatory (no fallback to publication timestamp).
+       - provider_available_evidence must be non-empty and verifiable.
+       - Prohibits self-asserted evidence strings on unauthenticated sources (open RSS, batch crawl, scraper caches).
+    Returns:
+        Effective available_at Timestamp.
+    """
+    candidate_ts = article.provider_available_at or article.source_published_at
+    if candidate_ts is None:
+        raise ValueError("Strict PIT Error: Article must possess an explicit availability timestamp.")
+
+    if getattr(candidate_ts, "tzinfo", None) is None:
+        raise ValueError(
+            f"Strict PIT Error: Article timestamp must be timezone-aware (got naive {candidate_ts})."
+        )
+
+    # Timezone trap check
+    is_trapped, trap_reason = detect_timezone_trap(candidate_ts, article.headline, article.source_name)
+    if is_trapped and mode == "formal":
+        raise ValueError(f"Strict PIT Rejection: {trap_reason}")
+
+    if mode == "formal":
+        if not article.is_audit_verified:
+            raise ValueError(
+                f"Strict PIT Error: Cannot ingest unverified article '{article.headline[:30]}' in formal mode. "
+                f"is_audit_verified=True is mandatory."
+            )
+        if article.provider_available_at is None:
+            raise ValueError(
+                "Strict PIT Rejection: In formal mode, provider_available_at is mandatory and cannot fall back to source_published_at."
+            )
+        if not article.provider_available_evidence or not str(article.provider_available_evidence).strip():
+            raise ValueError(
+                "Strict PIT Rejection: is_audit_verified=True requires explicit provider_available_evidence."
+            )
+
+        # Anti-self-assertion guard: Prohibit self-filled unauthenticated web feed notes claiming formal verification
+        ev_lower = str(article.provider_available_evidence).lower()
+        unauthenticated_markers = [
+            "unauthenticated", "batch crawl", "batch crawl artifact",
+            "scraping", "scraper cache", "rss feed log", "google news article cache",
+            "unverified web feed", "self-filled",
+        ]
+        if any(marker in ev_lower for marker in unauthenticated_markers):
+            raise ValueError(
+                f"Strict PIT Rejection: Evidence '{article.provider_available_evidence}' indicates an unauthenticated "
+                f"or open web feed. Self-filled evidence strings cannot elevate unauthenticated sources to formal audit verification."
+            )
+
+        eff_available_at = article.provider_available_at
+    else:
+        eff_available_at = article.provider_available_at or article.source_published_at
+
+    return eff_available_at
+
+
 def convert_article_to_event_record(
     article: RawNewsArticle,
     embedding_engine: Optional[TextEmbeddingEngine] = None,
@@ -496,24 +592,16 @@ def convert_article_to_event_record(
 ) -> Optional[Dict[str, Any]]:
     """
     Converts a single RawNewsArticle into an individual event record ready for HistoricalSnapshotBuilder.
-    P0-1: Preserves individual revision records without pre-compressing the dataset.
+    P0-1 / V8.7: Preserves individual revision records with unified formal PIT contract validation.
     """
+    # 1. Enforce unified PIT validation contract
+    avail_ts = validate_news_article_pit_contract(article, mode=mode)
+
     engine = embedding_engine or TextEmbeddingEngine(
         embedding_type=TextEmbeddingType.DETERMINISTIC_HASH,
         model_version="sha256-projection-v1.0",
         dim=EVENT_TEXT_DIM,
     )
-
-    # 1. Resolve availability timestamp
-    if mode == "formal":
-        if article.provider_available_at is None:
-            return None
-        avail_ts = article.provider_available_at
-    else:
-        avail_ts = article.provider_available_at or article.source_published_at
-
-    if avail_ts is None:
-        return None
 
     # 2. Text embedding (128D)
     text_to_embed = f"{article.headline} {article.body_text}".strip()
@@ -584,44 +672,20 @@ class HistoricalMultimodalPipeline:
         Ingests a raw news article into the historical repository.
         Validates PIT compliance and returns the assigned stable event ID.
         """
-        # 1. Determine availability timestamp candidates
-        candidate_ts = article.provider_available_at or article.source_published_at
-        if candidate_ts is None:
-            raise ValueError("Strict PIT Error: Article must possess an explicit availability timestamp.")
+        eff_available_at = validate_news_article_pit_contract(article, mode=self.mode)
 
-        # 2. Timezone trap audit (P0-1)
-        is_trapped, trap_reason = detect_timezone_trap(candidate_ts, article.headline, article.source_name)
-        if is_trapped and self.mode == "formal":
-            raise ValueError(f"Strict PIT Rejection: {trap_reason}")
-
-        # 3. Formal Mode Strict Availability Contract (P0-2)
-        if self.mode == "formal":
-            if not article.is_audit_verified:
-                raise ValueError(
-                    f"Strict PIT Error: Cannot ingest unverified article '{article.headline[:30]}' in formal mode."
-                )
-            if article.provider_available_at is None:
-                raise ValueError(
-                    "Strict PIT Rejection: In formal mode, provider_available_at is mandatory and cannot fall back to source_published_at."
-                )
-            if not article.provider_available_evidence or not str(article.provider_available_evidence).strip():
-                raise ValueError(
-                    "Strict PIT Rejection: is_audit_verified=True requires explicit provider_available_evidence."
-                )
-
-        # 4. Resolve effective available_at
-        if self.mode == "formal":
-            eff_available_at = article.provider_available_at
-        else:
-            eff_available_at = article.provider_available_at or article.source_published_at
-
-        # 5. Register in two-tier index
+        # Register in two-tier index
         art_id = article.article_id or compute_article_id(
             article.source_name, article.stock_id, article.url, eff_available_at, article.headline, article.body_text
         )
         ev_id = article.event_id or compute_canonical_event_id(
             article.stock_id, article.headline, article.parent_event_id
         )
+
+        self._articles.append(article)
+        self._articles_by_article_id[art_id] = article
+        self._revisions_by_event_id.setdefault(ev_id, []).append(article)
+        return ev_id
 
         self._articles.append(article)
         self._articles_by_article_id[art_id] = article
