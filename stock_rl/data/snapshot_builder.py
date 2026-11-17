@@ -120,8 +120,18 @@ class HistoricalSnapshotBuilder:
                 raise ValueError(
                     "Strict PIT Error: 'available_at' in df_ohlcv must be timezone-aware in formal mode."
                 )
-            if "is_audit_verified" in self.df_ohlcv.columns:
-                self.df_ohlcv = self.df_ohlcv[self.df_ohlcv["is_audit_verified"] == True]
+            if "is_audit_verified" not in self.df_ohlcv.columns:
+                raise ValueError(
+                    "Strict PIT Error: df_ohlcv missing required audit verification column 'is_audit_verified' in formal mode. "
+                    "Unverified sources are strictly rejected."
+                )
+            self.df_ohlcv = self.df_ohlcv[self.df_ohlcv["is_audit_verified"] == True]
+            if "missing_status" in self.df_ohlcv.columns:
+                self.df_ohlcv = self.df_ohlcv[~self.df_ohlcv["missing_status"].isin([
+                    MissingStatus.UNKNOWN, MissingStatus.UNKNOWN.value,
+                    MissingStatus.MISSING, MissingStatus.MISSING.value,
+                    "UNKNOWN", "MISSING"
+                ])]
 
         # ----------------------------------------------------------------------
         # P0-2: Institutional Data Validation
@@ -147,12 +157,31 @@ class HistoricalSnapshotBuilder:
                     )
 
             if self.mode == "formal":
+                if "available_at" not in self.df_inst.columns:
+                    raise ValueError(
+                        "Strict PIT Error: df_inst missing required explicit 'available_at' column in formal mode. "
+                        "Using DataFrame index as available_at is strictly prohibited."
+                    )
+                if self.df_inst["available_at"].isna().any():
+                    raise ValueError(
+                        "Strict PIT Error: df_inst contains missing 'available_at' timestamps in formal mode."
+                    )
                 if getattr(self.df_inst["available_at"].dt, "tz", None) is None:
                     raise ValueError(
                         "Strict PIT Error: 'available_at' in df_inst must be timezone-aware in formal mode."
                     )
-                if "is_audit_verified" in self.df_inst.columns:
-                    self.df_inst = self.df_inst[self.df_inst["is_audit_verified"] == True]
+                if "is_audit_verified" not in self.df_inst.columns:
+                    raise ValueError(
+                        "Strict PIT Error: df_inst missing required audit verification column 'is_audit_verified' in formal mode. "
+                        "Unverified sources are strictly rejected."
+                    )
+                self.df_inst = self.df_inst[self.df_inst["is_audit_verified"] == True]
+                if "missing_status" in self.df_inst.columns:
+                    self.df_inst = self.df_inst[~self.df_inst["missing_status"].isin([
+                        MissingStatus.UNKNOWN, MissingStatus.UNKNOWN.value,
+                        MissingStatus.MISSING, MissingStatus.MISSING.value,
+                        "UNKNOWN", "MISSING"
+                    ])]
 
         # ----------------------------------------------------------------------
         # P0-2: Macro Data Validation
@@ -178,12 +207,45 @@ class HistoricalSnapshotBuilder:
                     )
 
             if self.mode == "formal":
+                if self.df_macro["available_at"].isna().any():
+                    raise ValueError(
+                        "Strict PIT Error: df_macro contains missing 'available_at' timestamps in formal mode."
+                    )
                 if getattr(self.df_macro["available_at"].dt, "tz", None) is None:
                     raise ValueError(
                         "Strict PIT Error: 'available_at' in df_macro must be timezone-aware in formal mode."
                     )
-                if "is_audit_verified" in self.df_macro.columns:
-                    self.df_macro = self.df_macro[self.df_macro["is_audit_verified"] == True]
+                if "is_audit_verified" not in self.df_macro.columns:
+                    raise ValueError(
+                        "Strict PIT Error: df_macro missing required audit verification column 'is_audit_verified' in formal mode. "
+                        "Unverified sources are strictly rejected."
+                    )
+                self.df_macro = self.df_macro[self.df_macro["is_audit_verified"] == True]
+                if "missing_status" in self.df_macro.columns:
+                    self.df_macro = self.df_macro[~self.df_macro["missing_status"].isin([
+                        MissingStatus.UNKNOWN, MissingStatus.UNKNOWN.value,
+                        MissingStatus.MISSING, MissingStatus.MISSING.value,
+                        "UNKNOWN", "MISSING"
+                    ])]
+
+        # ----------------------------------------------------------------------
+        # Formal Foreign Cross-Market Data Validation
+        # ----------------------------------------------------------------------
+        if self.df_foreign is not None and self.mode == "formal":
+            if "available_at" not in self.df_foreign.columns:
+                raise ValueError(
+                    "Strict PIT Error: df_foreign missing required explicit 'available_at' column in formal mode."
+                )
+            if getattr(self.df_foreign["available_at"].dt, "tz", None) is None:
+                raise ValueError(
+                    "Strict PIT Error: 'available_at' in df_foreign must be timezone-aware in formal mode."
+                )
+            if "is_audit_verified" not in self.df_foreign.columns:
+                raise ValueError(
+                    "Strict PIT Error: df_foreign missing required audit verification column 'is_audit_verified' in formal mode. "
+                    "Unverified sources are strictly rejected."
+                )
+            self.df_foreign = self.df_foreign[self.df_foreign["is_audit_verified"] == True]
 
     def _asof_align_feed(
         self,
@@ -239,7 +301,8 @@ class HistoricalSnapshotBuilder:
         # 5. Extract feature columns and determine missing mask
         meta_cols = {
             "available_at", "_trading_date_normalized", "is_audit_verified",
-            "observation_date", "trading_date", "revision_id", "provenance"
+            "observation_date", "trading_date", "revision_id", "provenance",
+            "missing_status", "missing_reason",
         }
         feature_cols = [c for c in aligned.columns if c not in meta_cols]
         aligned_features = aligned[feature_cols]
@@ -445,41 +508,76 @@ class HistoricalSnapshotBuilder:
             ctx_missing_mask[:] = True
 
         # ----------------------------------------------------------------------
-        # 5. P0-3 As-Of slice Events: 1-to-1 Slot Alignment
+        # 5. P0-3 As-Of slice Events: 1-to-1 Slot Alignment & Deduplication
         # ----------------------------------------------------------------------
         ev_meta_missing_mask = np.zeros((TOTAL_EVENT_SLOTS, EVENT_METADATA_DIM), dtype=bool)
 
-        avail_events = [
-            e for e in self.event_records
-            if e.get("provenance") is not None and e["provenance"].is_available_as_of(decision_timestamp, mode=self.mode)
-        ]
-        avail_active = [
-            e for e in self.active_event_records
-            if e.get("provenance") is not None and e["provenance"].is_available_as_of(decision_timestamp, mode=self.mode)
-        ]
+        def _get_stable_event_id(e: Dict[str, Any]) -> str:
+            if "event_id" in e and e["event_id"] is not None:
+                return str(e["event_id"])
+            prov = e.get("provenance")
+            if prov is not None and getattr(prov, "source_id", None) is not None:
+                return str(prov.source_id)
+            return str(id(e))
 
-        # Separate pools with strict disjoint sets guarantee
-        active_pool = list(avail_active)
-        recent_pool = []
-        for e in avail_events:
-            is_active = (
-                e.get("is_active", False) is True
-                or str(e.get("event_status", "")).lower() in ("active", "ongoing", "standing")
+        def _get_revision_sort_key(e: Dict[str, Any]) -> Tuple[pd.Timestamp, int]:
+            prov = e.get("provenance")
+            avail = prov.available_at if (prov is not None and prov.available_at is not None) else pd.Timestamp.min
+            rev_id = int(getattr(prov, "revision_id", e.get("revision_id", 0)))
+            return (avail, rev_id)
+
+        # 1. Collect all candidates available strictly on or before decision_timestamp
+        candidate_list: List[Tuple[Dict[str, Any], bool]] = []
+        for e in self.active_event_records:
+            if e.get("provenance") is not None and e["provenance"].is_available_as_of(decision_timestamp, mode=self.mode):
+                candidate_list.append((e, True))
+        for e in self.event_records:
+            if e.get("provenance") is not None and e["provenance"].is_available_as_of(decision_timestamp, mode=self.mode):
+                is_act = (
+                    e.get("is_active", False) is True
+                    or str(e.get("event_status", "")).lower() in ("active", "ongoing", "standing")
+                )
+                candidate_list.append((e, is_act))
+
+        # 2. Group candidates by stable event_id to resolve point-in-time revisions
+        events_by_id: Dict[str, List[Tuple[Dict[str, Any], bool]]] = {}
+        for rec, is_act in candidate_list:
+            ev_id = _get_stable_event_id(rec)
+            events_by_id.setdefault(ev_id, []).append((rec, is_act))
+
+        # 3. For each event_id, pick the latest valid revision as-of decision_timestamp
+        # Superseded historical revisions are strictly dropped, preventing redundant slots & causal memory pollution.
+        active_pool: List[Dict[str, Any]] = []
+        recent_pool: List[Dict[str, Any]] = []
+
+        for ev_id, rev_list in events_by_id.items():
+            # Sort chronologically ascending by (available_at, revision_id, is_active)
+            # If same timestamp & revision, prefer the active designation
+            rev_list.sort(key=lambda item: (_get_revision_sort_key(item[0]), int(item[1])))
+            latest_rec, latest_act_flag = rev_list[-1]
+
+            # Check if any candidate designated it active
+            has_active_candidate = any(
+                item[1]
+                or (item[0].get("is_active") is True)
+                or (str(item[0].get("event_status", "")).lower() in ("active", "ongoing", "standing"))
+                for item in rev_list
             )
-            if is_active:
-                active_pool.append(e)
+
+            # Check if the latest revision strictly closed/resolved it
+            status_str = str(latest_rec.get("event_status", "")).lower()
+            is_strictly_closed = status_str in ("closed", "resolved", "expired", "inactive")
+
+            if is_strictly_closed:
+                recent_pool.append(latest_rec)
+            elif has_active_candidate:
+                active_pool.append(latest_rec)
             else:
-                recent_pool.append(e)
+                recent_pool.append(latest_rec)
 
-        active_obj_ids = {id(e) for e in active_pool}
-        active_str_ids = {e["event_id"] for e in active_pool if "event_id" in e}
-        recent_pool = [
-            e for e in recent_pool
-            if id(e) not in active_obj_ids and e.get("event_id") not in active_str_ids
-        ]
-
-        recent_pool.sort(key=lambda e: e["provenance"].available_at, reverse=True)
-        active_pool.sort(key=lambda e: e["provenance"].available_at, reverse=True)
+        # 4. Sort pools descending by available_at (most recent first)
+        recent_pool.sort(key=lambda e: (_get_revision_sort_key(e), _get_stable_event_id(e)), reverse=True)
+        active_pool.sort(key=lambda e: (_get_revision_sort_key(e), _get_stable_event_id(e)), reverse=True)
 
         ev_meta_arr = np.zeros((TOTAL_EVENT_SLOTS, EVENT_METADATA_DIM), dtype=np.float32)
         ev_rel_arr = np.zeros((TOTAL_EVENT_SLOTS, EVENT_STOCK_RELATION_DIM), dtype=np.float32)
@@ -547,7 +645,7 @@ class HistoricalSnapshotBuilder:
                     novelty_labels[k, 0] = float(ev["ground_truth_novelty"])
                     novelty_mask[k, 0] = True
 
-                slot_event_ids[k] = ev.get("event_id", ev["provenance"].source_id)
+                slot_event_ids[k] = _get_stable_event_id(ev)
             else:
                 ev_meta_missing_mask[k, :] = True
                 ev_emb_recent[k, 0] = 1.0
@@ -605,7 +703,7 @@ class HistoricalSnapshotBuilder:
                     novelty_labels[global_k, 0] = float(ev["ground_truth_novelty"])
                     novelty_mask[global_k, 0] = True
 
-                slot_event_ids[global_k] = ev.get("event_id", ev["provenance"].source_id)
+                slot_event_ids[global_k] = _get_stable_event_id(ev)
             else:
                 ev_meta_missing_mask[global_k, :] = True
                 ev_emb_active[m, 0] = 1.0

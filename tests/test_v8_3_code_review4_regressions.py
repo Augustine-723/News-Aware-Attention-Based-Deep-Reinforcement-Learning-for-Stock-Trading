@@ -697,3 +697,276 @@ def test_snapshot_builder_to_stage1_2_3_micro_regression():
     batch_sampled = replay_buffer.sample(batch_size=2)
     obs_batch = batch_sampled[0]
     assert obs_batch.price.shape[0] == 2
+
+
+# ==============================================================================
+# 9. V8.3 Final Gate: Mandatory Source Audit & Active Event Deduplication
+# ==============================================================================
+
+def test_mandatory_source_audit_and_rejection():
+    """
+    V8.3 Final Gate (Item 1):
+    - HistoricalSnapshotBuilder in mode="formal" strictly rejects feeds missing is_audit_verified column.
+    - Data with is_audit_verified=False is never used as verified data (fails closed / masked).
+    - MissingStatus.UNKNOWN / MISSING records are excluded from active data and marked missing.
+    - Prohibits automatic estimation of available_at in formal mode.
+    """
+    df_ohlcv, df_inst, df_macro, df_foreign, ctx_recs, ev_recs, trade_dates = _generate_deterministic_raw_history(100)
+
+    # 1. Rejection of df_ohlcv missing is_audit_verified column in formal mode
+    df_ohlcv_no_audit = df_ohlcv.drop(columns=["is_audit_verified"])
+    with pytest.raises(ValueError, match="Strict PIT Error: df_ohlcv missing required audit verification column 'is_audit_verified'"):
+        HistoricalSnapshotBuilder(
+            df_ohlcv=df_ohlcv_no_audit,
+            df_inst=df_inst,
+            df_macro=df_macro,
+            df_foreign=df_foreign,
+            mode="formal",
+        )
+
+    # 2. Rejection of df_inst missing is_audit_verified column in formal mode
+    df_inst_no_audit = df_inst.drop(columns=["is_audit_verified"])
+    with pytest.raises(ValueError, match="Strict PIT Error: df_inst missing required audit verification column 'is_audit_verified'"):
+        HistoricalSnapshotBuilder(
+            df_ohlcv=df_ohlcv,
+            df_inst=df_inst_no_audit,
+            df_macro=df_macro,
+            df_foreign=df_foreign,
+            mode="formal",
+        )
+
+    # 3. Rejection of df_macro missing is_audit_verified column in formal mode
+    df_macro_no_audit = df_macro.drop(columns=["is_audit_verified"])
+    with pytest.raises(ValueError, match="Strict PIT Error: df_macro missing required audit verification column 'is_audit_verified'"):
+        HistoricalSnapshotBuilder(
+            df_ohlcv=df_ohlcv,
+            df_inst=df_inst,
+            df_macro=df_macro_no_audit,
+            df_foreign=df_foreign,
+            mode="formal",
+        )
+
+    # 4. Rejection of df_foreign missing is_audit_verified column in formal mode
+    df_foreign_no_audit = df_foreign.drop(columns=["is_audit_verified"])
+    with pytest.raises(ValueError, match="Strict PIT Error: df_foreign missing required audit verification column 'is_audit_verified'"):
+        HistoricalSnapshotBuilder(
+            df_ohlcv=df_ohlcv,
+            df_inst=df_inst,
+            df_macro=df_macro,
+            df_foreign=df_foreign_no_audit,
+            mode="formal",
+        )
+
+    # 5. Unverified records (is_audit_verified=False) must NEVER be used as verified data
+    # Set day 65 institutional data to is_audit_verified=False
+    decision_ts = trade_dates[65].floor("D") + pd.Timedelta(hours=20)
+    df_inst_unverified = df_inst.copy()
+    df_inst_unverified.loc[trade_dates[65], "is_audit_verified"] = False
+
+    builder_unverified = HistoricalSnapshotBuilder(
+        df_ohlcv=df_ohlcv,
+        df_inst=df_inst_unverified,
+        df_macro=df_macro,
+        df_foreign=df_foreign,
+        mode="formal",
+    )
+    snap_unverified = builder_unverified.build_snapshot(decision_ts)
+    # Day 65 is window index 59 -> must be marked missing!
+    assert snap_unverified.institutional_missing_mask[0, 59].all().item() is True
+
+    # 6. missing_status=UNKNOWN or MISSING must also be masked
+    df_macro_unknown = df_macro.copy()
+    df_macro_unknown["missing_status"] = "AVAILABLE"
+    df_macro_unknown.loc[trade_dates[65], "missing_status"] = MissingStatus.UNKNOWN.value
+
+    builder_unknown = HistoricalSnapshotBuilder(
+        df_ohlcv=df_ohlcv,
+        df_inst=df_inst,
+        df_macro=df_macro_unknown,
+        df_foreign=df_foreign,
+        mode="formal",
+    )
+    snap_unknown = builder_unknown.build_snapshot(decision_ts)
+    assert snap_unknown.macro_missing_mask[0, 59].all().item() is True
+
+
+def test_active_event_deduplication_multi_revision_and_causal_memory():
+    """
+    V8.3 Final Gate (Item 2):
+    1. Identify events by stable event_id.
+    2. Multi-revision resolution: select latest valid revision available_at <= decision_timestamp;
+       future revisions (available_at > decision_timestamp) are excluded, older revisions superseded.
+    3. Cross-source duplicate event_id (in raw events and active pool) retained at most once in active pool.
+    4. Active / Recent disjoint sets: no event occupies both pools.
+    5. Each valid event_id occupies at most one active slot.
+    6. Novelty Causal Memory: older revisions or duplicates of the same event never act as prior evidence.
+    """
+    df_ohlcv, df_inst, df_macro, df_foreign, ctx_recs, _, trade_dates = _generate_deterministic_raw_history(100)
+    decision_ts = trade_dates[70].floor("D") + pd.Timedelta(hours=20)
+
+    # 1. Multi-Revision Scenario: EV_CORP_01
+    # Rev 1: T - 5 days, magnitude = 0.20
+    # Rev 2: T - 1 day,  magnitude = 0.80
+    # Rev 3: T + 1 day (future), magnitude = 0.99
+    rev1 = {
+        "event_id": "EV_CORP_01",
+        "revision_id": 1,
+        "is_active": True,
+        "quantified_magnitude": 0.20,
+        "text_embedding": np.ones(128, dtype=np.float32) * 0.2,
+        "actor_embedding_4d": np.ones(4, dtype=np.float32) * 0.1,
+        "type_embedding_8d": np.ones(8, dtype=np.float32) / np.sqrt(8),
+        "status_embedding_4d": np.zeros(4, dtype=np.float32),
+        "provenance": ProvenanceRecord(
+            source_id="EV_CORP_01_R1",
+            revision_id=1,
+            available_at=decision_ts - pd.Timedelta(days=5),
+            is_audit_verified=True,
+            missing_status="AVAILABLE",
+        ),
+    }
+    rev2 = {
+        "event_id": "EV_CORP_01",
+        "revision_id": 2,
+        "is_active": True,
+        "quantified_magnitude": 0.80,
+        "text_embedding": np.ones(128, dtype=np.float32) * 0.8,
+        "actor_embedding_4d": np.ones(4, dtype=np.float32) * 0.1,
+        "type_embedding_8d": np.ones(8, dtype=np.float32) / np.sqrt(8),
+        "status_embedding_4d": np.zeros(4, dtype=np.float32),
+        "provenance": ProvenanceRecord(
+            source_id="EV_CORP_01_R2",
+            revision_id=2,
+            available_at=decision_ts - pd.Timedelta(days=1),
+            is_audit_verified=True,
+            missing_status="AVAILABLE",
+        ),
+    }
+    rev3 = {
+        "event_id": "EV_CORP_01",
+        "revision_id": 3,
+        "is_active": True,
+        "quantified_magnitude": 0.99,
+        "text_embedding": np.ones(128, dtype=np.float32) * 0.99,
+        "actor_embedding_4d": np.ones(4, dtype=np.float32) * 0.1,
+        "type_embedding_8d": np.ones(8, dtype=np.float32) / np.sqrt(8),
+        "status_embedding_4d": np.zeros(4, dtype=np.float32),
+        "provenance": ProvenanceRecord(
+            source_id="EV_CORP_01_R3",
+            revision_id=3,
+            available_at=decision_ts + pd.Timedelta(days=1),  # Future!
+            is_audit_verified=True,
+            missing_status="AVAILABLE",
+        ),
+    }
+
+    # 2. Cross-Source Duplicate Scenario: EV_DUAL_02
+    # Appears in both event_records and active_event_records
+    ev_dual_raw = {
+        "event_id": "EV_DUAL_02",
+        "is_active": False,
+        "quantified_magnitude": 0.35,
+        "text_embedding": np.ones(128, dtype=np.float32) * 0.35,
+        "provenance": ProvenanceRecord(
+            source_id="EV_DUAL_02_RAW",
+            available_at=decision_ts - pd.Timedelta(days=3),
+            is_audit_verified=True,
+            missing_status="AVAILABLE",
+        ),
+    }
+    ev_dual_active = {
+        "event_id": "EV_DUAL_02",
+        "is_active": True,
+        "quantified_magnitude": 0.35,
+        "text_embedding": np.ones(128, dtype=np.float32) * 0.35,
+        "provenance": ProvenanceRecord(
+            source_id="EV_DUAL_02_ACT",
+            available_at=decision_ts - pd.Timedelta(days=3),
+            is_audit_verified=True,
+            missing_status="AVAILABLE",
+        ),
+    }
+
+    # 3. Add distinct Recent events (5 recent events)
+    recent_events = []
+    for k in range(5):
+        recent_events.append({
+            "event_id": f"RECENT_UNIQUE_{k}",
+            "is_active": False,
+            "quantified_magnitude": 0.10 * (k + 1),
+            "text_embedding": np.ones(128, dtype=np.float32) * 0.1 * (k + 1),
+            "provenance": ProvenanceRecord(
+                source_id=f"RECENT_UNIQUE_{k}",
+                available_at=decision_ts - pd.Timedelta(days=k + 2),
+                is_audit_verified=True,
+                missing_status="AVAILABLE",
+            ),
+        })
+
+    builder = HistoricalSnapshotBuilder(
+        df_ohlcv=df_ohlcv,
+        df_inst=df_inst,
+        df_macro=df_macro,
+        df_foreign=df_foreign,
+        stock_context_records=ctx_recs,
+        event_records=[rev1, rev2, rev3, ev_dual_raw] + recent_events,
+        active_event_records=[ev_dual_active],
+        mode="formal",
+    )
+    snap = builder.build_snapshot(decision_ts)
+
+    slot_ids = snap.slot_event_ids[0]
+    assert len(slot_ids) == TOTAL_EVENT_SLOTS  # 40
+
+    # A. Multi-revision checks for EV_CORP_01:
+    # Occurs at most ONCE in the entire slot_ids list
+    corp_01_count = slot_ids.count("EV_CORP_01")
+    assert corp_01_count == 1, f"EV_CORP_01 must appear exactly once, found {corp_01_count}"
+    corp_01_slot = slot_ids.index("EV_CORP_01")
+    # It must be in an active slot (32..39)
+    assert 32 <= corp_01_slot < 40, f"EV_CORP_01 must be in active slots, found at slot {corp_01_slot}"
+    # Magnitude must be from Revision 2 (0.80), NOT Revision 1 (0.20) and NOT Revision 3 (0.99)
+    # E22 quantified magnitude is at index 21
+    assert np.isclose(snap.event_metadata[0, corp_01_slot, 21].item(), 0.80)
+
+    # B. Cross-source duplicate checks for EV_DUAL_02:
+    dual_02_count = slot_ids.count("EV_DUAL_02")
+    assert dual_02_count == 1, f"EV_DUAL_02 must appear exactly once, found {dual_02_count}"
+    dual_02_slot = slot_ids.index("EV_DUAL_02")
+    assert 32 <= dual_02_slot < 40, f"EV_DUAL_02 must be in active slots, found at slot {dual_02_slot}"
+
+    # C. Disjoint sets verification
+    recent_slot_ids = [sid for sid in slot_ids[:RECENT_EVENT_SLOTS] if sid is not None]
+    active_slot_ids = [sid for sid in slot_ids[RECENT_EVENT_SLOTS:] if sid is not None]
+    assert set(recent_slot_ids).isdisjoint(set(active_slot_ids)), (
+        f"Recent and Active slots must be strictly disjoint! Overlap: {set(recent_slot_ids) & set(active_slot_ids)}"
+    )
+
+    # D. Slot Sentinel verification
+    # Recent: 5 events populated (0..4), 5..31 are Slot Sentinel
+    for r_idx in range(5):
+        assert snap.event_mask[0, r_idx].item() is True
+        assert slot_ids[r_idx] is not None
+    for r_idx in range(5, RECENT_EVENT_SLOTS):
+        assert snap.event_mask[0, r_idx].item() is False
+        assert slot_ids[r_idx] is None
+        assert snap.event_metadata_missing_mask[0, r_idx].all().item() is True
+
+    # Active: 2 active events populated (EV_CORP_01, EV_DUAL_02), rest are Slot Sentinel
+    assert len(active_slot_ids) == 2
+    for m in range(2, ACTIVE_EVENT_SLOTS):
+        act_slot = RECENT_EVENT_SLOTS + m
+        assert snap.event_mask[0, act_slot].item() is False
+        assert slot_ids[act_slot] is None
+        assert snap.event_metadata_missing_mask[0, act_slot].all().item() is True
+
+    # E. Novelty Causal Memory Integration
+    model = StockRLFullModel()
+    _, _, _, _, causal_prior_memory = model.encode_multimodal_state(snap)
+    assert causal_prior_memory.shape == (1, 40, 128)
+    # Verify no NaN in causal prior memory
+    assert not torch.isnan(causal_prior_memory).any()
+
+    # Verify that the older revision (Rev 1) does NOT exist as an earlier slot comparing to Rev 2
+    # Because only Rev 2 is in slot_ids, EV_CORP_01 only compares against strictly prior other events
+    assert slot_ids.count("EV_CORP_01") == 1

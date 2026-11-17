@@ -96,6 +96,7 @@ def _generate_deterministic_raw_history(n_days: int = 100):
     df_ohlcv = pd.DataFrame({
         "open": opens, "high": highs, "low": lows, "close": closes,
         "volume": volumes, "value": values, "available_at": available_at_ohlcv,
+        "is_audit_verified": True,
     }, index=trade_dates)
 
     df_inst = pd.DataFrame({
@@ -105,6 +106,7 @@ def _generate_deterministic_raw_history(n_days: int = 100):
         "margin_balance": np.random.uniform(1e5, 2e5, size=n_days),
         "short_balance": np.random.uniform(1e4, 3e4, size=n_days),
         "available_at": available_at_inst,
+        "is_audit_verified": True,
     }, index=trade_dates)
 
     df_macro = pd.DataFrame({
@@ -112,6 +114,7 @@ def _generate_deterministic_raw_history(n_days: int = 100):
         "sector_index": 500.0 + np.cumsum(np.random.randn(n_days) * 1.5),
         "usdtwd": 31.0 + np.cumsum(np.random.randn(n_days) * 0.02),
         "available_at": available_at_macro,
+        "is_audit_verified": True,
     }, index=trade_dates)
 
     # US Foreign cross-market feed: T-1 16:00 EST available at 17:00 EST
