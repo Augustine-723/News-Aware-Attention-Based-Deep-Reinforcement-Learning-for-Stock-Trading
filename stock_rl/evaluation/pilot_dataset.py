@@ -17,6 +17,7 @@ Provides:
 """
 
 from dataclasses import dataclass, field
+from enum import Enum
 import hashlib
 import json
 import math
@@ -49,7 +50,98 @@ from stock_rl.evaluation.provenance import (
 
 
 # ==============================================================================
-# 1. Pilot Event Sample Data Structure
+# 1. Source Verification & Supervision Target Taxonomies
+# ==============================================================================
+
+class SourceVerificationStatus(str, Enum):
+    """
+    Formal categorization of event source authenticity.
+    """
+    VERIFIED_SOURCE = "VERIFIED_SOURCE"          # Formally/cryptographically verified against official exchange archive
+    CURATED_UNVERIFIED = "CURATED_UNVERIFIED"    # Curated public domain report; pending official cryptographic verification
+    SYNTHETIC_FIXTURE = "SYNTHETIC_FIXTURE"      # Synthetic test fixture
+
+
+class SupervisionTargetName(str, Enum):
+    """
+    Independent supervision target formulations to prevent silent fallback contamination.
+    """
+    HUMAN_IMPORTANCE = "HUMAN_IMPORTANCE"
+    EX_POST_MARKET_IMPACT = "EX_POST_MARKET_IMPACT"
+    HYBRID_IMPORTANCE = "HYBRID_IMPORTANCE"
+
+
+@dataclass
+class EventSourceRecord:
+    """
+    Auditable historical event source record.
+    Preserves exact provenance without fabricating URLs, MOPS log IDs, or timestamps.
+    """
+    event_id: str
+    article_id: str
+    headline: str
+    source_name: str
+    source_type: NewsSourceType
+    source_id: str
+    published_at: pd.Timestamp
+    timezone: str = "Asia/Taipei"
+    retrieved_at: pd.Timestamp = field(default_factory=lambda: pd.Timestamp("2024-04-01 00:00:00", tz="Asia/Taipei"))
+    url: Optional[str] = None
+    payload_hash: str = ""
+    verification_status: SourceVerificationStatus = SourceVerificationStatus.CURATED_UNVERIFIED
+    audit_notes: str = "Curated historical financial disclosure from public domain; pending official audit trail."
+
+
+class PilotSourceManifest:
+    """
+    Auditable Source Manifest maintaining provenance records for all pilot events.
+    Strictly prevents elevating unverified curated items to Formal PIT.
+    """
+    @classmethod
+    def generate_manifest(cls, raw_events: Optional[List[Dict[str, Any]]] = None) -> Dict[str, EventSourceRecord]:
+        events = raw_events if raw_events is not None else RAW_PILOT_EVENTS
+        records: Dict[str, EventSourceRecord] = {}
+        for ev in events:
+            p_hash = compute_normalized_content_hash(ev["headline"], ev.get("body_text", ""))
+            pub_dt = pd.Timestamp(f"{ev['date_str']} {ev['pub_time_str']}", tz="Asia/Taipei")
+            v_status = ev.get("verification_status", SourceVerificationStatus.CURATED_UNVERIFIED)
+            if isinstance(v_status, str):
+                v_status = SourceVerificationStatus(v_status)
+
+            rec = EventSourceRecord(
+                event_id=ev["event_id"],
+                article_id=ev["article_id"],
+                headline=ev["headline"],
+                source_name=ev["source_name"],
+                source_type=ev["source_type"],
+                source_id=ev.get("source_id", f"{ev['source_name']}-{ev['article_id']}"),
+                published_at=pub_dt,
+                timezone="Asia/Taipei",
+                retrieved_at=pd.Timestamp("2024-04-01 00:00:00", tz="Asia/Taipei"),
+                url=ev.get("url", None),
+                payload_hash=p_hash,
+                verification_status=v_status,
+                audit_notes=ev.get("audit_notes", "Curated historical financial disclosure from public domain; pending official audit trail."),
+            )
+            records[ev["event_id"]] = rec
+        return records
+
+    @classmethod
+    def get_provenance_summary(cls, raw_events: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+        manifest = cls.generate_manifest(raw_events)
+        counts = {
+            "total_records": len(manifest),
+            SourceVerificationStatus.VERIFIED_SOURCE.value: sum(1 for r in manifest.values() if r.verification_status == SourceVerificationStatus.VERIFIED_SOURCE),
+            SourceVerificationStatus.CURATED_UNVERIFIED.value: sum(1 for r in manifest.values() if r.verification_status == SourceVerificationStatus.CURATED_UNVERIFIED),
+            SourceVerificationStatus.SYNTHETIC_FIXTURE.value: sum(1 for r in manifest.values() if r.verification_status == SourceVerificationStatus.SYNTHETIC_FIXTURE),
+            "records_with_external_url": sum(1 for r in manifest.values() if r.url is not None and str(r.url).strip() != ""),
+            "records_with_valid_hash": sum(1 for r in manifest.values() if len(r.payload_hash) == 64),
+        }
+        return counts
+
+
+# ==============================================================================
+# 2. Pilot Event Sample Data Structure
 # ==============================================================================
 
 @dataclass
@@ -75,11 +167,37 @@ class PilotEventSample:
     lifecycle_status: str = "PUBLISHED"
     evidence_level: EvidenceAuditLevel = EvidenceAuditLevel.ESTIMATED
     provenance_category: str = "ESTIMATED_PIT_NEWS"
-    human_importance: float = 0.5        # Prior domain importance in [0, 1]
+    verification_status: SourceVerificationStatus = SourceVerificationStatus.CURATED_UNVERIFIED
+    
+    # Independent Supervision Targets
+    target_human_importance: Optional[float] = None
+    target_market_impact: Optional[float] = None
+    target_hybrid_importance: Optional[float] = None
+    target_availability: Dict[str, pd.Timestamp] = field(default_factory=dict)
+    target_missing_status: Dict[str, str] = field(default_factory=dict)
+    
+    # Active Supervised Target (selected target score for model training/evaluation)
+    target_score: Optional[float] = None
+    human_importance: float = 0.5        # Retained for backward compatibility
     ex_post_label: Optional[ExPostMarketReactionLabel] = None
-    target_score: float = 0.5            # Ground truth supervised target in [0, 1]
+    source_record: Optional[EventSourceRecord] = None
     metadata_32d: Optional[np.ndarray] = None
     text_128d: Optional[np.ndarray] = None
+
+    def get_target(self, target_name: str) -> Optional[float]:
+        """Returns the specific target score without cross-target fallback."""
+        if target_name in (SupervisionTargetName.HUMAN_IMPORTANCE.value, "HUMAN_IMPORTANCE"):
+            return self.target_human_importance
+        elif target_name in (SupervisionTargetName.EX_POST_MARKET_IMPACT.value, "EX_POST_MARKET_IMPACT"):
+            return self.target_market_impact
+        elif target_name in (SupervisionTargetName.HYBRID_IMPORTANCE.value, "HYBRID_IMPORTANCE"):
+            return self.target_hybrid_importance
+        else:
+            raise ValueError(f"Unknown supervision target name: {target_name}")
+
+    def is_target_available(self, target_name: str) -> bool:
+        """Returns True if the specified target score is non-missing."""
+        return self.get_target(target_name) is not None
 
     def verify_causality(self) -> None:
         """Enforces point-in-time causal validity."""
@@ -908,8 +1026,10 @@ class PilotDatasetBuilder:
         self,
         data_dir: str = "data/poc_real_data",
         encoder: Optional[GenuinePretrainedSemanticEncoder] = None,
+        default_target: str = "HYBRID_IMPORTANCE",
     ):
         self.data_dir = data_dir
+        self.default_target = default_target
         self.market_dfs: Dict[str, pd.DataFrame] = {}
         self.taiex_df: Optional[pd.DataFrame] = None
         self._load_market_data()
@@ -919,6 +1039,9 @@ class PilotDatasetBuilder:
             self.encoder = encoder
         else:
             self.encoder = load_trusted_pretrained_embedding_engine(local_files_only=True)
+            
+        # Generate and cache source manifest
+        self.source_manifest = PilotSourceManifest.generate_manifest()
 
     def _load_market_data(self) -> None:
         """Loads and indexes authentic OHLCV DataFrames."""
@@ -950,12 +1073,16 @@ class PilotDatasetBuilder:
         self,
         raw_events: Optional[List[Dict[str, Any]]] = None,
         verify_holdout: bool = True,
+        target_name: Optional[str] = None,
     ) -> List[PilotEventSample]:
         """
         Builds the supervised pilot dataset across all raw curated events.
+        Produces 3 independent supervision targets with ZERO silent fallback.
         """
         events = raw_events or RAW_PILOT_EVENTS
+        target_field = target_name or self.default_target
         samples: List[PilotEventSample] = []
+        manifest = PilotSourceManifest.generate_manifest(events)
 
         # 1. First verify holdout contamination
         if verify_holdout:
@@ -978,6 +1105,8 @@ class PilotDatasetBuilder:
 
             stock_df = self.market_dfs[stock_id]
             market_df = self.taiex_df
+            source_rec = manifest.get(ev["event_id"])
+            v_status = source_rec.verification_status if source_rec else SourceVerificationStatus.CURATED_UNVERIFIED
 
             # Pre-T 32D Metadata Feature Extraction
             art = RawNewsArticle(
@@ -1009,15 +1138,55 @@ class PilotDatasetBuilder:
                 calendar=TWSETradingCalendar,
             )
 
-            # Formulate continuous target score y in [0, 1]
-            # Balanced synthesis of prior human domain importance (0.4) and ex-post market reaction (0.6)
-            # If market reaction is missing (e.g. edge of dataset), fall back to human importance
+            # ------------------------------------------------------------------
+            # Target 1: HUMAN_IMPORTANCE
+            # Formula: y = human_importance in [0, 1]
+            # Available at: decision_timestamp (annotated prior to or at decision time)
+            # ------------------------------------------------------------------
             human_imp = float(ev.get("human_importance", 0.5))
+            target_human = round(float(np.clip(human_imp, 0.0, 1.0)), 4)
+            avail_human = t_decision
+            status_human = "AVAILABLE"
+
+            # ------------------------------------------------------------------
+            # Target 2: EX_POST_MARKET_IMPACT
+            # Formula: y = composite_market_impact_score in [0, 1]
+            # Available at: T+2 trading session 14:00:00 Asia/Taipei
+            # Strictly authentic: requires valid pre-T Beta120 and Volume stats,
+            # and valid T+1/T+2 market observations.
+            # ------------------------------------------------------------------
             if label.missing_status == "AVAILABLE" and label.composite_market_impact_score is not None:
-                market_score = label.composite_market_impact_score
-                target_score = round(float(np.clip(0.4 * human_imp + 0.6 * market_score, 0.0, 1.0)), 4)
+                target_market = round(float(np.clip(label.composite_market_impact_score, 0.0, 1.0)), 4)
+                avail_market = label.available_at
+                status_market = "AVAILABLE"
             else:
-                target_score = round(human_imp, 4)
+                target_market = None
+                avail_market = label.available_at if label.available_at is not None else t_decision + pd.Timedelta(days=2)
+                status_market = f"MISSING_{label.missing_status}"
+
+            # ------------------------------------------------------------------
+            # Target 3: HYBRID_IMPORTANCE
+            # Formula: y = 0.4 * target_human + 0.6 * target_market
+            # Available at: T+2 trading session 14:00:00 Asia/Taipei
+            # Strictly requires BOTH human importance and market impact to be available!
+            # ABSOLUTELY NO SILENT FALLBACK TO HUMAN IMPORTANCE!
+            # ------------------------------------------------------------------
+            if target_market is not None:
+                target_hybrid = round(float(np.clip(0.4 * target_human + 0.6 * target_market, 0.0, 1.0)), 4)
+                avail_hybrid = avail_market
+                status_hybrid = "AVAILABLE"
+            else:
+                target_hybrid = None
+                avail_hybrid = avail_market
+                status_hybrid = "MISSING_MARKET_COMPONENT"
+
+            # Active supervised target
+            target_map = {
+                "HUMAN_IMPORTANCE": target_human,
+                "EX_POST_MARKET_IMPACT": target_market,
+                "HYBRID_IMPORTANCE": target_hybrid,
+            }
+            active_target = target_map.get(target_field, target_hybrid)
 
             sample = PilotEventSample(
                 sample_id=f"SMP-{ev['event_id']}",
@@ -1037,9 +1206,24 @@ class PilotDatasetBuilder:
                 lifecycle_status=ev.get("lifecycle_status", "PUBLISHED"),
                 evidence_level=EvidenceAuditLevel.ESTIMATED,
                 provenance_category="ESTIMATED_PIT_NEWS",
+                verification_status=v_status,
+                target_human_importance=target_human,
+                target_market_impact=target_market,
+                target_hybrid_importance=target_hybrid,
+                target_availability={
+                    "HUMAN_IMPORTANCE": avail_human,
+                    "EX_POST_MARKET_IMPACT": avail_market,
+                    "HYBRID_IMPORTANCE": avail_hybrid,
+                },
+                target_missing_status={
+                    "HUMAN_IMPORTANCE": status_human,
+                    "EX_POST_MARKET_IMPACT": status_market,
+                    "HYBRID_IMPORTANCE": status_hybrid,
+                },
+                target_score=active_target,
                 human_importance=human_imp,
                 ex_post_label=label,
-                target_score=target_score,
+                source_record=source_rec,
                 metadata_32d=meta_32d,
                 text_128d=text_128d,
             )
@@ -1049,3 +1233,27 @@ class PilotDatasetBuilder:
         # Sort chronologically by decision_timestamp
         samples.sort(key=lambda s: s.decision_timestamp)
         return samples
+
+    @classmethod
+    def get_target_statistics(cls, samples: List[PilotEventSample]) -> Dict[str, Any]:
+        """
+        Computes formal validity and missing ratio statistics across the 3 independent targets.
+        """
+        n_total = len(samples)
+        stats = {}
+        for t_name in ["HUMAN_IMPORTANCE", "EX_POST_MARKET_IMPACT", "HYBRID_IMPORTANCE"]:
+            vals = [s.get_target(t_name) for s in samples]
+            valid_vals = [v for v in vals if v is not None]
+            n_valid = len(valid_vals)
+            n_missing = n_total - n_valid
+            stats[t_name] = {
+                "total_samples": n_total,
+                "valid_samples": n_valid,
+                "missing_samples": n_missing,
+                "missing_ratio": round(n_missing / n_total, 4) if n_total > 0 else 0.0,
+                "mean": round(float(np.mean(valid_vals)), 4) if valid_vals else None,
+                "std": round(float(np.std(valid_vals, ddof=1)), 4) if len(valid_vals) > 1 else None,
+                "min": round(float(np.min(valid_vals)), 4) if valid_vals else None,
+                "max": round(float(np.max(valid_vals)), 4) if valid_vals else None,
+            }
+        return stats
