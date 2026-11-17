@@ -149,6 +149,7 @@ def load_real_market_feeds(
     stock_id: str = "2330",
     data_dir: str = DATA_DIR,
     mode: str = "estimated",
+    include_micro_news: bool = False,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, List[Dict[str, Any]], List[Dict[str, Any]]]:
     """
     Loads raw market files for stock_id, aligns them to Asia/Taipei timezone,
@@ -427,6 +428,27 @@ def load_real_market_feeds(
                     "macro_factor_exposure": 0.0,
                 },
             })
+
+    # V8.6 Micro Historical News Integration
+    if include_micro_news:
+        micro_path = os.path.join(data_dir, "historical_news_micro.json")
+        if os.path.exists(micro_path):
+            from stock_rl.data.multimodal_pipeline import load_micro_news_dataset, HistoricalMultimodalPipeline
+            raw_articles = load_micro_news_dataset(micro_path)
+            pipe = HistoricalMultimodalPipeline(mode=mode)
+            for art in raw_articles:
+                if str(art.stock_id).strip() == stock_id:
+                    try:
+                        pipe.ingest_article(art)
+                    except ValueError:
+                        # In formal mode, unverified or trapped articles are rejected
+                        continue
+            enriched_recent, enriched_active = pipe.resolve_snapshot_events(
+                stock_id=stock_id,
+                decision_timestamp=pd.Timestamp("2099-12-31 23:59:59", tz="Asia/Taipei"),
+            )
+            event_records.extend(enriched_recent)
+            event_records.extend(enriched_active)
 
     return df_ohlcv, df_inst, df_macro, df_foreign, stock_context_records, event_records
 
