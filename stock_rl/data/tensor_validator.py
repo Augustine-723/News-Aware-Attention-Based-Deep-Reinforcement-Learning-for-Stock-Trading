@@ -159,4 +159,29 @@ def validate_multimodal_batch(
         if not torch.all((pos == 0.0) | (pos == 1.0)):
             raise TensorSchemaError("Position State target position (S01) must be binary 0.0 or 1.0.")
 
+    # 5. Missing & Epistemic Tracking Masks Validation (P1-4)
+    if batch.macro_missing_mask is not None:
+        if tuple(batch.macro_missing_mask.shape) != (B, MARKET_WINDOW_LENGTH, MACRO_DIM):
+            raise TensorSchemaError(f"Macro missing mask shape mismatch: expected {(B, MARKET_WINDOW_LENGTH, MACRO_DIM)}, got {tuple(batch.macro_missing_mask.shape)}")
+        if batch.macro_missing_mask.dtype != torch.bool:
+            raise TensorSchemaError("Macro missing mask must have dtype torch.bool")
+
+    if batch.institutional_missing_mask is not None:
+        if tuple(batch.institutional_missing_mask.shape) != (B, MARKET_WINDOW_LENGTH, INSTITUTIONAL_DIM):
+            raise TensorSchemaError(f"Institutional missing mask shape mismatch: expected {(B, MARKET_WINDOW_LENGTH, INSTITUTIONAL_DIM)}, got {tuple(batch.institutional_missing_mask.shape)}")
+        if batch.institutional_missing_mask.dtype != torch.bool:
+            raise TensorSchemaError("Institutional missing mask must have dtype torch.bool")
+
+    if batch.stock_context_missing_mask is not None:
+        if tuple(batch.stock_context_missing_mask.shape) != (B, STOCK_CONTEXT_DIM):
+            raise TensorSchemaError(f"Stock context missing mask shape mismatch: expected {(B, STOCK_CONTEXT_DIM)}, got {tuple(batch.stock_context_missing_mask.shape)}")
+        if batch.stock_context_missing_mask.dtype != torch.bool:
+            raise TensorSchemaError("Stock context missing mask must have dtype torch.bool")
+
+    if batch.event_metadata_missing_mask is not None:
+        if tuple(batch.event_metadata_missing_mask.shape) != (B, TOTAL_EVENT_SLOTS, EVENT_METADATA_DIM):
+            raise TensorSchemaError(f"Event metadata missing mask shape mismatch: expected {(B, TOTAL_EVENT_SLOTS, EVENT_METADATA_DIM)}, got {tuple(batch.event_metadata_missing_mask.shape)}")
+        if batch.event_metadata_missing_mask.dtype != torch.bool:
+            raise TensorSchemaError("Event metadata missing mask must have dtype torch.bool")
+
     return True

@@ -104,5 +104,9 @@ class MultimodalReplayBuffer:
             novelty_mask=torch.cat([b.novelty_mask for b in batch_list], dim=0) if batch_list[0].novelty_mask is not None else None,
             return_mask=torch.cat([b.return_mask for b in batch_list], dim=0) if batch_list[0].return_mask is not None else None,
             risk_mask=torch.cat([b.risk_mask for b in batch_list], dim=0) if batch_list[0].risk_mask is not None else None,
+            macro_missing_mask=torch.cat([b.macro_missing_mask for b in batch_list], dim=0) if batch_list[0].macro_missing_mask is not None else None,
+            institutional_missing_mask=torch.cat([b.institutional_missing_mask for b in batch_list], dim=0) if batch_list[0].institutional_missing_mask is not None else None,
+            stock_context_missing_mask=torch.cat([b.stock_context_missing_mask for b in batch_list], dim=0) if batch_list[0].stock_context_missing_mask is not None else None,
+            event_metadata_missing_mask=torch.cat([b.event_metadata_missing_mask for b in batch_list], dim=0) if batch_list[0].event_metadata_missing_mask is not None else None,
             schema_version=target_schema,
         )

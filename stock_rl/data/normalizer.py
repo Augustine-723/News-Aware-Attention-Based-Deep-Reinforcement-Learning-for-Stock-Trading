@@ -27,9 +27,11 @@ class SplitManifest:
     """
     Cryptographic and chronological manifest for dataset split boundaries (P1-5).
     Guarantees train/validation/test temporal isolation and provenance tracking.
+    Explicitly distinguishes Manifest Definition Hash from Dataset Content Hash.
     """
     dataset_id: str
-    manifest_hash: str
+    manifest_hash: str                  # Kept as alias of manifest_definition_hash for backwards compatibility
+    manifest_definition_hash: str       # Hash of split definition metadata
     schema_version: str
     train_start: pd.Timestamp
     train_end: pd.Timestamp
@@ -37,6 +39,50 @@ class SplitManifest:
     val_end: pd.Timestamp
     test_start: pd.Timestamp
     test_end: pd.Timestamp
+    raw_dataset_content_hash: Optional[str] = None     # SHA-256 of raw underlying input data (P1-5)
+    feature_snapshot_hash: Optional[str] = None        # SHA-256 of computed feature tensors (P1-5)
+    normalizer_fitting_data_hash: Optional[str] = None # SHA-256 of training batch used for fit() (P1-5)
+    feature_builder_version: str = "8.3.0"
+
+    @staticmethod
+    def compute_content_hash(data: Any) -> str:
+        """Computes deterministic cryptographic SHA-256 hash across DataFrames, numpy arrays, torch tensors, or dicts."""
+        hasher = hashlib.sha256()
+        if isinstance(data, pd.DataFrame):
+            hasher.update(data.to_csv(index=True).encode("utf-8"))
+        elif isinstance(data, np.ndarray):
+            hasher.update(data.tobytes())
+        elif isinstance(data, torch.Tensor):
+            hasher.update(data.detach().cpu().numpy().tobytes())
+        elif isinstance(data, dict):
+            for k in sorted(data.keys()):
+                hasher.update(str(k).encode("utf-8"))
+                hasher.update(SplitManifest.compute_content_hash(data[k]).encode("utf-8"))
+        elif isinstance(data, (list, tuple)):
+            for item in data:
+                hasher.update(SplitManifest.compute_content_hash(item).encode("utf-8"))
+        elif isinstance(data, (str, int, float, bool)):
+            hasher.update(str(data).encode("utf-8"))
+        elif data is None:
+            hasher.update(b"__NONE__")
+        else:
+            hasher.update(repr(data).encode("utf-8"))
+        return hasher.hexdigest()
+
+    @staticmethod
+    def compute_batch_content_hash(batch: MultimodalBatch) -> str:
+        """Computes cryptographic SHA-256 across all primary tensors in a MultimodalBatch."""
+        hasher = hashlib.sha256()
+        for tensor_name in [
+            "price", "technical", "institutional", "macro",
+            "stock_context", "recent_event_emb", "active_event_emb",
+            "event_metadata", "event_stock_rel", "event_mask", "position"
+        ]:
+            t = getattr(batch, tensor_name, None)
+            if t is not None:
+                hasher.update(tensor_name.encode("utf-8"))
+                hasher.update(t.detach().cpu().numpy().tobytes())
+        return hasher.hexdigest()
 
     @classmethod
     def create(
@@ -49,6 +95,10 @@ class SplitManifest:
         val_end: Union[str, pd.Timestamp],
         test_start: Union[str, pd.Timestamp],
         test_end: Union[str, pd.Timestamp],
+        raw_dataset_content_hash: Optional[str] = None,
+        feature_snapshot_hash: Optional[str] = None,
+        normalizer_fitting_data_hash: Optional[str] = None,
+        feature_builder_version: str = "8.3.0",
     ) -> "SplitManifest":
         t_start = pd.Timestamp(train_start)
         t_end = pd.Timestamp(train_end)
@@ -63,12 +113,16 @@ class SplitManifest:
                 f"val ({v_start}..{v_end}), test ({te_start}..{te_end}) must be strictly sequential."
             )
 
-        content = f"{dataset_id}|{schema_version}|{t_start.isoformat()}|{t_end.isoformat()}|{v_start.isoformat()}|{v_end.isoformat()}|{te_start.isoformat()}|{te_end.isoformat()}"
-        manifest_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        content = (
+            f"{dataset_id}|{schema_version}|{t_start.isoformat()}|{t_end.isoformat()}|"
+            f"{v_start.isoformat()}|{v_end.isoformat()}|{te_start.isoformat()}|{te_end.isoformat()}"
+        )
+        manifest_def_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
 
         return cls(
             dataset_id=dataset_id,
-            manifest_hash=manifest_hash,
+            manifest_hash=manifest_def_hash,
+            manifest_definition_hash=manifest_def_hash,
             schema_version=schema_version,
             train_start=t_start,
             train_end=t_end,
@@ -76,6 +130,34 @@ class SplitManifest:
             val_end=v_end,
             test_start=te_start,
             test_end=te_end,
+            raw_dataset_content_hash=raw_dataset_content_hash,
+            feature_snapshot_hash=feature_snapshot_hash,
+            normalizer_fitting_data_hash=normalizer_fitting_data_hash,
+            feature_builder_version=feature_builder_version,
+        )
+
+    def with_content_hashes(
+        self,
+        raw_dataset_content_hash: Optional[str] = None,
+        feature_snapshot_hash: Optional[str] = None,
+        normalizer_fitting_data_hash: Optional[str] = None,
+    ) -> "SplitManifest":
+        """Returns an updated immutable SplitManifest with actual content hashes attached."""
+        return SplitManifest(
+            dataset_id=self.dataset_id,
+            manifest_hash=self.manifest_hash,
+            manifest_definition_hash=self.manifest_definition_hash,
+            schema_version=self.schema_version,
+            train_start=self.train_start,
+            train_end=self.train_end,
+            val_start=self.val_start,
+            val_end=self.val_end,
+            test_start=self.test_start,
+            test_end=self.test_end,
+            raw_dataset_content_hash=raw_dataset_content_hash or self.raw_dataset_content_hash,
+            feature_snapshot_hash=feature_snapshot_hash or self.feature_snapshot_hash,
+            normalizer_fitting_data_hash=normalizer_fitting_data_hash or self.normalizer_fitting_data_hash,
+            feature_builder_version=self.feature_builder_version,
         )
 
     def validate_sample_timestamps(
@@ -144,6 +226,10 @@ class FeatureNormalizer:
         self.fitted_dataset_id: Optional[str] = None
         self.fitted_manifest_hash: Optional[str] = None
         self.fitted_train_window: Optional[tuple] = None
+        self.fitted_fitting_data_hash: Optional[str] = None
+        self.fitted_raw_content_hash: Optional[str] = None
+        self.fitted_feature_snapshot_hash: Optional[str] = None
+        self.feature_builder_version: str = "8.3.0"
 
     def fit(
         self,
@@ -243,6 +329,25 @@ class FeatureNormalizer:
                 f"Unknown FeatureNormalizer mode: {effective_mode}. Expected 'formal', 'synthetic', or 'test'."
             )
 
+        # P1-5: Compute content hash of fitting data
+        if isinstance(batch_or_list, list):
+            fitting_hash = SplitManifest.compute_content_hash([SplitManifest.compute_batch_content_hash(b) for b in batch_or_list])
+        else:
+            fitting_hash = SplitManifest.compute_batch_content_hash(batch_or_list)
+        self.fitted_fitting_data_hash = fitting_hash
+
+        if manifest is not None and manifest.normalizer_fitting_data_hash is not None:
+            if self.fitted_fitting_data_hash != manifest.normalizer_fitting_data_hash:
+                raise ValueError(
+                    f"Dataset Content Hash Mismatch (P1-5): Normalizer fitting data hash '{self.fitted_fitting_data_hash}' "
+                    f"does not match SplitManifest contract normalizer_fitting_data_hash '{manifest.normalizer_fitting_data_hash}'. "
+                    "Underlying training batch data has been modified!"
+                )
+        if manifest is not None:
+            self.fitted_raw_content_hash = manifest.raw_dataset_content_hash
+            self.fitted_feature_snapshot_hash = manifest.feature_snapshot_hash
+            self.feature_builder_version = manifest.feature_builder_version
+
         if isinstance(batch_or_list, list):
             price = torch.cat([b.price for b in batch_or_list], dim=0)
             tech = torch.cat([b.technical for b in batch_or_list], dim=0)
@@ -257,26 +362,28 @@ class FeatureNormalizer:
             ctx = batch_or_list.stock_context
 
         # Compute statistics over batch and time dimensions: [dim]
+        b_dim = ctx.shape[0]
+        ctx_std = ctx.std(dim=0, keepdim=True, correction=0 if b_dim == 1 else 1)
         self.stats = {
             "price": {
                 "mean": price.mean(dim=(0, 1), keepdim=True),
-                "std": torch.clamp(price.std(dim=(0, 1), keepdim=True), min=1e-4),
+                "std": torch.clamp(torch.nan_to_num(price.std(dim=(0, 1), keepdim=True), nan=1.0), min=1e-4),
             },
             "technical": {
                 "mean": tech.mean(dim=(0, 1), keepdim=True),
-                "std": torch.clamp(tech.std(dim=(0, 1), keepdim=True), min=1e-4),
+                "std": torch.clamp(torch.nan_to_num(tech.std(dim=(0, 1), keepdim=True), nan=1.0), min=1e-4),
             },
             "institutional": {
                 "mean": inst.mean(dim=(0, 1), keepdim=True),
-                "std": torch.clamp(inst.std(dim=(0, 1), keepdim=True), min=1e-4),
+                "std": torch.clamp(torch.nan_to_num(inst.std(dim=(0, 1), keepdim=True), nan=1.0), min=1e-4),
             },
             "macro": {
                 "mean": macro.mean(dim=(0, 1), keepdim=True),
-                "std": torch.clamp(macro.std(dim=(0, 1), keepdim=True), min=1e-4),
+                "std": torch.clamp(torch.nan_to_num(macro.std(dim=(0, 1), keepdim=True), nan=1.0), min=1e-4),
             },
             "stock_context": {
                 "mean": ctx.mean(dim=0, keepdim=True),
-                "std": torch.clamp(ctx.std(dim=0, keepdim=True), min=1e-4),
+                "std": torch.clamp(torch.nan_to_num(ctx_std, nan=1.0), min=1e-4),
             },
         }
 
@@ -286,6 +393,7 @@ class FeatureNormalizer:
     def transform(self, batch: MultimodalBatch) -> MultimodalBatch:
         """
         Transforms features in MultimodalBatch using the FROZEN training statistics.
+        Preserves missing masks without modification (P1-4).
         """
         if not self.is_fitted:
             raise RuntimeError(
@@ -323,6 +431,10 @@ class FeatureNormalizer:
             novelty_mask=batch.novelty_mask.clone() if batch.novelty_mask is not None else None,
             return_mask=batch.return_mask.clone() if batch.return_mask is not None else None,
             risk_mask=batch.risk_mask.clone() if batch.risk_mask is not None else None,
+            macro_missing_mask=batch.macro_missing_mask.clone() if batch.macro_missing_mask is not None else None,
+            institutional_missing_mask=batch.institutional_missing_mask.clone() if batch.institutional_missing_mask is not None else None,
+            stock_context_missing_mask=batch.stock_context_missing_mask.clone() if batch.stock_context_missing_mask is not None else None,
+            event_metadata_missing_mask=batch.event_metadata_missing_mask.clone() if batch.event_metadata_missing_mask is not None else None,
             schema_version=self.schema_version,
         )
 
@@ -345,24 +457,52 @@ class FeatureNormalizer:
         return self.transform(train_batch)
 
     def state_dict(self) -> Dict[str, Any]:
-        """Exports normalizer statistics and provenance."""
+        """Exports normalizer statistics and comprehensive provenance (P1-5)."""
         if not self.is_fitted:
             raise RuntimeError("Cannot export state_dict of an unfitted normalizer.")
         return {
             "schema_version": self.schema_version,
             "manifest_hash": self.fitted_manifest_hash or (self.split_manifest.manifest_hash if self.split_manifest else None),
+            "manifest_definition_hash": self.fitted_manifest_hash or (self.split_manifest.manifest_definition_hash if self.split_manifest else None),
+            "fitting_data_hash": self.fitted_fitting_data_hash,
+            "raw_dataset_content_hash": self.fitted_raw_content_hash or (self.split_manifest.raw_dataset_content_hash if self.split_manifest else None),
+            "feature_snapshot_hash": self.fitted_feature_snapshot_hash or (self.split_manifest.feature_snapshot_hash if self.split_manifest else None),
+            "feature_builder_version": self.feature_builder_version,
             "dataset_id": self.fitted_dataset_id or (self.split_manifest.dataset_id if self.split_manifest else None),
             "stats": copy.deepcopy(self.stats),
             "mode": self.mode,
         }
 
-    def load_state_dict(self, state: Dict[str, Any]):
-        """Loads and freezes normalizer statistics from state dict."""
+    def load_state_dict(
+        self,
+        state: Dict[str, Any],
+        expected_manifest: Optional[SplitManifest] = None,
+    ):
+        """Loads and freezes normalizer statistics from state dict with contract verification (P1-5)."""
         schema_ver = state.get("schema_version", CURRENT_ACTIVE_SCHEMA_VERSION)
         if schema_ver != self.schema_version:
             raise ValueError(
                 f"Cannot load normalizer state: target normalizer is '{self.schema_version}', "
                 f"but state dict has '{schema_ver}'."
             )
+        if expected_manifest is not None:
+            state_def_hash = state.get("manifest_definition_hash") or state.get("manifest_hash")
+            if state_def_hash and state_def_hash != expected_manifest.manifest_definition_hash:
+                raise ValueError(
+                    f"Manifest Definition Hash Mismatch (P1-5): State has '{state_def_hash}', "
+                    f"expected '{expected_manifest.manifest_definition_hash}'."
+                )
+            if expected_manifest.normalizer_fitting_data_hash and state.get("fitting_data_hash"):
+                if state["fitting_data_hash"] != expected_manifest.normalizer_fitting_data_hash:
+                    raise ValueError(
+                        f"Fitting Data Hash Mismatch (P1-5): State has '{state.get('fitting_data_hash')}', "
+                        f"expected '{expected_manifest.normalizer_fitting_data_hash}'."
+                    )
         self.stats = copy.deepcopy(state["stats"])
+        self.fitted_dataset_id = state.get("dataset_id")
+        self.fitted_manifest_hash = state.get("manifest_hash")
+        self.fitted_fitting_data_hash = state.get("fitting_data_hash")
+        self.fitted_raw_content_hash = state.get("raw_dataset_content_hash")
+        self.fitted_feature_snapshot_hash = state.get("feature_snapshot_hash")
+        self.feature_builder_version = state.get("feature_builder_version", "8.3.0")
         self.is_fitted = True

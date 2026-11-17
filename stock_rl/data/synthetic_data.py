@@ -58,6 +58,12 @@ class MultimodalBatch:
     return_mask: Optional[torch.Tensor] = None       # [B, 3] (bool)
     risk_mask: Optional[torch.Tensor] = None         # [B, 3] (bool)
 
+    # Feature Missing & Epistemic Tracking Masks (P1-4)
+    macro_missing_mask: Optional[torch.Tensor] = None          # [B, 60, 12] (bool: True if imputed/missing)
+    institutional_missing_mask: Optional[torch.Tensor] = None  # [B, 60, 8]  (bool: True if imputed/missing)
+    stock_context_missing_mask: Optional[torch.Tensor] = None  # [B, 16]     (bool: True if imputed/missing)
+    event_metadata_missing_mask: Optional[torch.Tensor] = None # [B, 40, 24] (bool: True if imputed/missing)
+
     schema_version: str = CURRENT_ACTIVE_SCHEMA_VERSION
 
     def to(self, device: torch.device) -> "MultimodalBatch":
@@ -82,6 +88,10 @@ class MultimodalBatch:
             novelty_mask=self.novelty_mask.to(device) if self.novelty_mask is not None else None,
             return_mask=self.return_mask.to(device) if self.return_mask is not None else None,
             risk_mask=self.risk_mask.to(device) if self.risk_mask is not None else None,
+            macro_missing_mask=self.macro_missing_mask.to(device) if self.macro_missing_mask is not None else None,
+            institutional_missing_mask=self.institutional_missing_mask.to(device) if self.institutional_missing_mask is not None else None,
+            stock_context_missing_mask=self.stock_context_missing_mask.to(device) if self.stock_context_missing_mask is not None else None,
+            event_metadata_missing_mask=self.event_metadata_missing_mask.to(device) if self.event_metadata_missing_mask is not None else None,
             schema_version=self.schema_version,
         )
 
@@ -107,6 +117,10 @@ class MultimodalBatch:
             novelty_mask=self.novelty_mask.clone() if self.novelty_mask is not None else None,
             return_mask=self.return_mask.clone() if self.return_mask is not None else None,
             risk_mask=self.risk_mask.clone() if self.risk_mask is not None else None,
+            macro_missing_mask=self.macro_missing_mask.clone() if self.macro_missing_mask is not None else None,
+            institutional_missing_mask=self.institutional_missing_mask.clone() if self.institutional_missing_mask is not None else None,
+            stock_context_missing_mask=self.stock_context_missing_mask.clone() if self.stock_context_missing_mask is not None else None,
+            event_metadata_missing_mask=self.event_metadata_missing_mask.clone() if self.event_metadata_missing_mask is not None else None,
             schema_version=self.schema_version,
         )
 

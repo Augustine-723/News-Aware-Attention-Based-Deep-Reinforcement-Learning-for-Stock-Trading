@@ -5,10 +5,24 @@ Enforces strict historical availability, document versioning, and dynamic label 
 
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from typing import Dict, List, Optional, Tuple, Any
 import warnings
 import pandas as pd
 import numpy as np
+
+
+class MissingStatus(str, Enum):
+    """
+    P1-4: Formal Missing & Epistemic Status.
+    Explicitly distinguishes between true valid observations, actual zeros,
+    expected-but-missing data, unverified unknown data, and future unreleased data.
+    """
+    AVAILABLE = "AVAILABLE"
+    ACTUAL_ZERO = "ACTUAL_ZERO"
+    MISSING = "MISSING"
+    UNKNOWN = "UNKNOWN"
+    NOT_YET_PUBLISHED = "NOT_YET_PUBLISHED"
 
 
 class AvailabilityStatus:
@@ -276,7 +290,8 @@ class ProvenanceRecord:
     """
     Cryptographically and chronologically auditable feature provenance record.
     Tracks primary source publishing, vendor dissemination, local ingestion,
-    and historical availability status per V8.3 Code Review 1 & 2 (P0-1, P1-7).
+    and historical availability status per V8.3 Code Review 1, 2 & 3 (P0-1, P0-2, P1-7).
+    Fail-closed defaults: is_audit_verified=False, missing_status=UNKNOWN.
     """
     source_id: str
     source_published_at: Optional[pd.Timestamp] = None
@@ -285,18 +300,26 @@ class ProvenanceRecord:
     ingested_at: Optional[pd.Timestamp] = None
     revision_id: int = 1
     version: str = "1.0"
-    is_audit_verified: bool = True
-    missing_status: str = "AVAILABLE"  # "AVAILABLE", "UNKNOWN", "MISSING"
+    is_audit_verified: bool = False  # P0-2: Default False (Fail-Closed)
+    missing_status: str = MissingStatus.UNKNOWN.value  # P0-2: Default UNKNOWN (Fail-Closed)
+    missing_reason: Optional[str] = None
+    mode: str = "formal"
 
-    def is_available_as_of(self, decision_time: pd.Timestamp) -> bool:
+    def is_available_as_of(self, decision_time: pd.Timestamp, mode: Optional[str] = None) -> bool:
         """
         Validates historical availability strictly at decision_time.
-        Requires verified available_at <= decision_time and missing_status == 'AVAILABLE'.
-        Timezone-aware safe comparison.
+        Requires verified available_at <= decision_time and missing_status in (AVAILABLE, ACTUAL_ZERO).
+        Timezone-aware safe comparison. Naive timestamps raise ValueError in formal mode.
         """
-        if self.missing_status in ("UNKNOWN", "MISSING"):
-            return False
+        eff_mode = mode or self.mode
         if not self.is_audit_verified:
+            return False
+        if self.missing_status not in (
+            MissingStatus.AVAILABLE.value,
+            MissingStatus.ACTUAL_ZERO.value,
+            "AVAILABLE",
+            "ACTUAL_ZERO",
+        ):
             return False
         if self.available_at is None:
             return False
@@ -304,15 +327,40 @@ class ProvenanceRecord:
         t_avail = self.available_at
         t_dec = decision_time
 
-        # Normalize timezones for comparison
-        if t_avail.tzinfo is not None and t_dec.tzinfo is not None:
-            return t_avail <= t_dec
-        elif t_avail.tzinfo is None and t_dec.tzinfo is None:
-            return t_avail <= t_dec
-        else:
-            t_avail_utc = t_avail.tz_convert("UTC") if t_avail.tzinfo is not None else t_avail.tz_localize("UTC")
-            t_dec_utc = t_dec.tz_convert("UTC") if t_dec.tzinfo is not None else t_dec.tz_localize("UTC")
-            return t_avail_utc <= t_dec_utc
+        # P0-2: Strictly enforce timezone awareness. Silent UTC fallback is prohibited!
+        if t_avail.tzinfo is None or t_dec.tzinfo is None:
+            if eff_mode == "formal":
+                raise ValueError(
+                    f"Strict PIT Error: Timestamps in ProvenanceRecord and decision_time must be timezone-aware. "
+                    f"available_at={t_avail} (tz={t_avail.tzinfo}), decision_time={t_dec} (tz={t_dec.tzinfo}). "
+                    "Naive timestamps cannot be presumed UTC without timezone specification in formal mode."
+                )
+            return False
+
+        return t_avail <= t_dec
+
+
+class HistoricalVersionSelector:
+    """
+    P0-2: Point-In-Time Historical Version Selector.
+    Selects the authoritative revision of a document or record as of decision_timestamp.
+    Guarantees that unreleased or future revisions cannot overwrite historical values.
+    """
+    @staticmethod
+    def select_as_of(
+        revisions: List[ProvenanceRecord],
+        decision_time: pd.Timestamp,
+        mode: str = "formal",
+    ) -> Optional[ProvenanceRecord]:
+        if not revisions:
+            return None
+        valid_revs = [
+            r for r in revisions
+            if r.is_available_as_of(decision_time, mode=mode)
+        ]
+        if not valid_revs:
+            return None
+        return max(valid_revs, key=lambda r: (r.available_at, r.revision_id))
 
 
 def asof_join_cross_market(
@@ -389,8 +437,18 @@ def asof_join_cross_market(
 
     foreign_clean["_avail_utc"] = avail_utc
 
-    # 4. Audit verification filter
-    if "is_audit_verified" in foreign_clean.columns:
+    # 4. Mandatory Audit verification filter (P0-3)
+    if "is_audit_verified" not in foreign_clean.columns:
+        if mode == "formal":
+            raise ValueError(
+                "Strict PIT Error: foreign_market_df missing required audit verification column "
+                "'is_audit_verified' in formal mode. Unverified sources are strictly rejected."
+            )
+        warnings.warn(
+            "Estimated Availability Fallback: 'is_audit_verified' missing in synthetic mode.",
+            UserWarning,
+        )
+    else:
         if mode == "formal":
             foreign_clean = foreign_clean[foreign_clean["is_audit_verified"] == True]
 
@@ -398,7 +456,7 @@ def asof_join_cross_market(
     foreign_valid = foreign_clean.dropna(subset=["_avail_utc"]).sort_values("_avail_utc").reset_index(drop=True)
 
     # 5. Backward-only As-Of Join
-    feature_cols = [c for c in foreign_clean.columns if c not in (foreign_available_col, "_avail_utc")]
+    feature_cols = [c for c in foreign_clean.columns if c not in (foreign_available_col, "_avail_utc", "is_audit_verified")]
     if len(foreign_valid) == 0:
         # No valid foreign records available
         result_df = pd.DataFrame(np.nan, index=taiwan_decision_times, columns=feature_cols)

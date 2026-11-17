@@ -83,6 +83,7 @@ def test_cross_market_pit_asof_join_no_bfill():
     df_us = pd.DataFrame({
         "available_at": us_dates,
         "sp500": [5100.0, 5120.0, 5130.0, 5150.0, 5160.0],
+        "is_audit_verified": True,
     })
 
     # Backward-only As-Of Join
@@ -116,6 +117,7 @@ def test_cross_market_counterfactual_future_modification():
         "sox": [4000.0, 4050.0, 4100.0, 4150.0, 4200.0],
         "vix": [14.0, 14.5, 13.8, 14.2, 14.0],
         "us_10y_yield": [4.05, 4.08, 4.10, 4.12, 4.15],
+        "is_audit_verified": True,
     })
 
     # Perturbed future data on day 3 and 4
@@ -349,6 +351,7 @@ def test_audited_provenance_builders_pit_guard():
         available_at=pd.Timestamp("2024-04-13 10:05:00", tz="Asia/Taipei"),
         ingested_at=pd.Timestamp("2024-04-13 10:10:00", tz="Asia/Taipei"),
         is_audit_verified=True,
+        missing_status="AVAILABLE",
     )
     meta_valid = build_audited_event_metadata(
         actor_embedding_4d=np.ones(4),
@@ -375,6 +378,7 @@ def test_audited_provenance_builders_pit_guard():
         available_at=pd.Timestamp("2024-04-16 09:05:00", tz="Asia/Taipei"),
         ingested_at=pd.Timestamp("2024-04-16 09:10:00", tz="Asia/Taipei"),
         is_audit_verified=True,
+        missing_status="AVAILABLE",
     )
     meta_future = build_audited_event_metadata(
         actor_embedding_4d=np.ones(4),
