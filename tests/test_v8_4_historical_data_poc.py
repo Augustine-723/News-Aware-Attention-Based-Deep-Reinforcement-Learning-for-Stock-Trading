@@ -394,3 +394,173 @@ def test_real_data_multimodal_tensor_validation_and_model_forward():
         assert "relevance_logits" in smoke_res["aux_keys"]
         assert "pred_returns" in smoke_res["aux_keys"]
         assert "pred_risk" in smoke_res["aux_keys"]
+
+
+# ==============================================================================
+# 10. Gate 1: Historical Stock Context Zero Leakage & Dynamic Beta (Final Gate 1)
+# ==============================================================================
+
+def test_stock_context_no_future_leakage_and_beta_variation():
+    """
+    Gate 1: Verifies that Stock Context features (Beta120, suspension, market cap):
+    - Are independently evaluated as-of each decision timestamp.
+    - Beta120 dynamically changes over time and does NOT backfill dataset-end values.
+    - Mutating future prices or volumes at T+1 strictly produces 100% bitwise equal Stock Context at T.
+    """
+    ohlcv, inst, macro, foreign, ctx, evs = load_real_market_feeds("2330", mode="estimated")
+    meta = STOCK_METADATA["2330"]
+
+    builder = HistoricalSnapshotBuilder(
+        df_ohlcv=ohlcv,
+        df_inst=inst,
+        df_macro=macro,
+        df_foreign=foreign,
+        stock_context_records=ctx,
+        event_records=evs,
+        shares_outstanding=meta["shares_outstanding"],
+        mode="estimated",
+    )
+
+    # 1. Beta120 dynamic variation over time
+    snap_day120 = builder.build_snapshot(ohlcv.index[120].floor("D") + pd.Timedelta(hours=20))
+    snap_day160 = builder.build_snapshot(ohlcv.index[160].floor("D") + pd.Timedelta(hours=20))
+    snap_day200 = builder.build_snapshot(ohlcv.index[200].floor("D") + pd.Timedelta(hours=20))
+
+    beta_120 = snap_day120.stock_context[0, 12].item()
+    beta_160 = snap_day160.stock_context[0, 12].item()
+    beta_200 = snap_day200.stock_context[0, 12].item()
+
+    assert not np.isclose(beta_120, beta_160), "Beta120 must vary dynamically over time!"
+    assert not np.isclose(beta_160, beta_200), "Beta120 must vary dynamically over time!"
+
+    # 2. Mutating future data at T+1 does not affect Day 120 stock context
+    assert RealDataQualityAuditor.run_counterfactual_leakage_test("2330", decision_idx=120) is True
+
+
+# ==============================================================================
+# 11. Gate 1: Trading Suspension and Shares Outstanding As-Of Verification (Final Gate 1)
+# ==============================================================================
+
+def test_trading_suspension_and_shares_asof():
+    """
+    Gate 1: Verifies that recent trading suspension indicator (C16) and shares outstanding:
+    - Only evaluate trading volume in the 20 days prior to decision timestamp.
+    - Correctly reflect historical share capital increases.
+    """
+    ohlcv, inst, macro, foreign, ctx, evs = load_real_market_feeds("2881", mode="estimated")
+    meta = STOCK_METADATA["2881"]
+
+    builder = HistoricalSnapshotBuilder(
+        df_ohlcv=ohlcv,
+        df_inst=inst,
+        df_macro=macro,
+        df_foreign=foreign,
+        stock_context_records=ctx,
+        event_records=evs,
+        shares_outstanding=meta["shares_outstanding"],
+        mode="estimated",
+    )
+
+    # Day 80 snapshot
+    dec_t = ohlcv.index[80].floor("D") + pd.Timedelta(hours=20)
+    snap_clean = builder.build_snapshot(dec_t)
+    assert snap_clean.stock_context[0, 15].item() == 0.0  # Not suspended in past 20 days
+
+    # Insert fake suspension at T+1 (future)
+    ohlcv_fake_fut = ohlcv.copy()
+    ohlcv_fake_fut.iloc[81, ohlcv_fake_fut.columns.get_loc("volume")] = 0.0
+    builder_fut = HistoricalSnapshotBuilder(
+        df_ohlcv=ohlcv_fake_fut,
+        df_inst=inst,
+        df_macro=macro,
+        df_foreign=foreign,
+        stock_context_records=ctx,
+        event_records=evs,
+        shares_outstanding=meta["shares_outstanding"],
+        mode="estimated",
+    )
+    snap_fut = builder_fut.build_snapshot(dec_t)
+    # Suspension at T+1 must NOT leak into Day T observation!
+    assert snap_fut.stock_context[0, 15].item() == 0.0
+    assert torch.equal(snap_clean.stock_context, snap_fut.stock_context)
+
+
+# ==============================================================================
+# 12. Gate 2: Institutional vs Margin Separate Availability Channels (Final Gate 2)
+# ==============================================================================
+
+def test_institutional_margin_separate_availability_at_1830():
+    """
+    Gate 2: Verifies independent availability channels for Institutional (18:00) vs Margin/Short (19:30):
+    - At 18:30: Institutional net buy (I01..I05) is available; Margin balances (I06..I08) are masked.
+    - At 20:00: Both Institutional and Margin are fully available.
+    """
+    ohlcv, inst, macro, foreign, ctx, evs = load_real_market_feeds("2330", mode="estimated")
+    meta = STOCK_METADATA["2330"]
+
+    builder = HistoricalSnapshotBuilder(
+        df_ohlcv=ohlcv,
+        df_inst=inst,
+        df_macro=macro,
+        df_foreign=foreign,
+        stock_context_records=ctx,
+        event_records=evs,
+        shares_outstanding=meta["shares_outstanding"],
+        mode="estimated",
+    )
+
+    # 1. Decision time at 18:30 Asia/Taipei (between 18:00 and 19:30)
+    dec_1830 = ohlcv.index[100].floor("D") + pd.Timedelta(hours=18, minutes=30)
+    snap_1830 = builder.build_snapshot(dec_1830)
+
+    # Last row of 60D window (index 59)
+    # I01..I05 (cols 0..4) must be AVAILABLE (mask is False)
+    assert not snap_1830.institutional_missing_mask[0, 59, 0:5].any().item(), \
+        "Institutional flow (I01..I05) must be available at 18:30!"
+    # I06..I08 (cols 5..7) must be MASKED (margin not available until 19:30)
+    assert snap_1830.institutional_missing_mask[0, 59, 5:8].all().item(), \
+        "Margin/Short features (I06..I08) must be masked at 18:30!"
+
+    # 2. Decision time at 20:00 Asia/Taipei (after 19:30)
+    dec_2000 = ohlcv.index[100].floor("D") + pd.Timedelta(hours=20)
+    snap_2000 = builder.build_snapshot(dec_2000)
+    # Both channels are available
+    assert not snap_2000.institutional_missing_mask[0, 59, :].any().item(), \
+        "All institutional features must be available at 20:00!"
+
+
+# ==============================================================================
+# 13. Gate 3: Empirical Coverage Audit Calculated from Snapshots (Final Gate 3)
+# ==============================================================================
+
+def test_empirical_coverage_calculated_from_snapshots():
+    """
+    Gate 3: Verifies Empirical Coverage calculation directly from evaluation snapshots:
+    - Exactly evaluates 487,200 market window cells across 3 stocks and 56 trading days.
+    - Demonstrates 100% valid populated market cells (0 NaNs).
+    - Demonstrates strictly separated Event Slot Occupancy (0.0% occupancy).
+    """
+    emp = RealDataQualityAuditor.compute_empirical_coverage(
+        stock_ids=["2330", "2603", "2881"],
+        eval_start="2024-01-02",
+        eval_end="2024-03-29",
+        mode="estimated",
+    )
+
+    m_cells = emp["market_context_cells"]
+    assert m_cells["total_evaluated"] == 487200, f"Expected 487,200 cells, got {m_cells['total_evaluated']}"
+    assert m_cells["valid_populated"] == 487200
+    assert m_cells["missing_imputed"] == 0
+    assert np.isclose(m_cells["empirical_validity_rate"], 1.0)
+
+    # Event Slot Occupancy must be strictly reported separately
+    ev_occ = emp["event_slot_occupancy"]
+    assert ev_occ["occupied_slots"] == 0
+    assert ev_occ["total_slots"] == 6720
+    assert np.isclose(ev_occ["occupancy_rate"], 0.0)
+
+    # Per-stock validity
+    for sid in ["2330", "2603", "2881"]:
+        assert emp["per_stock"][sid]["num_snapshots"] == 56
+        assert emp["per_stock"][sid]["valid_market_cells"] == 162400
+

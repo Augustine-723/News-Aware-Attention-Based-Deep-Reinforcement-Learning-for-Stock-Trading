@@ -269,7 +269,10 @@ class HistoricalSnapshotBuilder:
             return None, np.ones((len(window_dates), feature_dim), dtype=bool)
 
         # 1. Strictly filter by available_at <= decision_timestamp
-        avail_mask = df["available_at"] <= decision_timestamp
+        if feed_name == "df_inst" and "inst_available_at" in df.columns:
+            avail_mask = (df["inst_available_at"] <= decision_timestamp) | (df["available_at"] <= decision_timestamp)
+        else:
+            avail_mask = df["available_at"] <= decision_timestamp
         df_avail = df[avail_mask].copy()
 
         # 2. Extract trading / observation date explicitly
@@ -300,18 +303,37 @@ class HistoricalSnapshotBuilder:
 
         # 5. Extract feature columns and determine missing mask
         meta_cols = {
-            "available_at", "_trading_date_normalized", "is_audit_verified",
+            "available_at", "inst_available_at", "margin_available_at",
+            "_trading_date_normalized", "is_audit_verified",
             "observation_date", "trading_date", "revision_id", "provenance",
-            "missing_status", "missing_reason",
+            "missing_status", "missing_reason", "availability_classification",
+            "inst_estimation_rationale", "margin_estimation_rationale",
+            "estimation_rationale", "ingested_at",
         }
         feature_cols = [c for c in aligned.columns if c not in meta_cols]
-        aligned_features = aligned[feature_cols]
+        aligned_features = aligned[feature_cols].copy()
 
         is_null = aligned_features.isnull().values
         missing_mask = np.zeros((len(window_dates), feature_dim), dtype=bool)
         # If any raw input column for a trading date is missing, all derived features for that date are missing
         row_is_missing = is_null.any(axis=1)
         missing_mask[row_is_missing, :] = True
+
+        # Independent channel availability for Institutional (18:00) vs Margin/Short (19:30)
+        if feed_name == "df_inst":
+            if "margin_available_at" in aligned.columns:
+                margin_unavail = (aligned["margin_available_at"].isnull()) | (aligned["margin_available_at"] > decision_timestamp)
+                missing_mask[margin_unavail.values, 5:8] = True
+                for col in ["margin_balance", "short_balance"]:
+                    if col in aligned_features.columns:
+                        aligned_features.loc[margin_unavail, col] = 0.0
+
+            if "inst_available_at" in aligned.columns:
+                inst_unavail = (aligned["inst_available_at"].isnull()) | (aligned["inst_available_at"] > decision_timestamp)
+                missing_mask[inst_unavail.values, 0:5] = True
+                for col in ["foreign_net_buy", "trust_net_buy", "dealer_net_buy"]:
+                    if col in aligned_features.columns:
+                        aligned_features.loc[inst_unavail, col] = 0.0
 
         # 6. Fill policy: forward-fill for continuous macro series, zero-fill for institutional
         if ffill_missing:
@@ -488,6 +510,8 @@ class HistoricalSnapshotBuilder:
                 avail_ctx_records,
                 key=lambda r: (r["provenance"].available_at, getattr(r["provenance"], "revision_id", 0))
             )
+            shares_asof = float(latest_ctx_rec.get("shares_outstanding", self.shares_outstanding))
+            market_cap_asof = float(last_asof_close * shares_asof)
             ctx_vec = build_audited_stock_context(
                 industry_embedding_8d=latest_ctx_rec.get("industry_embedding_8d", np.zeros(8, dtype=np.float32)),
                 market_cap=market_cap_asof,
