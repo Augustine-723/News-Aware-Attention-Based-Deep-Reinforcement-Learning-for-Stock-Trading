@@ -194,18 +194,19 @@ def test_historical_source_verification_coverage():
     ev_dt = pd.Timestamp(f"{ev_target['date_str']} {ev_target['pub_time_str']}", tz="Asia/Taipei")
     ev_hash = compute_normalized_content_hash(ev_target["headline"], ev_target.get("body_text", ""))
 
-    valid_evidence = TrustedExternalSourceAdapter.certify_with_adapter_receipt(
+    valid_evidence = TrustedExternalSourceAdapter.certify_with_live_retrieval_evidence(
         announcement_id="MOPS-2330-20230606-AGM",
         company_id=ev_target["stock_id"],
         announcement_datetime=ev_dt,
         raw_content=ev_target.get("body_text", ""),
+        raw_http_response_bytes=ev_target.get("body_text", "").encode("utf-8"),
+        retrieval_session_id="SESS-LIVE-20230606-001",
         headline=ev_target["headline"],
         payload_hash=ev_hash,
         endpoint_url="https://mops.twse.com.tw/mops/web/t05st01?step=1&TYPEK=sii&year=112&month=06&co_id=2330",
         is_existence_verified=True,
         is_availability_verified=False,  # Distinguishes existence vs historical provider availability!
         audit_notes="Authentic exchange filing verified against raw disclosure archive.",
-        is_authentic=True,
     )
 
     # Manifest with verified evidence bundle

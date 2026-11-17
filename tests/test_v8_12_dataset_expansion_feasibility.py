@@ -213,14 +213,15 @@ def test_trusted_source_certification_preflight():
 
     # --- Rejection Case 5: Reusing evidence from another announcement ---
     ev_other = [e for e in RAW_PILOT_EVENTS if e["event_id"] == "EV-2330-03"][0]
-    valid_evidence_agm = TrustedExternalSourceAdapter.certify_with_adapter_receipt(
+    valid_evidence_agm = TrustedExternalSourceAdapter.certify_with_live_retrieval_evidence(
         announcement_id="MOPS-2330-20230606-AGM",
         company_id="2330",
         announcement_datetime=ev_dt,
         raw_content=ev_target.get("body_text", ""),
+        raw_http_response_bytes=ev_target.get("body_text", "").encode("utf-8"),
+        retrieval_session_id="SESS-LIVE-20230606-001",
         headline=ev_target["headline"],
         endpoint_url="https://mops.twse.com.tw/mops/web/t05st01",
-        is_authentic=True,
     )
     status, evidence_dict, notes = TrustedSourceCertifier.verify_evidence(ev_other, valid_evidence_agm)
     assert status == SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED
@@ -297,18 +298,19 @@ def test_event_existence_vs_historical_availability_distinction():
     ev_dt = pd.Timestamp(f"{ev_target['date_str']} {ev_target['pub_time_str']}", tz="Asia/Taipei")
     ev_hash = compute_normalized_content_hash(ev_target["headline"], ev_target.get("body_text", ""))
 
-    valid_evidence = TrustedExternalSourceAdapter.certify_with_adapter_receipt(
+    valid_evidence = TrustedExternalSourceAdapter.certify_with_live_retrieval_evidence(
         announcement_id="MOPS-2330-20230606-AGM",
         company_id="2330",
         announcement_datetime=ev_dt,
         raw_content=ev_target.get("body_text", ""),
+        raw_http_response_bytes=ev_target.get("body_text", "").encode("utf-8"),
+        retrieval_session_id="SESS-LIVE-20230606-001",
         headline=ev_target["headline"],
         payload_hash=ev_hash,
         endpoint_url="https://mops.twse.com.tw/mops/web/t05st01",
         is_existence_verified=True,
         is_availability_verified=False,  # Segregated! No historical vendor feed receipt
         audit_notes="Authentic exchange filing verified against raw disclosure archive.",
-        is_authentic=True,
     )
 
     manifest = PilotSourceManifest.generate_manifest(evidence_registry={"EV-2330-01": valid_evidence})

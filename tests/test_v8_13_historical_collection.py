@@ -114,8 +114,8 @@ def test_simulated_receipt_rejection_and_fail_closed():
     assert status_none == SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED
     assert "unverified without raw evidence" in notes_none
 
-    # 6. Authentic receipt -> Can elevate to VERIFIED_SOURCE when all checks pass
-    authentic_evidence = TrustedExternalSourceAdapter.certify_with_adapter_receipt(
+    # 6. Attempt certification with is_authentic=True via standard adapter -> MUST FAIL CLOSED (P0-3)
+    self_attested_evidence = TrustedExternalSourceAdapter.certify_with_adapter_receipt(
         announcement_id="MOPS-2330-20230606-AGM",
         company_id="2330",
         announcement_datetime=ev_dt,
@@ -127,16 +127,86 @@ def test_simulated_receipt_rejection_and_fail_closed():
         is_availability_verified=False,
         is_authentic=True,
     )
+    assert self_attested_evidence.adapter_receipt.receipt_mode == AdapterReceiptMode.SIMULATED_ADAPTER_RECEIPT
+    assert self_attested_evidence.adapter_receipt.is_simulated is True
+    assert self_attested_evidence.adapter_receipt.is_verified_live_retrieval is False
+
+    fail_status, fail_dict, fail_notes = TrustedSourceCertifier.verify_evidence(ev_target, self_attested_evidence)
+    assert fail_status == SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED
+    assert fail_dict is None
+    assert "Adapter receipt is a SIMULATED_ADAPTER_RECEIPT" in fail_notes or "lacks verified live external retrieval" in fail_notes
+
+    # 7. Genuine live retrieval evidence -> Elevates to VERIFIED_SOURCE when verified
+    live_raw_bytes = ev_target.get("body_text", "").encode("utf-8")
+    authentic_evidence = TrustedExternalSourceAdapter.certify_with_live_retrieval_evidence(
+        announcement_id="MOPS-2330-20230606-AGM",
+        company_id="2330",
+        announcement_datetime=ev_dt,
+        raw_content=ev_target.get("body_text", ""),
+        raw_http_response_bytes=live_raw_bytes,
+        retrieval_session_id="SESS-TWSE-2024Q1-LIVE-001",
+        headline=ev_target["headline"],
+        payload_hash=ev_hash,
+        endpoint_url="https://mops.twse.com.tw/mops/web/t05st01",
+        is_existence_verified=True,
+        is_availability_verified=False,
+    )
     assert authentic_evidence.adapter_receipt.receipt_mode == AdapterReceiptMode.AUTHENTIC_EXTERNAL_RECEIPT
     assert authentic_evidence.adapter_receipt.is_simulated is False
     assert authentic_evidence.adapter_receipt.is_live_adapter_call is True
+    assert authentic_evidence.adapter_receipt.is_verified_live_retrieval is True
+    assert authentic_evidence.adapter_receipt.retrieval_session_id == "SESS-TWSE-2024Q1-LIVE-001"
+    assert authentic_evidence.adapter_receipt.raw_http_status == 200
 
     auth_status, auth_dict, auth_notes = TrustedSourceCertifier.verify_evidence(ev_target, authentic_evidence)
     assert auth_status == SourceVerificationStatus.VERIFIED_SOURCE
     assert auth_dict is not None
     assert auth_dict["receipt_mode"] == "AUTHENTIC_EXTERNAL_RECEIPT"
     assert auth_dict["is_simulated"] is False
+    assert auth_dict["is_verified_live_retrieval"] is True
     assert "Verified authentic MOPS corporate disclosure" in auth_notes
+
+
+def test_self_attested_authentic_receipt_rejection():
+    """
+    P0-3 Regression Test:
+    Calling with is_authentic=True or instantiating receipts without verified live external retrieval
+    MUST fail closed and be rejected from VERIFIED_SOURCE.
+    """
+    ev_target = [e for e in RAW_PILOT_EVENTS if e["event_id"] == "EV-2330-01"][0]
+    ev_dt = pd.Timestamp(f"{ev_target['date_str']} {ev_target['pub_time_str']}", tz="Asia/Taipei")
+    ev_hash = compute_normalized_content_hash(ev_target["headline"], ev_target.get("body_text", ""))
+
+    # Attempt to forge authentic receipt directly on ExternalSourceAdapterReceipt
+    forged_receipt = ExternalSourceAdapterReceipt(
+        adapter_id="TWSE_MOPS_REST_ADAPTER_V1",
+        receipt_id="FORGED-RCPT-001",
+        retrieved_at=pd.Timestamp.now(tz="Asia/Taipei"),
+        raw_response_hash=hashlib.sha256(ev_target.get("body_text", "").encode("utf-8")).hexdigest(),
+        announcement_id="MOPS-2330-20230606-AGM",
+        company_id="2330",
+        publication_datetime=ev_dt,
+        endpoint_url="https://mops.twse.com.tw/mops/web/t05st01",
+        receipt_mode=AdapterReceiptMode.AUTHENTIC_EXTERNAL_RECEIPT,
+        is_simulated=False,
+        is_verified_live_retrieval=False,  # Self-attested without verified live session!
+        retrieval_session_id=None,
+    )
+    forged_evidence = MOPSSourceEvidence(
+        announcement_id="MOPS-2330-20230606-AGM",
+        company_id="2330",
+        announcement_datetime=ev_dt,
+        raw_content=ev_target.get("body_text", ""),
+        payload_hash=ev_hash,
+        certifier_authority="TWSE_MOPS_OFFICIAL_ARCHIVE",
+        external_reference_url="https://mops.twse.com.tw/mops/web/t05st01",
+        adapter_receipt=forged_receipt,
+        is_trusted_external_certified=True,
+    )
+    status, evidence_dict, notes = TrustedSourceCertifier.verify_evidence(ev_target, forged_evidence)
+    assert status == SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED
+    assert evidence_dict is None
+    assert "lacks verified live external retrieval evidence" in notes
 
 
 # ==============================================================================
@@ -178,14 +248,17 @@ def test_small_scale_official_historical_collection_inventory():
 
     # Check all fields populated with authentic provenance
     for r in inventory:
-        assert r.announcement_id.startswith("MOPS-")
+        assert r.candidate_fixture_id.startswith("CANDIDATE-Q1-2024-")
+        assert r.announcement_id is None  # P0-2: Unverified without live official response
         assert r.company_id in ["2330", "2603", "2881"]
         assert len(r.headline) > 5
         assert len(r.body_text) > 20
         assert str(r.filing_datetime.tz) == "Asia/Taipei"
-        assert str(r.retrieved_at.tz) == "Asia/Taipei"
-        assert len(r.payload_hash) == 64
-        assert len(r.raw_response_hash) == 64
+        assert r.retrieved_at is None  # P0-2: None without actual network log
+        assert r.raw_official_response_bytes is None  # P0-2: None without live server bytes
+        assert r.raw_response_hash is None  # P0-2: None without live server bytes
+        assert len(r.candidate_fixture_hash) == 64
+        assert len(r.normalized_content_hash) == 64
         assert r.historical_provider_availability_included is False
         assert r.provider_availability_receipt is None
         assert r.license_metadata is not None
@@ -199,16 +272,15 @@ def test_small_scale_official_historical_collection_inventory():
 
 def test_coverage_and_collection_quality_metrics():
     """
-    V8.13 Requirement 3:
-    - Evaluates collection coverage, retrieval coverage, and historical availability coverage.
-    - Evaluates 3-way daily query resolution:
-      * NOT_ATTEMPTED (未完成檢索)
-      * QUERY_COMPLETED_ZERO_RESULTS (已完成檢索但無結果 - 正常無事件交易日)
-      * AUTHENTIC_NO_ANNOUNCEMENT_CONFIRMED (官方來源確認無重大訊息)
-    - Validates event cluster deduplication (10 clusters across 12 announcements).
+    V8.13 Requirement 3 & P0-1:
+    - Coverage metrics dynamically computed from QueryAttemptRecord.
+    - Offline prototype state defaults honestly to NOT_EXECUTED_OFFLINE_PROTOTYPE (56 NOT_ATTEMPTED).
+    - Dynamic query attempt evaluation correctly updates 3-way daily resolution and failure rates.
+    - Validates live OpenAPI query probe execution.
+    - Validates event cluster deduplication (10 clusters across 12 candidate announcements).
     - Validates revision tracking (Rule 51 clarification lineage).
-    - Validates zero query failure rate on lawful query interface.
     """
+    # 1. Default offline state (no fabricated queries!)
     metrics = OfficialHistoricalNewsCollector.evaluate_q1_2024_collection_metrics()
 
     # Scope
@@ -217,15 +289,16 @@ def test_coverage_and_collection_quality_metrics():
     assert scope["target_constituents"] == ["2330", "2603", "2881"]
     assert scope["total_trading_sessions"] == 56
 
-    # 1. Collection coverage (100% of planned Q1 sessions audited)
+    # 1. Collection coverage (Honest 0 queries executed offline)
     assert metrics["collection_coverage"]["sessions_planned"] == 56
-    assert metrics["collection_coverage"]["sessions_queried"] == 56
-    assert metrics["collection_coverage"]["collection_coverage_ratio"] == 1.0
+    assert metrics["collection_coverage"]["sessions_queried"] == 0
+    assert metrics["collection_coverage"]["collection_coverage_ratio"] == 0.0
+    assert metrics["collection_coverage"]["collection_status"] == "NOT_EXECUTED_OFFLINE_PROTOTYPE"
 
-    # 2. Retrieval coverage (9 distinct days with announcements out of 56 trading sessions)
+    # 2. Retrieval coverage
+    assert metrics["retrieval_coverage"]["candidate_fixture_announcements"] == 12
     assert metrics["retrieval_coverage"]["sessions_with_announcements"] == 9
-    assert metrics["retrieval_coverage"]["retrieval_coverage_ratio"] == round(9 / 56, 4)
-    assert metrics["retrieval_coverage"]["total_announcements_retrieved"] == 12
+    assert len(metrics["retrieval_coverage"]["announcement_dates"]) == 9
 
     # 3. Historical availability coverage (0% - MOPS lacks downstream vendor feed timestamps)
     assert metrics["historical_availability_coverage"]["announcements_with_provider_receipts"] == 0
@@ -236,13 +309,11 @@ def test_coverage_and_collection_quality_metrics():
     assert metrics["verification_status_summary"]["VERIFIED_SOURCE"] == 0
     assert metrics["verification_status_summary"]["MOPS_CANDIDATE_UNVERIFIED"] == 12
 
-    # 5. Three-way session resolution
+    # 5. Three-way session resolution (56 NOT_ATTEMPTED in offline mode)
     three_way = metrics["three_way_session_resolution"]
-    assert three_way["NOT_ATTEMPTED"] == 0
-    assert three_way["QUERY_COMPLETED_ZERO_RESULTS"] == 47
-    assert three_way["AUTHENTIC_NO_ANNOUNCEMENT_CONFIRMED"] == 47
-    assert three_way["ANNOUNCEMENTS_RETRIEVED"] == 9
-    assert "47 trading sessions completed official exchange queries with zero announcements returned" in three_way["semantic_clarification"]
+    assert three_way["NOT_ATTEMPTED"] == 56
+    assert three_way["QUERY_COMPLETED_ZERO_RESULTS"] == 0
+    assert three_way["AUTHENTIC_NO_ANNOUNCEMENT_CONFIRMED"] == 0
 
     # 6. Deduplication & Revisions
     dedup = metrics["event_cluster_deduplication"]
@@ -254,12 +325,36 @@ def test_coverage_and_collection_quality_metrics():
 
     rev = metrics["revision_tracking"]
     assert rev["revision_announcements_count"] == 1
-    assert "MOPS-2330-20240318-CLARIFICATION" in rev["revision_announcements"]
-    assert rev["clarification_details"]["MOPS-2330-20240318-CLARIFICATION"]["statutory_rule"] == "TWSE Material Disclosure Rule 51 (重大訊息澄清)"
+    assert "CANDIDATE-Q1-2024-2330-06" in rev["revision_announcements"]
 
-    # 7. Query failure rate (0% failure)
+    # 7. Query failure rate (0 queries executed offline)
+    assert metrics["source_failure_rate"]["total_queries_executed"] == 0
     assert metrics["source_failure_rate"]["failed_queries"] == 0
     assert metrics["source_failure_rate"]["failure_rate"] == 0.0
+    assert metrics["source_failure_rate"]["execution_status"] == "NOT_EXECUTED_OFFLINE_PROTOTYPE"
+
+    # 8. Dynamic computation with simulated query attempts
+    sim_attempts = OfficialHistoricalNewsCollector.create_simulated_audit_query_attempts()
+    sim_metrics = OfficialHistoricalNewsCollector.evaluate_q1_2024_collection_metrics(query_attempts=sim_attempts)
+    assert sim_metrics["collection_coverage"]["sessions_planned"] == 56
+    assert sim_metrics["collection_coverage"]["sessions_queried"] == 56
+    assert sim_metrics["collection_coverage"]["collection_coverage_ratio"] == 1.0
+    assert sim_metrics["collection_coverage"]["collection_status"] == "FULLY_EXECUTED"
+    assert sim_metrics["three_way_session_resolution"]["NOT_ATTEMPTED"] == 0
+    assert sim_metrics["three_way_session_resolution"]["ANNOUNCEMENTS_RETRIEVED"] == 9
+    assert sim_metrics["source_failure_rate"]["total_queries_executed"] == 56
+    assert sim_metrics["source_failure_rate"]["failed_queries"] == 0
+
+    # 9. Genuine Live OpenAPI Query Probe (single session lawful audit probe)
+    probe_rec = OfficialHistoricalNewsCollector.execute_live_openapi_query_probe(target_stock="2330")
+    assert probe_rec.stock_id == "2330"
+    assert probe_rec.source_channel == OfficialSourceChannel.TWSE_OPENAPI
+    assert probe_rec.endpoint == "https://openapi.twse.com.tw/v1/opendata/t187ap04_L"
+    assert probe_rec.response_status in [QueryResolutionStatus.QUERY_COMPLETED_SUCCESS, QueryResolutionStatus.QUERY_FAILED]
+    if probe_rec.http_status == 200:
+        assert probe_rec.actual_raw_response_hash is not None
+        assert len(probe_rec.actual_raw_response_hash) == 64
+        assert probe_rec.raw_bytes_len is not None and probe_rec.raw_bytes_len > 0
 
 
 # ==============================================================================
@@ -287,8 +382,15 @@ def test_statistical_power_validity_and_calibration():
     assert type1_res["nominal_alpha"] == 0.05
     assert type1_res["calibration_status"] == "CALIBRATED_NOMINAL_5_PERCENT"
     assert type1_res["is_type_1_error_calibrated"] is True
+    assert type1_res["calibration_type"] == "ASSUMPTION_BASED"
+    assert "oracle_simulation_calibration" in type1_res
+    assert "implemented_test_calibration" in type1_res
+    assert type1_res["oracle_simulation_calibration"]["calibration_status"] == "CALIBRATED_NOMINAL_5_PERCENT"
+    assert type1_res["implemented_test_calibration"]["calibration_status"] == "CALIBRATED_WITHIN_DATASET_CLUSTER_BOOTSTRAP"
     # Empirical false rejection rate must be well-calibrated (around 5% nominal)
     assert 0.03 <= type1_res["overall_mean_type_1_error"] <= 0.07
+    assert 0.03 <= type1_res["oracle_simulation_calibration"]["overall_mean_type_1_error"] <= 0.07
+    assert 0.03 <= type1_res["implemented_test_calibration"]["overall_mean_type_1_error"] <= 0.12
 
     # 2. Power curve classification and status
     power_res = DatasetExpansionReadinessAssessor.simulate_cluster_bootstrap_power(
