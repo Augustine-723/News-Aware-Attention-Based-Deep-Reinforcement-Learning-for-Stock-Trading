@@ -122,10 +122,10 @@ class MultiTaskLoss(nn.Module):
     def forward(
         self,
         predictions: Dict[str, torch.Tensor],
-        relevance_labels: torch.Tensor,                    # [B, 40, 1]
-        novelty_labels: torch.Tensor,                      # [B, 40, 1]
-        return_targets: torch.Tensor,                      # [B, 3]
-        risk_targets: torch.Tensor,                        # [B, 3]
+        relevance_labels: Optional[torch.Tensor] = None,   # [B, 40, 1]
+        novelty_labels: Optional[torch.Tensor] = None,     # [B, 40, 1]
+        return_targets: Optional[torch.Tensor] = None,     # [B, 3]
+        risk_targets: Optional[torch.Tensor] = None,       # [B, 3]
         relevance_mask: Optional[torch.Tensor] = None,     # [B, 40, 1]
         novelty_mask: Optional[torch.Tensor] = None,       # [B, 40, 1]
         return_mask: Optional[torch.Tensor] = None,        # [B, 3]
@@ -133,72 +133,89 @@ class MultiTaskLoss(nn.Module):
         event_mask: Optional[torch.Tensor] = None,         # [B, 40]
         fallback_event_mask: Optional[torch.Tensor] = None # [B, 40]
     ) -> Tuple[torch.Tensor, Dict[str, float]]:
-        B = relevance_labels.shape[0]
+        device = predictions["pred_returns"].device
+        B = predictions["pred_returns"].shape[0]
 
         if fallback_event_mask is None and event_mask is not None:
             fallback_event_mask = event_mask
 
         # 1. Resolve Relevance Mask & clean targets
-        if relevance_mask is None:
-            relevance_mask = fallback_event_mask.unsqueeze(-1) if fallback_event_mask is not None else torch.ones_like(relevance_labels, dtype=torch.bool)
+        if relevance_labels is None:
+            rel_valid = False
+            loss_rel = torch.tensor(0.0, device=device)
         else:
-            relevance_mask = relevance_mask.bool()
+            if relevance_mask is None:
+                relevance_mask = fallback_event_mask.unsqueeze(-1) if fallback_event_mask is not None else torch.ones_like(relevance_labels, dtype=torch.bool)
+            else:
+                relevance_mask = relevance_mask.bool()
 
-        rel_valid = (relevance_mask.sum() > 0).item()
-        if rel_valid:
-            clean_rel_labels = torch.where(relevance_mask, relevance_labels, torch.zeros_like(relevance_labels))
-            rel_logits = predictions["relevance_logits"]
-            loss_rel_raw = F.binary_cross_entropy_with_logits(rel_logits, clean_rel_labels, reduction="none")
-            loss_rel = (loss_rel_raw * relevance_mask.float()).sum() / (relevance_mask.float().sum() + 1e-8)
-        else:
-            loss_rel = torch.tensor(0.0, device=predictions["relevance_logits"].device)
+            rel_valid = (relevance_mask.sum() > 0).item()
+            if rel_valid:
+                clean_rel_labels = torch.where(relevance_mask, relevance_labels, torch.zeros_like(relevance_labels))
+                rel_logits = predictions["relevance_logits"]
+                loss_rel_raw = F.binary_cross_entropy_with_logits(rel_logits, clean_rel_labels, reduction="none")
+                loss_rel = (loss_rel_raw * relevance_mask.float()).sum() / (relevance_mask.float().sum() + 1e-8)
+            else:
+                loss_rel = torch.tensor(0.0, device=device)
 
         # 2. Resolve Novelty Mask & clean targets
-        if novelty_mask is None:
-            novelty_mask = fallback_event_mask.unsqueeze(-1) if fallback_event_mask is not None else torch.ones_like(novelty_labels, dtype=torch.bool)
+        if novelty_labels is None:
+            nov_valid = False
+            loss_nov = torch.tensor(0.0, device=device)
         else:
-            novelty_mask = novelty_mask.bool()
-
-        nov_valid = (novelty_mask.sum() > 0).item()
-        if nov_valid:
-            clean_nov_labels = torch.where(novelty_mask, novelty_labels, torch.zeros_like(novelty_labels))
-            nov_scores = predictions["novelty_scores"]
-            if self.novelty_loss_type == "bce":
-                loss_nov_raw = F.binary_cross_entropy(nov_scores, (clean_nov_labels > 0.25).float(), reduction="none")
+            if novelty_mask is None:
+                novelty_mask = fallback_event_mask.unsqueeze(-1) if fallback_event_mask is not None else torch.ones_like(novelty_labels, dtype=torch.bool)
             else:
-                # Masked Huber Loss for continuous/ordinal Novelty in {0.0, 0.5, 1.0} per V8.0
-                loss_nov_raw = self.huber_novelty(nov_scores, clean_nov_labels)
-            loss_nov = (loss_nov_raw * novelty_mask.float()).sum() / (novelty_mask.float().sum() + 1e-8)
-        else:
-            loss_nov = torch.tensor(0.0, device=predictions["novelty_scores"].device)
+                novelty_mask = novelty_mask.bool()
+
+            nov_valid = (novelty_mask.sum() > 0).item()
+            if nov_valid:
+                clean_nov_labels = torch.where(novelty_mask, novelty_labels, torch.zeros_like(novelty_labels))
+                nov_scores = predictions["novelty_scores"]
+                if self.novelty_loss_type == "bce":
+                    loss_nov_raw = F.binary_cross_entropy(nov_scores, (clean_nov_labels > 0.25).float(), reduction="none")
+                else:
+                    # Masked Huber Loss for continuous/ordinal Novelty in {0.0, 0.5, 1.0} per V8.0
+                    loss_nov_raw = self.huber_novelty(nov_scores, clean_nov_labels)
+                loss_nov = (loss_nov_raw * novelty_mask.float()).sum() / (novelty_mask.float().sum() + 1e-8)
+            else:
+                loss_nov = torch.tensor(0.0, device=device)
 
         # 3. Resolve Return Mask & clean targets
-        if return_mask is None:
-            return_mask = torch.ones_like(return_targets, dtype=torch.bool)
+        if return_targets is None:
+            ret_valid = False
+            loss_ret = torch.tensor(0.0, device=device)
         else:
-            return_mask = return_mask.bool()
+            if return_mask is None:
+                return_mask = torch.ones_like(return_targets, dtype=torch.bool)
+            else:
+                return_mask = return_mask.bool()
 
-        ret_valid = (return_mask.sum() > 0).item()
-        if ret_valid:
-            clean_ret_targets = torch.where(return_mask, return_targets, torch.zeros_like(return_targets))
-            loss_ret_raw = self.huber_return(predictions["pred_returns"], clean_ret_targets)
-            loss_ret = (loss_ret_raw * return_mask.float()).sum() / (return_mask.float().sum() + 1e-8)
-        else:
-            loss_ret = torch.tensor(0.0, device=predictions["pred_returns"].device)
+            ret_valid = (return_mask.sum() > 0).item()
+            if ret_valid:
+                clean_ret_targets = torch.where(return_mask, return_targets, torch.zeros_like(return_targets))
+                loss_ret_raw = self.huber_return(predictions["pred_returns"], clean_ret_targets)
+                loss_ret = (loss_ret_raw * return_mask.float()).sum() / (return_mask.float().sum() + 1e-8)
+            else:
+                loss_ret = torch.tensor(0.0, device=device)
 
         # 4. Resolve Risk Mask & clean targets
-        if risk_mask is None:
-            risk_mask = torch.ones_like(risk_targets, dtype=torch.bool)
+        if risk_targets is None:
+            risk_valid = False
+            loss_risk = torch.tensor(0.0, device=device)
         else:
-            risk_mask = risk_mask.bool()
+            if risk_mask is None:
+                risk_mask = torch.ones_like(risk_targets, dtype=torch.bool)
+            else:
+                risk_mask = risk_mask.bool()
 
-        risk_valid = (risk_mask.sum() > 0).item()
-        if risk_valid:
-            clean_risk_targets = torch.where(risk_mask, risk_targets, torch.zeros_like(risk_targets))
-            loss_risk_raw = self.huber_risk(predictions["pred_risk"], clean_risk_targets)
-            loss_risk = (loss_risk_raw * risk_mask.float()).sum() / (risk_mask.float().sum() + 1e-8)
-        else:
-            loss_risk = torch.tensor(0.0, device=predictions["pred_risk"].device)
+            risk_valid = (risk_mask.sum() > 0).item()
+            if risk_valid:
+                clean_risk_targets = torch.where(risk_mask, risk_targets, torch.zeros_like(risk_targets))
+                loss_risk_raw = self.huber_risk(predictions["pred_risk"], clean_risk_targets)
+                loss_risk = (loss_risk_raw * risk_mask.float()).sum() / (risk_mask.float().sum() + 1e-8)
+            else:
+                loss_risk = torch.tensor(0.0, device=device)
 
         task_losses = [loss_rel, loss_nov, loss_ret, loss_risk]
         task_active = [bool(rel_valid), bool(nov_valid), bool(ret_valid), bool(risk_valid)]

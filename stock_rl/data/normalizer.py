@@ -70,18 +70,71 @@ class SplitManifest:
         return hasher.hexdigest()
 
     @staticmethod
-    def compute_batch_content_hash(batch: MultimodalBatch) -> str:
-        """Computes cryptographic SHA-256 across all primary tensors in a MultimodalBatch."""
+    def compute_batch_content_hash(
+        batch: MultimodalBatch,
+        builder_version: str = "8.3.0",
+        dataset_id: Optional[str] = None,
+    ) -> str:
+        """
+        Computes Canonical Cryptographic SHA-256 Hash across all MultimodalBatch components (P1-5):
+        - Schema version, builder version, dataset ID
+        - Feature tensors: price, technical, institutional, macro, stock_context,
+          recent_event_emb, active_event_emb, event_metadata, event_stock_rel, position
+        - Feature missing masks: macro_missing_mask, institutional_missing_mask,
+          stock_context_missing_mask, event_metadata_missing_mask
+        - Event mask: event_mask
+        - Supervised targets: relevance_labels, novelty_labels, return_targets, risk_targets
+        - Label validity masks: relevance_mask, novelty_mask, return_mask, risk_mask
+        - Tensor shapes & dtypes
+        """
         hasher = hashlib.sha256()
-        for tensor_name in [
-            "price", "technical", "institutional", "macro",
-            "stock_context", "recent_event_emb", "active_event_emb",
-            "event_metadata", "event_stock_rel", "event_mask", "position"
-        ]:
-            t = getattr(batch, tensor_name, None)
-            if t is not None:
-                hasher.update(tensor_name.encode("utf-8"))
-                hasher.update(t.detach().cpu().numpy().tobytes())
+
+        # 1. Metadata header
+        hasher.update(f"schema:{getattr(batch, 'schema_version', '')}|".encode("utf-8"))
+        hasher.update(f"builder:{builder_version}|".encode("utf-8"))
+        hasher.update(f"dataset:{dataset_id or ''}|".encode("utf-8"))
+
+        # 2. Canonical tensor list
+        tensor_names = [
+            # Primary feature tensors
+            "price",
+            "technical",
+            "institutional",
+            "macro",
+            "stock_context",
+            "recent_event_emb",
+            "active_event_emb",
+            "event_metadata",
+            "event_stock_rel",
+            "position",
+            # Event masks
+            "event_mask",
+            # Missing masks
+            "macro_missing_mask",
+            "institutional_missing_mask",
+            "stock_context_missing_mask",
+            "event_metadata_missing_mask",
+            # Supervised targets
+            "relevance_labels",
+            "novelty_labels",
+            "return_targets",
+            "risk_targets",
+            # Label validity masks
+            "relevance_mask",
+            "novelty_mask",
+            "return_mask",
+            "risk_mask",
+        ]
+
+        for name in tensor_names:
+            t = getattr(batch, name, None)
+            if t is None:
+                hasher.update(f"{name}:NONE|".encode("utf-8"))
+            else:
+                hasher.update(f"{name}:shape={tuple(t.shape)}:dtype={str(t.dtype)}|".encode("utf-8"))
+                arr = t.detach().cpu().numpy()
+                hasher.update(np.ascontiguousarray(arr).tobytes())
+
         return hasher.hexdigest()
 
     @classmethod
