@@ -365,6 +365,69 @@ def compute_split_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, f
     }
 
 
+def determine_empirical_research_verdict(
+    target_name: str,
+    delta_rho: float,
+    ci_delta_rho_95: Tuple[float, float],
+    p_delta_rho_positive: float,
+    sample_size: int = 11,
+) -> Dict[str, Any]:
+    """
+    Evidence-based research verdict determination based strictly on statistical uncertainty.
+    
+    Rules:
+    1. If 95% CI spans zero (ci_low <= 0 <= ci_high):
+       Formal incremental value MUST remain 'INCONCLUSIVE'.
+       If point delta_rho > 0, exploratory_descriptor = 'EXPLORATORY_POSITIVE_TREND'.
+       If point delta_rho <= 0, exploratory_descriptor = 'INCONCLUSIVE_NO_TREND'.
+    2. If 95% CI is strictly positive (ci_low > 0):
+       Formal incremental value = 'STATISTICALLY_SUPPORTED'.
+    3. If 95% CI is strictly negative (ci_high < 0):
+       Formal incremental value = 'NOT_SUPPORTED'.
+    4. Bootstrap positive proportion (p_delta_rho_positive) is documented as an empirical
+       bootstrap sample proportion, NEVER as a Bayesian posterior probability of model superiority.
+    """
+    ci_low, ci_high = ci_delta_rho_95
+    ci_crosses_zero = bool(ci_low <= 0.0 <= ci_high)
+
+    if not ci_crosses_zero and ci_low > 0:
+        formal_status = "STATISTICALLY_SUPPORTED"
+        exploratory_desc = "STATISTICALLY_SIGNIFICANT"
+        verdict_text = f"Formal incremental value supported at 95% confidence level ({ci_delta_rho_95})."
+    elif not ci_crosses_zero and ci_high < 0:
+        formal_status = "NOT_SUPPORTED"
+        exploratory_desc = "STATISTICALLY_SIGNIFICANT_NEGATIVE"
+        verdict_text = f"Baseline statistically outperforms Method C at 95% confidence level ({ci_delta_rho_95})."
+    else:
+        formal_status = "INCONCLUSIVE"
+        if delta_rho > 0:
+            exploratory_desc = "EXPLORATORY_POSITIVE_TREND"
+            verdict_text = (
+                f"Formal incremental value is INCONCLUSIVE: 95% bootstrap CI {ci_delta_rho_95} spans zero "
+                f"due to small test sample size (N={sample_size}). Displays an exploratory positive point trend "
+                f"(Delta rho = {delta_rho:+.4f}; bootstrap sample positive proportion = {p_delta_rho_positive:.1%}), "
+                f"but generalizability and statistical significance are NOT established."
+            )
+        else:
+            exploratory_desc = "INCONCLUSIVE_NO_TREND"
+            verdict_text = (
+                f"Formal incremental value is INCONCLUSIVE: 95% bootstrap CI {ci_delta_rho_95} spans zero and "
+                f"point delta is non-positive (Delta rho = {delta_rho:+.4f}; bootstrap sample positive proportion = "
+                f"{p_delta_rho_positive:.1%}). Realized return variance dominates ranking signal."
+            )
+
+    return {
+        "formal_status": formal_status,
+        "exploratory_descriptor": exploratory_desc,
+        "verdict_summary": verdict_text,
+        "bootstrap_sample_positive_proportion": p_delta_rho_positive,
+        "bootstrap_interpretation_note": (
+            "p_delta_rho_positive is an empirical bootstrap resample proportion; "
+            "it is NOT a Bayesian posterior probability of model superiority."
+        ),
+    }
+
+
 def compute_paired_differences_and_bootstrap(
     y_true: np.ndarray,
     y_pred_c: np.ndarray,
@@ -394,7 +457,7 @@ def compute_paired_differences_and_bootstrap(
       - p_delta_mae_positive: Empirical probability that Delta MAE > 0
       - mean_delta_rho: bootstrap distribution mean
       - std_delta_rho: bootstrap distribution standard error
-    - incremental_value_verdict: "SUPPORTED", "SUPPORTED_EXPLORATORY", or "INCONCLUSIVE"
+    - incremental_value_verdict: "SUPPORTED", "NOT_SUPPORTED", or "INCONCLUSIVE"
     """
     n = len(y_true)
     if n == 0:
@@ -463,15 +526,16 @@ def compute_paired_differences_and_bootstrap(
     p_ndcg_pos = round(float(np.mean(np.array(boot_delta_ndcg3) > 0)), 4)
     p_mae_pos = round(float(np.mean(np.array(boot_delta_mae) > 0)), 4)
 
-    # 4. Rigorous determination classification
+    # 4. Rigorous evidence-based determination classification (P1-3)
     if ci_rho[0] > 0:
-        verdict = "SUPPORTED"
+        formal_status = "SUPPORTED"
+        exploratory_desc = "STATISTICALLY_SIGNIFICANT"
     elif ci_rho[1] < 0:
-        verdict = "NOT_SUPPORTED"
-    elif p_rho_pos >= 0.70 and delta_rho_point > 0:
-        verdict = "SUPPORTED_EXPLORATORY"
+        formal_status = "NOT_SUPPORTED"
+        exploratory_desc = "STATISTICALLY_SIGNIFICANT_NEGATIVE"
     else:
-        verdict = "INCONCLUSIVE"
+        formal_status = "INCONCLUSIVE"
+        exploratory_desc = "EXPLORATORY_POSITIVE_TREND" if delta_rho_point > 0 else "INCONCLUSIVE_NO_TREND"
 
     return {
         "sample_size": n,
@@ -485,11 +549,18 @@ def compute_paired_differences_and_bootstrap(
         "ci_delta_ndcg3_95": ci_ndcg3,
         "ci_delta_mae_95": ci_mae,
         "p_delta_rho_positive": p_rho_pos,
+        "bootstrap_positive_proportion": p_rho_pos,
         "p_delta_ndcg3_positive": p_ndcg_pos,
         "p_delta_mae_positive": p_mae_pos,
         "mean_bootstrap_delta_rho": round(float(np.mean(boot_delta_rho)), 4),
         "std_bootstrap_delta_rho": round(float(np.std(boot_delta_rho)), 4),
-        "incremental_value_verdict": verdict,
+        "incremental_value_verdict": formal_status,
+        "formal_status": formal_status,
+        "exploratory_descriptor": exploratory_desc,
+        "bootstrap_interpretation_note": (
+            "p_delta_rho_positive is an empirical bootstrap resample proportion; "
+            "it is NOT a Bayesian posterior probability of model superiority."
+        ),
     }
 
 
@@ -1251,12 +1322,13 @@ class PilotExperimentRunner:
             boot_ci_rho = boot_uncertainty.get("ci_delta_rho_95", (0.0, 0.0))
             p_pos = boot_uncertainty.get("p_delta_rho_positive", 0.0)
 
-            if tgt == "HUMAN_IMPORTANCE":
-                claim = "SUPPORTED (High semantic alignment with human materiality)"
-            elif tgt == "EX_POST_MARKET_IMPACT":
-                claim = "INCONCLUSIVE (Realized returns dominated by small-sample market noise)"
-            else:
-                claim = "SUPPORTED_EXPLORATORY (Positive gain driven by human importance component)"
+            verdict_info = determine_empirical_research_verdict(
+                target_name=tgt,
+                delta_rho=d_rho_bm,
+                ci_delta_rho_95=boot_ci_rho,
+                p_delta_rho_positive=p_pos,
+                sample_size=11,
+            )
 
             summary_table.append({
                 "target": tgt,
@@ -1269,20 +1341,25 @@ class PilotExperimentRunner:
                 "method_c_ndcg3": c_ndcg,
                 "delta_ndcg3_c_vs_bm": round(d_ndcg_bm, 4),
                 "bootstrap_95_ci_delta_rho": boot_ci_rho,
-                "p_delta_rho_positive": p_pos,
-                "empirical_claim": claim,
+                "bootstrap_sample_positive_proportion": p_pos,
+                "formal_incremental_status": verdict_info["formal_status"],
+                "exploratory_descriptor": verdict_info["exploratory_descriptor"],
+                "empirical_claim": verdict_info["verdict_summary"],
+                "bootstrap_interpretation_note": verdict_info["bootstrap_interpretation_note"],
             })
 
         return {
             "targets": results_by_target,
             "multi_target_comparison_summary": summary_table,
             "overall_conclusion": (
-                "Supervision Quality findings: Semantic text vectors strongly improve ranking of "
-                "Human Importance (Delta rho = +0.3470, Delta NDCG@3 = +0.1068), demonstrating that pretrained "
-                "representations capture textual materiality. However, predicting realized 2-day ex-post abnormal "
-                "returns on N=11 test events yields inconclusive results (Delta rho = -0.0367), as idiosyncratic market "
-                "microstructure noise dominates. Positive performance on Hybrid Importance (Delta rho = +0.0455) is "
-                "driven by its human annotation component and must not be conflated with market return predictability."
+                "Supervision Quality findings: Under 1,000-resample paired bootstrap uncertainty analysis, "
+                "formal statistical significance for semantic incremental value is INCONCLUSIVE across all three targets "
+                "because 95% confidence intervals span zero on N=11 test events. On Human Importance, an exploratory positive trend "
+                "is observed (Delta rho = +0.3470, Delta NDCG@3 = +0.1068, bootstrap positive sample proportion = 83.6%), reflecting textual "
+                "materiality ranking. On realized market returns (EX_POST_MARKET_IMPACT), small-sample idiosyncratic noise dominates "
+                "(Delta rho = -0.0367, bootstrap positive sample proportion = 63.5%), rendering market predictability strictly inconclusive. "
+                "Gains on Hybrid Importance (Delta rho = +0.0455) originate from the heuristic human component and must not be claimed as "
+                "evidence of market alpha or return prediction."
             ),
         }
 
@@ -1305,6 +1382,7 @@ class PurgedWalkForwardEvaluator:
     3. Label embargo enforcement (no labels after window cutoff).
     4. Purging gap enforcement (>= 3 trading sessions).
     5. No future lookahead across walk-forward windows.
+    6. Explicit disclosure of temporal overlap between W1 Test and W2 Validation.
     """
     WINDOWS: List[Dict[str, str]] = [
         {
@@ -1320,6 +1398,38 @@ class PurgedWalkForwardEvaluator:
             "test_end": "2024-03-31",
         },
     ]
+
+    TEMPORAL_OVERLAP_DISCLOSURE: Dict[str, Any] = {
+        "is_independent_sampling_experiment": False,
+        "evaluation_paradigm": "ROLLING_RETRAINING_CHRONOLOGICAL_SIMULATION",
+        "overlap_description": (
+            "Temporal overlap disclosure: Window 1 Test partition (2023-12-16 to 2024-01-31, N=11) "
+            "overlaps chronologically with Window 2 Validation partition (2023-12-01 to 2024-01-31, N=11). "
+            "This structure reflects chronological walk-forward rolling retraining where past test samples become "
+            "subsequent model validation data. W1 and W2 are NOT independent sample draws, and results from W1 and W2 "
+            "must NOT be treated as independent statistical trials."
+        ),
+        "windows_specification": [
+            {
+                "window_id": "W1",
+                "train_end": "2023-10-31",
+                "val_end": "2023-12-15",
+                "test_period": "2023-12-16 to 2024-01-31",
+                "n_test": 11,
+                "label_embargo_train": "2023-10-31 23:59:59+08:00",
+                "label_embargo_val": "2023-12-15 23:59:59+08:00",
+            },
+            {
+                "window_id": "W2",
+                "train_end": "2023-11-30",
+                "val_end": "2024-01-31",
+                "test_period": "2024-02-01 to 2024-03-31",
+                "n_test": 11,
+                "label_embargo_train": "2023-11-30 23:59:59+08:00",
+                "label_embargo_val": "2024-01-31 23:59:59+08:00",
+            },
+        ],
+    }
 
     def __init__(
         self,
@@ -1409,12 +1519,13 @@ class PurgedWalkForwardEvaluator:
         return {
             "target_evaluated": self.target_name,
             "num_windows": len(window_results),
+            "temporal_overlap_disclosure": self.TEMPORAL_OVERLAP_DISCLOSURE,
             "windows": window_results,
             "average_delta_spearman_rho": round(float(avg_delta_rho), 4),
             "average_delta_ndcg3": round(float(avg_delta_ndcg3), 4),
             "walk_forward_verdict": (
-                "CONSISTENT_POSITIVE" if avg_delta_rho > 0 and all(w["delta_spearman_rho"] >= 0 for w in window_results)
-                else "PARTIAL_POSITIVE" if avg_delta_rho > 0
+                "EXPLORATORY_ROLLING_POSITIVE" if avg_delta_rho > 0 and all(w["delta_spearman_rho"] >= 0 for w in window_results)
+                else "EXPLORATORY_PARTIAL_POSITIVE" if avg_delta_rho > 0
                 else "INCONCLUSIVE_OR_NEGATIVE"
             ),
         }

@@ -419,8 +419,10 @@ def test_pilot_source_manifest_and_authenticity_categories():
 
     summary = PilotSourceManifest.get_provenance_summary()
     assert summary["total_records"] == 50
+    assert summary["VERIFIED_SOURCE"] == 0
+    assert summary["MOPS_CANDIDATE_UNVERIFIED"] == 12
     assert summary["CURATED_UNVERIFIED"] == 38
-    assert summary["VERIFIED_SOURCE"] == 12
+    assert summary["total_unverified_records"] == 50
     assert summary["SYNTHETIC_FIXTURE"] == 0
     assert summary["records_with_external_url"] == 0
     assert summary["records_with_valid_hash"] == 50
@@ -428,6 +430,7 @@ def test_pilot_source_manifest_and_authenticity_categories():
     for eid, rec in manifest.items():
         assert rec.verification_status in [
             SourceVerificationStatus.CURATED_UNVERIFIED,
+            SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
             SourceVerificationStatus.VERIFIED_SOURCE,
         ]
         assert rec.url is None or rec.url == ""

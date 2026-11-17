@@ -57,9 +57,10 @@ class SourceVerificationStatus(str, Enum):
     """
     Formal categorization of event source authenticity.
     """
-    VERIFIED_SOURCE = "VERIFIED_SOURCE"          # Formally/cryptographically verified against official exchange archive
-    CURATED_UNVERIFIED = "CURATED_UNVERIFIED"    # Curated public domain report; pending official cryptographic verification
-    SYNTHETIC_FIXTURE = "SYNTHETIC_FIXTURE"      # Synthetic test fixture
+    VERIFIED_SOURCE = "VERIFIED_SOURCE"                      # Formally verified with verified external evidence bundle
+    MOPS_CANDIDATE_UNVERIFIED = "MOPS_CANDIDATE_UNVERIFIED"  # Candidate matched to MOPS announcement schema, but unverified without raw evidence
+    CURATED_UNVERIFIED = "CURATED_UNVERIFIED"                # Curated public domain report; pending official audit trail
+    SYNTHETIC_FIXTURE = "SYNTHETIC_FIXTURE"                  # Synthetic test fixture
 
 
 class SupervisionTargetName(str, Enum):
@@ -71,15 +72,33 @@ class SupervisionTargetName(str, Enum):
     HYBRID_IMPORTANCE = "HYBRID_IMPORTANCE"
 
 
+class AnnotationMethod(str, Enum):
+    """
+    Methodological origin of event importance annotations.
+    """
+    HEURISTIC_ASSIGNED = "HEURISTIC_ASSIGNED"
+    MANUAL_EXPERT_ANNOTATED = "MANUAL_EXPERT_ANNOTATED"
+    CONSENSUS_VERIFIED = "CONSENSUS_VERIFIED"
+    SYNTHETIC = "SYNTHETIC"
+
+
+class AnnotationTimeStatus(str, Enum):
+    """
+    Verification status of annotation creation timestamp.
+    """
+    VERIFIED_TIMESTAMP = "VERIFIED_TIMESTAMP"
+    ANNOTATION_TIME_UNKNOWN = "ANNOTATION_TIME_UNKNOWN"
+
+
 @dataclass
 class AnnotationProvenance:
     """
-    Formal provenance tracking for human importance annotations.
-    Strictly records annotator ID, creation timestamp, and standardized rubric.
-    Guarantees that human annotations are never conflated with historical point-in-time features.
+    Formal provenance tracking for event importance annotations.
+    Strictly distinguishes annotator ID, method, creation timestamp, and rubric version.
+    Guarantees that post-facto annotations are never conflated with historical point-in-time features.
     """
-    annotator_id: str = "DOMAIN_EXPERT_HEURISTIC_V1"
-    annotation_created_at: pd.Timestamp = field(default_factory=lambda: pd.Timestamp("2024-04-15 10:00:00", tz="Asia/Taipei"))
+    annotator_id: str = "PILOT_HEURISTIC_ANNOTATOR_V1"
+    annotation_method: AnnotationMethod = AnnotationMethod.HEURISTIC_ASSIGNED
     rubric_version: str = "V8.10-MATERIALITY-RUBRIC-V1"
     rubric_description: str = (
         "Disclosure Materiality Rubric: "
@@ -88,6 +107,8 @@ class AnnotationProvenance:
         "0.7-0.8 Annual financial reports, major CapEx investments, dividend approvals; "
         "0.9-1.0 Macro supply chain crisis, material regulatory actions, guidance revisions."
     )
+    annotation_created_at: Optional[pd.Timestamp] = None  # None when authentic annotation log is unrecorded
+    time_status: AnnotationTimeStatus = AnnotationTimeStatus.ANNOTATION_TIME_UNKNOWN
     is_ex_post_annotation: bool = True
     hindsight_isolated: bool = True  # Verified: annotation reflects textual disclosure magnitude, not realized T+1/T+2 market returns
 
@@ -96,11 +117,42 @@ class AnnotationProvenance:
         Verifies that annotation was created post-facto and is strictly isolated from decision time T.
         Raises RuntimeError if queried or accessed as a historical decision feature at decision_timestamp.
         """
+        # 1. Missing / unknown annotation time check
+        if self.annotation_created_at is None or self.time_status == AnnotationTimeStatus.ANNOTATION_TIME_UNKNOWN:
+            raise RuntimeError(
+                f"Hindsight isolation barrier: Annotation creation time is unknown ({self.time_status.value}) "
+                f"and cannot be verified as available at decision time {decision_timestamp}!"
+            )
+        # 2. Ex-post timestamp check
         if decision_timestamp < self.annotation_created_at:
             raise RuntimeError(
                 f"Hindsight isolation barrier: Annotation created at {self.annotation_created_at} "
                 f"cannot be accessed as a historical feature at decision time {decision_timestamp}!"
             )
+        # 3. Post-facto heuristic barrier (cannot enter historical decision state even if backdated)
+        if self.is_ex_post_annotation or self.annotation_method == AnnotationMethod.HEURISTIC_ASSIGNED:
+            raise RuntimeError(
+                f"Hindsight isolation barrier: Ex-post annotation ({self.annotation_method.value}) "
+                f"cannot enter historical decision State at {decision_timestamp}!"
+            )
+
+
+@dataclass
+class MOPSSourceEvidence:
+    """
+    Auditable evidence bundle for MOPS corporate disclosure verification.
+    Distinguishes existence verification from historical provider availability time verification.
+    """
+    announcement_id: str
+    company_id: str
+    announcement_datetime: pd.Timestamp
+    raw_content: str
+    payload_hash: str
+    is_existence_verified: bool = True
+    is_availability_verified: bool = False
+    provider_available_at: Optional[pd.Timestamp] = None
+    verification_method: str = "OFFICIAL_EXCHANGE_REGISTRY_AUDIT"
+    audit_notes: str = ""
 
 
 @dataclass
@@ -144,7 +196,7 @@ class PilotSourceManifest:
     Auditable Source Manifest maintaining provenance records for all pilot events.
     Strictly prevents elevating unverified curated items to Formal PIT.
     """
-    VERIFIED_MOPS_EVENTS: Dict[str, Dict[str, Any]] = {
+    MOPS_CANDIDATE_EVENTS: Dict[str, Dict[str, Any]] = {
         "EV-2330-01": {
             "source_id": "MOPS-2330-20230606-AGM",
             "evidence": {"channel": "MOPS_PUBLIC_DISCLOSURE", "company": "2330", "event": "AGM_RESOLUTIONS", "filing_date": "2023-06-06"},
@@ -194,22 +246,121 @@ class PilotSourceManifest:
             "evidence": {"channel": "MOPS_PUBLIC_DISCLOSURE", "company": "2881", "event": "ANNUAL_EARNINGS_DISCLOSURE", "filing_date": "2024-01-10"},
         },
     }
+    # Backward compatibility alias
+    VERIFIED_MOPS_EVENTS = MOPS_CANDIDATE_EVENTS
 
     @classmethod
-    def generate_manifest(cls, raw_events: Optional[List[Dict[str, Any]]] = None) -> Dict[str, EventSourceRecord]:
+    def audit_and_verify_source_evidence(
+        cls,
+        event_id: str,
+        raw_event: Dict[str, Any],
+        evidence: Optional[MOPSSourceEvidence],
+    ) -> Tuple[SourceVerificationStatus, Optional[Dict[str, Any]], str]:
+        """
+        Evidence-Based Verification Gate for MOPS candidates.
+        
+        Strict Rules:
+        1. Without an authentic MOPSSourceEvidence bundle, candidate is DEMOTED to MOPS_CANDIDATE_UNVERIFIED.
+           Mere existence of event_id in MOPS_CANDIDATE_EVENTS never confers verification!
+        2. Announcement ID must be non-empty and match.
+        3. Company ID must match raw_event['stock_id'].
+        4. Announcement datetime must match raw_event date and pub_time.
+        5. Raw content must be non-empty and compute to the expected payload hash.
+        6. Computed payload hash must match raw_event's normalized content hash.
+        7. Evidence must distinguish existence verification from historical availability verification.
+        """
+        if evidence is None:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                "Candidate matched to MOPS disclosure schema; unverified without raw evidence bundle.",
+            )
+
+        # Validate announcement ID
+        if not evidence.announcement_id or not isinstance(evidence.announcement_id, str):
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                "Verification failed closed: Missing or invalid announcement_id in evidence.",
+            )
+
+        # Validate company ID
+        if evidence.company_id != raw_event["stock_id"]:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                f"Verification failed closed: Company ID mismatch ({evidence.company_id} vs {raw_event['stock_id']}).",
+            )
+
+        # Validate announcement datetime
+        expected_dt = pd.Timestamp(f"{raw_event['date_str']} {raw_event['pub_time_str']}", tz="Asia/Taipei")
+        if evidence.announcement_datetime != expected_dt:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                f"Verification failed closed: Datetime mismatch ({evidence.announcement_datetime} vs {expected_dt}).",
+            )
+
+        # Validate raw content & payload hash
+        if not evidence.raw_content or not isinstance(evidence.raw_content, str):
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                "Verification failed closed: Empty or invalid raw_content in evidence bundle.",
+            )
+
+        recomputed_evidence_hash = compute_normalized_content_hash(raw_event["headline"], evidence.raw_content)
+        recomputed_event_hash = compute_normalized_content_hash(raw_event["headline"], raw_event.get("body_text", ""))
+
+        if recomputed_evidence_hash != evidence.payload_hash or recomputed_event_hash != evidence.payload_hash:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                f"Verification failed closed: Payload hash mismatch ({evidence.payload_hash} vs {recomputed_event_hash}).",
+            )
+
+        # Verified! Build verified evidence audit record
+        audit_record = {
+            "channel": "MOPS_PUBLIC_DISCLOSURE",
+            "announcement_id": evidence.announcement_id,
+            "company_id": evidence.company_id,
+            "announcement_datetime": evidence.announcement_datetime.isoformat(),
+            "payload_hash": evidence.payload_hash,
+            "is_existence_verified": evidence.is_existence_verified,
+            "is_availability_verified": evidence.is_availability_verified,
+            "existence_verified": evidence.is_existence_verified,
+            "availability_verified": evidence.is_availability_verified,
+            "provider_available_at": evidence.provider_available_at.isoformat() if evidence.provider_available_at else None,
+            "verification_method": evidence.verification_method,
+        }
+        note = (
+            "Verified authentic MOPS corporate disclosure with matching payload hash. "
+            f"Existence verified: {evidence.is_existence_verified}; "
+            f"Provider availability verified: {evidence.is_availability_verified}."
+            + (f" {evidence.audit_notes}" if evidence.audit_notes else "")
+        )
+        return (SourceVerificationStatus.VERIFIED_SOURCE, audit_record, note)
+
+    @classmethod
+    def generate_manifest(
+        cls,
+        raw_events: Optional[List[Dict[str, Any]]] = None,
+        evidence_registry: Optional[Dict[str, MOPSSourceEvidence]] = None,
+    ) -> Dict[str, EventSourceRecord]:
         events = raw_events if raw_events is not None else RAW_PILOT_EVENTS
         records: Dict[str, EventSourceRecord] = {}
         for ev in events:
+            eid = ev["event_id"]
             p_hash = compute_normalized_content_hash(ev["headline"], ev.get("body_text", ""))
             pub_dt = pd.Timestamp(f"{ev['date_str']} {ev['pub_time_str']}", tz="Asia/Taipei")
-            
-            # Check official verified MOPS cross-reference
-            eid = ev["event_id"]
-            if eid in cls.VERIFIED_MOPS_EVENTS:
-                v_status = SourceVerificationStatus.VERIFIED_SOURCE
-                s_id = cls.VERIFIED_MOPS_EVENTS[eid]["source_id"]
-                v_evidence = cls.VERIFIED_MOPS_EVENTS[eid]["evidence"]
-                notes = "Verified against authentic TWSE MOPS public disclosure registry record."
+
+            evidence_bundle = (evidence_registry or {}).get(eid)
+
+            if eid in cls.MOPS_CANDIDATE_EVENTS:
+                v_status, v_evidence, notes = cls.audit_and_verify_source_evidence(
+                    event_id=eid, raw_event=ev, evidence=evidence_bundle
+                )
+                s_id = cls.MOPS_CANDIDATE_EVENTS[eid]["source_id"]
             else:
                 v_status = ev.get("verification_status", SourceVerificationStatus.CURATED_UNVERIFIED)
                 if isinstance(v_status, str):
@@ -239,8 +390,25 @@ class PilotSourceManifest:
         return records
 
     @classmethod
-    def get_provenance_summary(cls, raw_events: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
-        manifest = cls.generate_manifest(raw_events)
+    def get_provenance_summary(
+        cls,
+        raw_events: Optional[List[Dict[str, Any]]] = None,
+        evidence_registry: Optional[Dict[str, MOPSSourceEvidence]] = None,
+    ) -> Dict[str, Any]:
+        manifest = cls.generate_manifest(raw_events, evidence_registry)
+        counts = {
+            "total_records": len(manifest),
+            SourceVerificationStatus.VERIFIED_SOURCE.value: sum(1 for r in manifest.values() if r.verification_status == SourceVerificationStatus.VERIFIED_SOURCE),
+            SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED.value: sum(1 for r in manifest.values() if r.verification_status == SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED),
+            SourceVerificationStatus.CURATED_UNVERIFIED.value: sum(1 for r in manifest.values() if r.verification_status == SourceVerificationStatus.CURATED_UNVERIFIED),
+            SourceVerificationStatus.SYNTHETIC_FIXTURE.value: sum(1 for r in manifest.values() if r.verification_status == SourceVerificationStatus.SYNTHETIC_FIXTURE),
+            "total_unverified_records": sum(1 for r in manifest.values() if r.verification_status in (SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED, SourceVerificationStatus.CURATED_UNVERIFIED)),
+            "missing_records": 0,
+            "records_with_external_url": sum(1 for r in manifest.values() if r.url is not None and str(r.url).strip() != ""),
+            "records_with_valid_hash": sum(1 for r in manifest.values() if len(r.payload_hash) == 64),
+            "records_with_retrieval_log": sum(1 for r in manifest.values() if r.retrieved_at is not None),
+        }
+        return counts
         counts = {
             "total_records": len(manifest),
             SourceVerificationStatus.VERIFIED_SOURCE.value: sum(1 for r in manifest.values() if r.verification_status == SourceVerificationStatus.VERIFIED_SOURCE),
@@ -1329,8 +1497,11 @@ class PilotDatasetBuilder:
                 provider_available_at=t_available,
                 retrieved_at=source_rec.retrieved_at if source_rec else None,
                 annotation_provenance=AnnotationProvenance(
-                    annotator_id="DOMAIN_EXPERT_HEURISTIC_V1",
-                    annotation_created_at=pd.Timestamp("2024-04-15 10:00:00", tz="Asia/Taipei"),
+                    annotator_id="PILOT_HEURISTIC_ANNOTATOR_V1",
+                    annotation_method=AnnotationMethod.HEURISTIC_ASSIGNED,
+                    rubric_version="V8.10-MATERIALITY-RUBRIC-V1",
+                    annotation_created_at=None,
+                    time_status=AnnotationTimeStatus.ANNOTATION_TIME_UNKNOWN,
                     is_ex_post_annotation=True,
                     hindsight_isolated=True,
                 ),
