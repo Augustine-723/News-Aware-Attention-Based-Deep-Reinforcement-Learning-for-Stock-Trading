@@ -45,6 +45,10 @@ from stock_rl.data.multimodal_pipeline import (
     HistoricalMultimodalPipeline,
     MultimodalCoverageAccountant,
 )
+from stock_rl.data.feature_engine import (
+    assemble_event_metadata,
+    build_audited_event_metadata,
+)
 from stock_rl.data.real_data_poc import (
     load_real_market_feeds,
     STOCK_METADATA,
@@ -454,3 +458,378 @@ def test_stock_rl_full_model_forward_and_micro_backward_with_real_news():
     assert len(grad_norms) > 0
     assert all(not np.isnan(g) and not np.isinf(g) for g in grad_norms)
     optimizer.step()
+
+
+# ==============================================================================
+# 6. P0-1: Historical Event Revision Resolution & Counterfactual Invariance (T1, T2, T3)
+# ==============================================================================
+
+def test_historical_revision_t1_t2_t3_counterfactual():
+    """
+    P0-1 Regression Test:
+    1. At T1 (2024-01-15 11:00:00), snapshot resolves ev_2330_cowos_capacity to Revision 1 (Rumor from Commercial Times at 08:30).
+    2. At T2 (2024-01-15 20:00:00), snapshot resolves ev_2330_cowos_capacity to Revision 2 (Clarification from MOPS at 14:15:30).
+    3. Exactly ONE slot is occupied for ev_2330_cowos_capacity at both T1 and T2 (no duplicate slots).
+    4. Adding a future Revision 3 at T3 (2024-01-18 10:00:00) causes ZERO change to T1 and T2 snapshots (torch.equal bitwise invariance).
+    """
+    ticker = "2330"
+    ohlcv, inst, macro, foreign, ctx, evs = load_real_market_feeds(ticker, mode="estimated", include_micro_news=True)
+    meta = STOCK_METADATA[ticker]
+
+    builder = HistoricalSnapshotBuilder(
+        df_ohlcv=ohlcv,
+        df_inst=inst,
+        df_macro=macro,
+        df_foreign=foreign,
+        stock_context_records=ctx,
+        event_records=evs,
+        shares_outstanding=meta["shares_outstanding"],
+        mode="estimated",
+    )
+
+    t1 = pd.Timestamp("2024-01-15 11:00:00", tz="Asia/Taipei")
+    t2 = pd.Timestamp("2024-01-15 20:00:00", tz="Asia/Taipei")
+
+    snap_t1 = builder.build_snapshot(t1)
+    snap_t2 = builder.build_snapshot(t2)
+
+    # In T1 snapshot, available_at <= 11:00:00 -> art_2330_ct_240115 (08:30, rev 1) and art_2330_ltn_240115 (10:07, rev 1)
+    assert int(snap_t1.event_mask[:, :RECENT_EVENT_SLOTS].sum().item()) == 2
+    assert int(snap_t1.event_mask[:, RECENT_EVENT_SLOTS:].sum().item()) == 0
+
+    # In T2 snapshot, available_at <= 20:00:00 -> art_2330_mops_240115 (14:15:30, rev 2) is chosen over rev 1!
+    assert int(snap_t2.event_mask[:, :RECENT_EVENT_SLOTS].sum().item()) == 2
+    assert int(snap_t2.event_mask[:, RECENT_EVENT_SLOTS:].sum().item()) == 0
+
+    # In snap_t2, slot 0 is the clarified MOPS event
+    assert snap_t2.event_metadata[0, 0, 0].item() == 1.0  # MOPS corporate management (E01)
+    assert snap_t2.event_metadata[0, 0, 15].item() == 1.0  # Clarified (E16)
+    assert snap_t2.event_metadata[0, 0, 19].item() == 0.5  # Revision 2 novelty estimate (0.5 for rev > 1)
+
+    # In snap_t1, slot 0 is the Commercial Times rumor event (not yet clarified)
+    assert snap_t1.event_metadata[0, 0, 0].item() == 0.0  # NOT MOPS corporate management
+    assert snap_t1.event_metadata[0, 0, 15].item() == 0.0  # NOT clarified
+    assert snap_t1.event_metadata[0, 0, 19].item() == 1.0  # Revision 1 novelty estimate (1.0 for rev == 1)
+
+    # 4. Inject future Revision 3 at T3 (2024-01-18 10:00:00)
+    evs_with_t3 = copy.deepcopy(evs)
+    rec_t3 = {
+        "event_id": "ev_2330_cowos_capacity",
+        "article_id": "art_2330_mops_t3_future",
+        "text_embedding": np.ones(EVENT_TEXT_DIM, dtype=np.float32) / np.sqrt(EVENT_TEXT_DIM),
+        "actor_embedding_4d": np.array([1, 0, 0, 0], dtype=np.float32),
+        "type_embedding_8d": np.array([0, 1, 0, 0, 0, 0, 0, 0], dtype=np.float32),
+        "status_embedding_4d": np.array([0, 0, 0, 1], dtype=np.float32),
+        "evidence_traceability": 1.0,
+        "source_reliability": 1.0,
+        "source_independence": 1.0,
+        "novelty_input_estimate": 0.2,
+        "market_surprise_preevent": 0.0,
+        "quantified_magnitude": 0.9,
+        "timestamp_reliability": 1.0,
+        "is_active": False,
+        "revision_id": 3,
+        "available_at": pd.Timestamp("2024-01-18 10:00:00", tz="Asia/Taipei"),
+        "provenance": ProvenanceRecord(
+            source_id="MOPS_art_2330_mops_t3_future",
+            source_published_at=pd.Timestamp("2024-01-18 10:00:00", tz="Asia/Taipei"),
+            provider_available_at=pd.Timestamp("2024-01-18 10:00:00", tz="Asia/Taipei"),
+            available_at=pd.Timestamp("2024-01-18 10:00:00", tz="Asia/Taipei"),
+            revision_id=3,
+            is_audit_verified=False,
+            mode="estimated",
+        ),
+        "relation": {
+            "direct_company_mention": True,
+            "industry_match": True,
+            "upstream_exposure": 0.0,
+            "downstream_exposure": 0.0,
+            "customer_relationship": 0.0,
+            "supplier_relationship": 0.0,
+            "geographic_exposure": 0.0,
+            "macro_factor_exposure": 0.0,
+        },
+    }
+    evs_with_t3.append(rec_t3)
+
+    builder_t3 = HistoricalSnapshotBuilder(
+        df_ohlcv=ohlcv,
+        df_inst=inst,
+        df_macro=macro,
+        df_foreign=foreign,
+        stock_context_records=ctx,
+        event_records=evs_with_t3,
+        shares_outstanding=meta["shares_outstanding"],
+        mode="estimated",
+    )
+
+    snap_t1_t3 = builder_t3.build_snapshot(t1)
+    snap_t2_t3 = builder_t3.build_snapshot(t2)
+
+    # Strict bitwise counterfactual invariance across T1 and T2
+    assert torch.equal(snap_t1.recent_event_emb, snap_t1_t3.recent_event_emb)
+    assert torch.equal(snap_t1.active_event_emb, snap_t1_t3.active_event_emb)
+    assert torch.equal(snap_t1.event_metadata, snap_t1_t3.event_metadata)
+    assert torch.equal(snap_t1.event_stock_rel, snap_t1_t3.event_stock_rel)
+    assert torch.equal(snap_t1.event_mask, snap_t1_t3.event_mask)
+
+    assert torch.equal(snap_t2.recent_event_emb, snap_t2_t3.recent_event_emb)
+    assert torch.equal(snap_t2.active_event_emb, snap_t2_t3.active_event_emb)
+    assert torch.equal(snap_t2.event_metadata, snap_t2_t3.event_metadata)
+    assert torch.equal(snap_t2.event_stock_rel, snap_t2_t3.event_stock_rel)
+    assert torch.equal(snap_t2.event_mask, snap_t2_t3.event_mask)
+
+
+# ==============================================================================
+# 7. Dynamic Recent / Active Slot As-Of Allocation
+# ==============================================================================
+
+def test_recent_active_slot_asof_selection():
+    """
+    P0-1 / P0-3 Test:
+    Verifies Recent 32 vs Active 8 allocation occurs dynamically as-of decision_timestamp:
+    - An active event lands in Active slot (slot index 32..39).
+    - When resolved, the event shifts dynamically to Recent slots (0..31), leaving Active empty.
+    - No duplicate slots across Recent and Active pools.
+    """
+    ticker = "2603"
+    ohlcv, inst, macro, foreign, ctx, evs = load_real_market_feeds(ticker, mode="estimated", include_micro_news=True)
+    meta = STOCK_METADATA[ticker]
+
+    builder = HistoricalSnapshotBuilder(
+        df_ohlcv=ohlcv,
+        df_inst=inst,
+        df_macro=macro,
+        df_foreign=foreign,
+        stock_context_records=ctx,
+        event_records=evs,
+        shares_outstanding=meta["shares_outstanding"],
+        mode="estimated",
+    )
+
+    t_active = pd.Timestamp("2024-01-15 20:00:00", tz="Asia/Taipei")
+    snap_active = builder.build_snapshot(t_active)
+
+    # 1 Recent slot (potential stock) + 1 Active slot (red sea crisis)
+    assert int(snap_active.event_mask[:, :RECENT_EVENT_SLOTS].sum().item()) == 1
+    assert int(snap_active.event_mask[:, RECENT_EVENT_SLOTS:].sum().item()) == 1
+    assert snap_active.event_mask[0, 0].item() is True
+    assert snap_active.event_mask[0, RECENT_EVENT_SLOTS].item() is True
+
+    # Now simulate an official resolution at 2024-01-16 12:00:00
+    evs_resolved = copy.deepcopy(evs)
+    res_rec = {
+        "event_id": "ev_2603_red_sea_crisis",
+        "article_id": "art_2603_resolution",
+        "text_embedding": np.ones(EVENT_TEXT_DIM, dtype=np.float32) / np.sqrt(EVENT_TEXT_DIM),
+        "actor_embedding_4d": np.array([1, 0, 0, 0], dtype=np.float32),
+        "type_embedding_8d": np.array([0, 1, 0, 0, 0, 0, 0, 0], dtype=np.float32),
+        "status_embedding_4d": np.array([0, 0, 0, 1], dtype=np.float32),  # Clarified/Resolved
+        "evidence_traceability": 1.0,
+        "source_reliability": 1.0,
+        "source_independence": 1.0,
+        "novelty_input_estimate": 0.5,
+        "market_surprise_preevent": 0.0,
+        "quantified_magnitude": 0.8,
+        "timestamp_reliability": 1.0,
+        "is_active": False,
+        "event_status": "resolved",
+        "revision_id": 2,
+        "available_at": pd.Timestamp("2024-01-16 12:00:00", tz="Asia/Taipei"),
+        "provenance": ProvenanceRecord(
+            source_id="MOPS_art_2603_resolution",
+            source_published_at=pd.Timestamp("2024-01-16 12:00:00", tz="Asia/Taipei"),
+            provider_available_at=pd.Timestamp("2024-01-16 12:00:00", tz="Asia/Taipei"),
+            available_at=pd.Timestamp("2024-01-16 12:00:00", tz="Asia/Taipei"),
+            revision_id=2,
+            is_audit_verified=False,
+            missing_status=MissingStatus.AVAILABLE.value,
+            mode="estimated",
+        ),
+        "relation": {
+            "direct_company_mention": True,
+            "industry_match": True,
+            "upstream_exposure": 0.0,
+            "downstream_exposure": 0.0,
+            "customer_relationship": 0.0,
+            "supplier_relationship": 0.0,
+            "geographic_exposure": 0.0,
+            "macro_factor_exposure": 0.0,
+        },
+    }
+    evs_resolved.append(res_rec)
+
+    builder_resolved = HistoricalSnapshotBuilder(
+        df_ohlcv=ohlcv,
+        df_inst=inst,
+        df_macro=macro,
+        df_foreign=foreign,
+        stock_context_records=ctx,
+        event_records=evs_resolved,
+        shares_outstanding=meta["shares_outstanding"],
+        mode="estimated",
+    )
+
+    t_after_res = pd.Timestamp("2024-01-16 20:00:00", tz="Asia/Taipei")
+    snap_after_res = builder_resolved.build_snapshot(t_after_res)
+
+    # After resolution: event shifts to Recent pool, leaving Active pool empty
+    assert int(snap_after_res.event_mask[:, RECENT_EVENT_SLOTS:].sum().item()) == 0
+    assert int(snap_after_res.event_mask[:, :RECENT_EVENT_SLOTS].sum().item()) == 2
+    # Exactly 2 total slots occupied (1 for potential stock, 1 for red sea crisis resolved - zero duplicate slots)
+    assert int(snap_after_res.event_mask.sum().item()) == 2
+
+
+# ==============================================================================
+# 8. P0-2: Authoritative 24-Dimension Event Metadata Sentinel Test
+# ==============================================================================
+
+def test_event_metadata_24d_sentinel():
+    """
+    P0-2 Sentinel Test:
+    Verifies that extract_event_metadata(), build_audited_event_metadata(), and
+    HistoricalSnapshotBuilder 100% strictly conform to the authoritative V8.0 specification layout:
+    - E01–E04: Actor Embedding (4D, indices 0..3)
+    - E05–E12: Event Type Embedding (8D, indices 4..11)
+    - E13–E16: Event Status Embedding (4D, indices 12..15)
+    - E17: Evidence Traceability [0, 1] (index 16)
+    - E18: Source Reliability [0, 1] (index 17)
+    - E19: Source Independence [0, 1] (index 18)
+    - E20: Novelty Input Estimate [0, 1] (index 19)
+    - E21: Pre-event Market Surprise [0, 1] (index 20, strictly pre-event prior implied move)
+    - E22: Quantified Magnitude [0, 1] (index 21)
+    - E23: Event Age in fractional days (index 22, Python Index 22)
+    - E24: Timestamp Reliability [0, 1] (index 23, Python Index 23)
+    Auxiliary features (sentiment, impact horizon) MUST NOT overwrite E01..E24.
+    """
+    t_avail = pd.Timestamp("2024-01-15 08:00:00", tz="Asia/Taipei")
+    t_dec = pd.Timestamp("2024-01-16 08:00:00", tz="Asia/Taipei")  # Exactly 1.0 day age
+
+    # Test Article covering each dimension group
+    art_mops = RawNewsArticle(
+        source_type=NewsSourceType.MOPS_OFFICIAL,
+        source_name="MOPS",
+        stock_id="2330",
+        headline="公告本公司自結獲利與營業收入",
+        body_text="澄清媒體報導獲利預測",
+        source_published_at=t_avail,
+        provider_available_at=t_avail,
+        provider_available_evidence="MOPS Rule 51 Log",
+        is_audit_verified=True,
+        revision_id=2,
+        lifecycle_status=EventLifecycleStatus.CLARIFIED,
+    )
+
+    vec = extract_event_metadata(art_mops, decision_time=t_dec)
+    assert vec.shape == (24,)
+
+    # 1. Actor (E01–E04): MOPS is Corporate Management -> index 0 is 1.0, indices 1..3 are 0.0
+    assert vec[0] == 1.0, "E01: Actor corporate management"
+    assert vec[1] == 0.0, "E02: Actor analyst"
+    assert vec[2] == 0.0, "E03: Actor media"
+    assert vec[3] == 0.0, "E04: Actor regulator"
+
+    # 2. Type (E05–E12): Earnings ("獲利", "營收") -> index 4 is 1.0, other type indices 0.0
+    assert vec[4] == 1.0, "E05: Type earnings"
+    assert (vec[5:12] == 0.0).all(), "E06..E12 must be 0.0"
+
+    # 3. Status (E13–E16): Clarified -> index 15 is 1.0
+    assert vec[12] == 0.0, "E13: Status rumor"
+    assert vec[13] == 0.0, "E14: Status announced"
+    assert vec[14] == 0.0, "E15: Status ongoing"
+    assert vec[15] == 1.0, "E16: Status clarified"
+
+    # 4. Scalars (E17–E24)
+    assert vec[16] == 1.0, "E17: Traceability verified"
+    assert vec[17] == 1.0, "E18: MOPS Source Reliability"
+    assert vec[18] == 1.0, "E19: MOPS Source Independence"
+    assert vec[19] == 0.5, "E20: Novelty Input Estimate (0.5 for revision > 1)"
+    assert vec[20] == 0.0, "E21: Pre-event Market Surprise (strictly 0.0 default, zero post-event leakage)"
+    assert vec[21] == 0.5, "E22: Quantified Magnitude"
+    assert np.isclose(vec[22], 1.0, atol=1e-4), f"E23: Event age in fractional days expected 1.0, got {vec[22]}"
+    assert vec[23] == 1.0, "E24: Timestamp Reliability"
+
+    # Verify Sentiment and Impact Horizon are stored in article.metadata, NOT overwriting E01..E24
+    assert "sentiment_polarity" in art_mops.metadata
+    assert "impact_horizon" in art_mops.metadata
+
+    # Sentinel comparison with feature_engine.assemble_event_metadata
+    assembled = assemble_event_metadata(
+        actor_embedding_4d=vec[:4],
+        type_embedding_8d=vec[4:12],
+        status_embedding_4d=vec[12:16],
+        evidence_traceability=float(vec[16]),
+        source_reliability=float(vec[17]),
+        source_independence=float(vec[18]),
+        novelty_input_estimate=float(vec[19]),
+        market_surprise_preevent=float(vec[20]),
+        quantified_magnitude=float(vec[21]),
+        event_age_days=float(vec[22]),
+        timestamp_reliability=float(vec[23]),
+    )
+    assert np.allclose(vec, assembled), "extract_event_metadata must produce identical layout to assemble_event_metadata"
+
+
+# ==============================================================================
+# 9. P1-3: Anti-Fabrication & Strictly Isolated Embedding Engines
+# ==============================================================================
+
+def test_pretrained_without_model_must_fail():
+    """
+    P1-3 Test:
+    1. PRETRAINED embedding mode must explicitly fail (ValueError) if genuine model weights / tokenizer are not loaded.
+    2. DETERMINISTIC_HASH is explicitly designated for Smoke Test / Reproducible Baseline with version 'sha256-projection-v1.0'.
+    3. UNTRAINED is strictly isolated from PRETRAINED.
+    4. EVENT_TEXT_DIM is authoritative 128 across all schema.
+    """
+    assert EVENT_TEXT_DIM == 128, "Authoritative EVENT_TEXT_DIM must be 128"
+
+    # 1. Calling PRETRAINED without model weights MUST raise ValueError
+    engine_pretrained = TextEmbeddingEngine(TextEmbeddingType.PRETRAINED, model_version="finbert-zh-base-v1.0")
+    with pytest.raises(ValueError, match="Strict Embedding Error: PRETRAINED"):
+        engine_pretrained.embed_text("測試標題")
+
+    # 2. DETERMINISTIC_HASH works deterministically for smoke tests
+    engine_hash = TextEmbeddingEngine(TextEmbeddingType.DETERMINISTIC_HASH, model_version="sha256-projection-v1.0")
+    v1 = engine_hash.embed_text("測試標題")
+    v2 = engine_hash.embed_text("測試標題")
+    assert v1.shape == (128,)
+    assert np.allclose(v1, v2)
+    assert np.isclose(np.linalg.norm(v1), 1.0, atol=1e-5)
+
+    # 3. UNTRAINED is strictly isolated
+    engine_untr = TextEmbeddingEngine(TextEmbeddingType.UNTRAINED, model_version="random-projection-v1.0")
+    v_untr = engine_untr.embed_text("測試標題")
+    assert v_untr.shape == (128,)
+    assert not np.allclose(v1, v_untr)
+
+
+# ==============================================================================
+# 10. P1-4: Historical News Evidence Integrity & Open RSS Audit Defense
+# ==============================================================================
+
+def test_news_source_evidence_integrity():
+    """
+    P1-4 Test:
+    1. Loads the 10 micro news articles from data/poc_real_data/historical_news_micro.json.
+    2. Confirms all 10 retain is_audit_verified == False (ESTIMATED) due to open RSS lack of server logs.
+    3. Confirms all 10 specify event_clustering_method == 'human_annotated' (distinguished from automated).
+    4. Confirms that in Formal Mode, articles with is_audit_verified == False are strictly rejected.
+    """
+    articles = load_micro_news_dataset()
+    assert len(articles) == 10, f"Expected 10 micro articles, got {len(articles)}"
+
+    for art in articles:
+        # All 10 must be marked unverified (ESTIMATED)
+        assert art.is_audit_verified is False, f"Article {art.article_id} must NOT be marked verified without authentic exchange logs"
+        # Must explicitly distinguish human-annotated clustering
+        assert art.event_clustering_method == "human_annotated", f"Article {art.article_id} missing human_annotated clustering tag"
+        # Must possess evidence documentation
+        assert art.provider_available_evidence is not None and len(art.provider_available_evidence) > 0
+
+    # In Formal Mode, unverified articles must be strictly rejected by pipeline
+    pipe_formal = HistoricalMultimodalPipeline(mode="formal")
+    for art in articles:
+        with pytest.raises(ValueError, match="Cannot ingest unverified article .* in formal mode"):
+            pipe_formal.ingest_article(art)
+

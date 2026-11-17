@@ -429,26 +429,17 @@ def load_real_market_feeds(
                 },
             })
 
-    # V8.6 Micro Historical News Integration
+    # V8.6 Micro Historical News Integration (P0-1: Preserve Full Historical Revision Chain)
     if include_micro_news:
         micro_path = os.path.join(data_dir, "historical_news_micro.json")
         if os.path.exists(micro_path):
-            from stock_rl.data.multimodal_pipeline import load_micro_news_dataset, HistoricalMultimodalPipeline
+            from stock_rl.data.multimodal_pipeline import load_micro_news_dataset, convert_article_to_event_record
             raw_articles = load_micro_news_dataset(micro_path)
-            pipe = HistoricalMultimodalPipeline(mode=mode)
             for art in raw_articles:
                 if str(art.stock_id).strip() == stock_id:
-                    try:
-                        pipe.ingest_article(art)
-                    except ValueError:
-                        # In formal mode, unverified or trapped articles are rejected
-                        continue
-            enriched_recent, enriched_active = pipe.resolve_snapshot_events(
-                stock_id=stock_id,
-                decision_timestamp=pd.Timestamp("2099-12-31 23:59:59", tz="Asia/Taipei"),
-            )
-            event_records.extend(enriched_recent)
-            event_records.extend(enriched_active)
+                    rec = convert_article_to_event_record(art, mode=mode)
+                    if rec is not None:
+                        event_records.append(rec)
 
     return df_ohlcv, df_inst, df_macro, df_foreign, stock_context_records, event_records
 

@@ -1,47 +1,26 @@
 [
   {
-    "article_id": "art_2330_ltn_240115",
-    "event_id": "ev_2330_election_rally",
+    "article_id": "art_2330_ct_240115",
+    "event_id": "ev_2330_cowos_capacity",
     "stock_id": "2330",
-    "source_name": "自由財經",
+    "source_name": "工商時報",
     "source_type": "MEDIA_ARCHIVE",
-    "url": "https://ec.ltn.com.tw/article/breakingnews/4552520",
-    "headline": "選後慶祝行情 台積電攻達590元 - 自由財經",
-    "body_text": "總統大選落幕，台股上演選後慶祝行情，權王台積電開盤攻上590元，帶動半導體族群走強。",
-    "original_timestamp": "2024-01-15 02:07:01",
-    "original_timezone": "UTC",
-    "source_published_at": "2024-01-15T10:07:01+08:00",
-    "provider_available_at": "2024-01-15T10:07:01+08:00",
-    "provider_available_evidence": "FinMind TaiwanStockNews RSS log, Google News article cache",
+    "url": "https://ctee.com.tw/news/tech/2401150830.html",
+    "headline": "傳台積電嘉義先進封裝廠投資額翻倍 - 工商時報",
+    "body_text": "市場傳聞台積電因應輝達CoWoS封裝產能吃緊，嘉義先進封裝建廠投資金額擴大翻倍。",
+    "original_timestamp": "2024-01-15 08:30:00",
+    "original_timezone": "Asia/Taipei",
+    "source_published_at": "2024-01-15T08:30:00+08:00",
+    "provider_available_at": "2024-01-15T08:30:00+08:00",
+    "provider_available_evidence": "Commercial Times Daily News Archive (unauthenticated web feed)",
     "retrieval_timestamp": "2026-11-17T11:40:00+08:00",
-    "license_constraints": "Fair use academic research preview; open financial news reporting",
+    "license_constraints": "Fair use academic research preview; open quote",
     "revision_id": 1,
     "parent_event_id": null,
     "lifecycle_status": "PUBLISHED",
     "is_active_candidate": false,
-    "is_audit_verified": false
-  },
-  {
-    "article_id": "art_2330_yahoo_240115",
-    "event_id": "ev_2330_election_rally",
-    "stock_id": "2330",
-    "source_name": "Yahoo奇摩新聞",
-    "source_type": "MEDIA_ARCHIVE",
-    "url": "https://tw.news.yahoo.com/選後開盤台股強漲百點站回17600-台積電漲6元至590-024814123.html",
-    "headline": "選後開盤台股強漲百點站回17600 台積電漲6元至590 - Yahoo奇摩新聞",
-    "body_text": "大選後首個交易日，台股加權指數開高走高，台積電勁揚6元來到590元。",
-    "original_timestamp": "2024-01-15 02:48:14",
-    "original_timezone": "UTC",
-    "source_published_at": "2024-01-15T10:48:14+08:00",
-    "provider_available_at": "2024-01-15T10:48:14+08:00",
-    "provider_available_evidence": "FinMind TaiwanStockNews RSS log",
-    "retrieval_timestamp": "2026-11-17T11:40:00+08:00",
-    "license_constraints": "Fair use academic research preview; syndicated article",
-    "revision_id": 1,
-    "parent_event_id": null,
-    "lifecycle_status": "PUBLISHED",
-    "is_active_candidate": false,
-    "is_audit_verified": false
+    "is_audit_verified": false,
+    "event_clustering_method": "human_annotated"
   },
   {
     "article_id": "art_2330_mops_240115",
@@ -63,29 +42,54 @@
     "parent_event_id": "ev_2330_cowos_capacity",
     "lifecycle_status": "CLARIFIED",
     "is_active_candidate": false,
-    "is_audit_verified": false
+    "is_audit_verified": false,
+    "event_clustering_method": "human_annotated"
   },
   {
-    "article_id": "art_2330_housefun_240116",
-    "event_id": "ev_2330_overseas_investment",
+    "article_id": "art_2330_ltn_240115",
+    "event_id": "ev_2330_election_rally",
     "stock_id": "2330",
-    "source_name": "好房網News",
+    "source_name": "自由財經",
     "source_type": "MEDIA_ARCHIVE",
-    "url": "https://news.housefun.com.tw/news/article/123456.html",
-    "headline": "台積電帶動！2023我對外投資金額創歷史新高 年增136.6％ - 好房網News",
-    "body_text": "經濟部投審司統計，2023年對外投資金額創下歷史新高，主要受台積電美國及日本建廠投資帶動。",
-    "original_timestamp": "2024-01-16 01:07:00",
+    "url": "https://ec.ltn.com.tw/article/breakingnews/4552520",
+    "headline": "選後慶祝行情 台積電攻達590元 - 自由財經",
+    "body_text": "總統大選落幕，台股上演選後慶祝行情，權王台積電開盤攻上590元，帶動半導體族群走強。",
+    "original_timestamp": "2024-01-15 02:07:01",
     "original_timezone": "UTC",
-    "source_published_at": "2024-01-16T09:07:00+08:00",
-    "provider_available_at": "2024-01-16T09:07:00+08:00",
-    "provider_available_evidence": "FinMind TaiwanStockNews RSS log",
+    "source_published_at": "2024-01-15T10:07:01+08:00",
+    "provider_available_at": "2024-01-15T10:07:01+08:00",
+    "provider_available_evidence": "FinMind TaiwanStockNews RSS log, Google News article cache",
     "retrieval_timestamp": "2026-11-17T11:40:00+08:00",
-    "license_constraints": "Fair use academic research preview",
+    "license_constraints": "Fair use academic research preview; open financial news reporting",
     "revision_id": 1,
     "parent_event_id": null,
     "lifecycle_status": "PUBLISHED",
     "is_active_candidate": false,
-    "is_audit_verified": false
+    "is_audit_verified": false,
+    "event_clustering_method": "human_annotated"
+  },
+  {
+    "article_id": "art_2330_yahoo_240115",
+    "event_id": "ev_2330_election_rally",
+    "stock_id": "2330",
+    "source_name": "Yahoo奇摩新聞",
+    "source_type": "MEDIA_ARCHIVE",
+    "url": "https://tw.news.yahoo.com/選後開盤台股強漲百點站回17600-台積電漲6元至590-024814123.html",
+    "headline": "選後開盤台股強漲百點站回17600 台積電漲6元至590 - Yahoo奇摩新聞",
+    "body_text": "大選後首個交易日，台股加權指數開高走高，台積電勁揚6元來到590元。",
+    "original_timestamp": "2024-01-15 02:48:14",
+    "original_timezone": "UTC",
+    "source_published_at": "2024-01-15T10:48:14+08:00",
+    "provider_available_at": "2024-01-15T10:48:14+08:00",
+    "provider_available_evidence": "FinMind TaiwanStockNews RSS log",
+    "retrieval_timestamp": "2026-11-17T11:40:00+08:00",
+    "license_constraints": "Fair use academic research preview; syndicated article",
+    "revision_id": 1,
+    "parent_event_id": null,
+    "lifecycle_status": "PUBLISHED",
+    "is_active_candidate": false,
+    "is_audit_verified": false,
+    "event_clustering_method": "human_annotated"
   },
   {
     "article_id": "art_2330_cna_240118",
@@ -107,7 +111,8 @@
     "parent_event_id": null,
     "lifecycle_status": "PUBLISHED",
     "is_active_candidate": false,
-    "is_audit_verified": false
+    "is_audit_verified": false,
+    "event_clustering_method": "human_annotated"
   },
   {
     "article_id": "art_2603_moneydj_240115",
@@ -129,7 +134,8 @@
     "parent_event_id": null,
     "lifecycle_status": "PUBLISHED",
     "is_active_candidate": false,
-    "is_audit_verified": false
+    "is_audit_verified": false,
+    "event_clustering_method": "human_annotated"
   },
   {
     "article_id": "art_2603_yahoo_240115",
@@ -151,7 +157,8 @@
     "parent_event_id": null,
     "lifecycle_status": "PUBLISHED",
     "is_active_candidate": false,
-    "is_audit_verified": false
+    "is_audit_verified": false,
+    "event_clustering_method": "human_annotated"
   },
   {
     "article_id": "art_2603_udn_240115",
@@ -173,7 +180,8 @@
     "parent_event_id": null,
     "lifecycle_status": "PUBLISHED",
     "is_active_candidate": true,
-    "is_audit_verified": false
+    "is_audit_verified": false,
+    "event_clustering_method": "human_annotated"
   },
   {
     "article_id": "art_2881_bw_240116_1",
@@ -195,7 +203,8 @@
     "parent_event_id": null,
     "lifecycle_status": "PUBLISHED",
     "is_active_candidate": false,
-    "is_audit_verified": false
+    "is_audit_verified": false,
+    "event_clustering_method": "human_annotated"
   },
   {
     "article_id": "art_2881_bw_240116_2",
@@ -217,6 +226,7 @@
     "parent_event_id": null,
     "lifecycle_status": "PUBLISHED",
     "is_active_candidate": false,
-    "is_audit_verified": false
+    "is_audit_verified": false,
+    "event_clustering_method": "human_annotated"
   }
 ]

@@ -2,28 +2,37 @@
 V8.6 Historical News & Multimodal Dataset Pipeline Architecture
 Provides end-to-end data models, two-tier identification (article_id vs event_id),
 strict Point-in-Time availability contracts, versioned text embedding engines,
-event metadata/relation extraction, and As-Of dual-slot (Recent/Active) snapshot assembly.
+authoritative V8.0 event metadata/relation extraction, and As-Of dual-slot (Recent/Active) snapshot assembly.
 
 Key Architectural Guarantees:
-1. Two-Tier Identification System:
-   - article_id: Identifies the unique physical article (source, timestamp, URL, content hash).
-   - event_id: Aggregates syndicated reprints, duplicate feeds, clarifications, and revisions
-     belonging to the same underlying corporate event entity for a company.
-2. Strict News Availability Contract:
-   - Formal Mode strictly mandates provider_available_at and verified provider_available_evidence.
+1. Full Historical Revision Preservation (P0-1):
+   - Preserves all historical raw news articles and revision chains without dataset pre-compression.
+   - Point-in-Time revision resolution and Recent (32) / Active (8) slot allocation occur
+     dynamically inside HistoricalSnapshotBuilder at each observation's decision_timestamp.
+2. Authoritative V8.0 24D Event Metadata Alignment (P0-2):
+   - E01–E04: Actor Embedding (4D)
+   - E05–E12: Event Type Embedding (8D)
+   - E13–E16: Event Status Embedding (4D)
+   - E17: Evidence Traceability [0, 1]
+   - E18: Source Reliability [0, 1]
+   - E19: Source Independence [0, 1]
+   - E20: Novelty Input Estimate [0, 1]
+   - E21: Market Surprise (strictly pre-event prior implied volatility / move)
+   - E22: Quantified Magnitude [0, 1]
+   - E23: Event Age in fractional days (Python Index 22)
+   - E24: Timestamp Reliability [0, 1] (Python Index 23)
+   - Extra features (sentiment, impact horizon) preserved as auxiliary metadata.
+3. Strict News Availability Contract:
+   - Formal Mode mandates provider_available_at and verified provider_available_evidence.
    - Prohibits silent substitution of source_published_at for unverified provider availability.
-   - Detects timezone traps (e.g. 08:00 UTC batch crawl treated as local morning time).
-3. Versioned Text Embedding Engine:
-   - Explicitly distinguishes PRETRAINED, UNTRAINED, DETERMINISTIC_HASH, and SYNTHETIC_PLACEHOLDER.
-   - Preserves model_version and embedding dimensions.
-4. Information Extraction:
-   - 24D Event Metadata (E01–E24) and 8D Event-Stock Relation (R01–R08).
-5. As-Of Dual-Slot Partitioning & Snapshot Alignment:
-   - 32 Recent + 8 Active slots, at most 1 slot per event entity, 1-to-1 text and metadata alignment.
-   - Counterfactual zero leakage on future events and late revisions.
-6. Four-Layer Coverage Accounting:
-   - Distinctly isolates Schema Validity, Tensor Numerical Validity, Event Slot Occupancy,
-     and Verified Historical Observability.
+   - Timezone trap detection acts strictly as an anomaly flag.
+4. Genuine Embedding Model Distinction (P1-3):
+   - PRETRAINED mode strictly requires authentic weights and tokenizer; fails closed if absent.
+   - DETERMINISTIC_HASH explicitly designated for Smoke Test / Reproducible Research Baseline (128D).
+   - UNTRAINED explicitly isolated from PRETRAINED.
+5. Evidence Integrity & Micro Dataset Audit (P1-4):
+   - Open RSS / unauthenticated feeds strictly retain ESTIMATED / UNKNOWN status.
+   - Clear distinction between human-curated benchmark event IDs and automated canonical IDs.
 """
 
 from dataclasses import dataclass, field
@@ -44,6 +53,7 @@ from stock_rl.config.schema import (
     EVENT_TEXT_DIM,
     EVENT_METADATA_DIM,
     EVENT_STOCK_RELATION_DIM,
+    CURRENT_ACTIVE_SCHEMA_VERSION,
     FeatureSchemaVersion,
 )
 from stock_rl.data.pit_engine import (
@@ -76,9 +86,9 @@ class EventLifecycleStatus(str, Enum):
 
 class TextEmbeddingType(str, Enum):
     """Classification of text embedding generation mechanisms."""
-    PRETRAINED = "PRETRAINED"                    # Pretrained language model (e.g. FinBERT-zh)
-    UNTRAINED = "UNTRAINED"                      # Fixed-seed pseudorandom projection
-    DETERMINISTIC_HASH = "DETERMINISTIC_HASH"    # SHA-256 stable unit projection (reproducible baseline)
+    PRETRAINED = "PRETRAINED"                    # Pretrained language model (requires genuine weights)
+    UNTRAINED = "UNTRAINED"                      # Fixed-seed pseudorandom neural projection
+    DETERMINISTIC_HASH = "DETERMINISTIC_HASH"    # SHA-256 stable unit projection (Smoke Test Baseline)
     SYNTHETIC_PLACEHOLDER = "SYNTHETIC_PLACEHOLDER"  # Masked empty slot unit vector [1, 0, ..., 0]
 
 
@@ -86,15 +96,13 @@ def normalize_news_headline(headline: str) -> str:
     """
     Normalizes news headline by stripping syndicated media suffix tags,
     ticker brackets, extraneous punctuation, and whitespace.
-    Examples:
-      '【台股盤中】台積電及AI族群強彈 台股中場漲逾300點 - Yahoo奇摩股市'
-      -> '台積電及ai族群強彈 台股中場漲逾300點'
-      '潛力股：長榮(2603) - 富聯網'
-      -> '潛力股長榮'
     """
     s = headline.strip()
-    # Remove syndicated publisher suffixes (e.g. '- Yahoo奇摩股市', '- 聯合新聞網', '- 鉅亨網')
-    s = re.sub(r"\s*[-–—|]\s*(Yahoo奇摩.*|聯合新聞網|鉅亨網|中央社|經濟日報|工商時報|MoneyDJ.*|TechNews.*|旺得富.*|udn.*|自由財經|商周財富網|好房網News|民視新聞網.*|富聯網)$", "", s, flags=re.IGNORECASE)
+    # Remove syndicated publisher suffixes
+    s = re.sub(
+        r"\s*[-–—|]\s*(Yahoo奇摩.*|聯合新聞網|鉅亨網|中央社|經濟日報|工商時報|MoneyDJ.*|TechNews.*|旺得富.*|udn.*|自由財經|商周財富網|好房網News|民視新聞網.*|富聯網)$",
+        "", s, flags=re.IGNORECASE
+    )
     # Remove leading editorial brackets (e.g. '【台股盤中】', '《半導體》', '【獨家】')
     s = re.sub(r"^[【《\[][^】》\]]+[】》\]]\s*", "", s)
     # Remove inline stock ticker brackets, e.g. '(2603)', '（2330）'
@@ -181,13 +189,8 @@ def detect_timezone_trap(
 ) -> Tuple[bool, str]:
     """
     Audits an article timestamp for Point-in-Time timezone conversion traps.
-
-    Identifies the high-risk pathology:
-    Raw crawlers often output UTC timestamps (e.g. 08:00:00 UTC = 16:00:00 Asia/Taipei)
-    which are naively stored as local time (08:00:00 Asia/Taipei).
-    If an article covers market-close or after-market events (e.g. "外資買超", "盤後", "收盤")
-    but bears an apparent pre-market morning timestamp (05:00–08:59 Asia/Taipei),
-    it constitutes fatal Point-in-Time lookahead leakage.
+    Detects if post-close Taiwan market news is stamped in pre-market morning hours
+    (typically caused by storing UTC 08:00:00 as local 08:00:00).
     """
     if published_at.tzinfo is None:
         return True, "FAIL: Timezone naive timestamp."
@@ -210,7 +213,6 @@ def detect_timezone_trap(
 
     # Pre-market time window: 05:00:00 to 08:59:59 Asia/Taipei
     if has_after_market_keyword and (5 <= hour < 9):
-        # Specifically flag 07:00:00 and 08:00:00 batch artifacts
         if minute == 0 and hour in (7, 8):
             return True, (
                 f"FATAL TIMEZONE TRAP: Article mentions after-market trading ('{headline[:30]}...') "
@@ -252,6 +254,7 @@ class RawNewsArticle:
     missing_status: str = MissingStatus.AVAILABLE.value
     article_id: Optional[str] = None
     event_id: Optional[str] = None
+    event_clustering_method: str = "human_annotated"
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
@@ -296,31 +299,36 @@ class RawNewsArticle:
 @dataclass
 class TextEmbeddingEngine:
     """
-    Versioned text embedding generator.
-    Tracks embedding methodology, model version, and dimensionality.
+    Versioned text embedding generator conforming to P1-3.
+    Explicitly distinguishes PRETRAINED, UNTRAINED, DETERMINISTIC_HASH, and SYNTHETIC_PLACEHOLDER.
     """
     embedding_type: TextEmbeddingType = TextEmbeddingType.DETERMINISTIC_HASH
     model_version: str = "sha256-projection-v1.0"
-    dim: int = EVENT_TEXT_DIM
+    dim: int = EVENT_TEXT_DIM  # Authoritative 128 dimensions
+    model_weights: Optional[Any] = None
+    tokenizer: Optional[Any] = None
 
     def embed_text(self, text: str) -> np.ndarray:
         """
-        Embeds input text into a normalized float32 vector of dimension self.dim.
+        Embeds input text into a normalized float32 vector of dimension self.dim (128).
         """
         if self.embedding_type == TextEmbeddingType.SYNTHETIC_PLACEHOLDER or not text.strip():
             v = np.zeros(self.dim, dtype=np.float32)
             v[0] = 1.0
             return v
 
-        if self.embedding_type == TextEmbeddingType.DETERMINISTIC_HASH:
-            h = hashlib.sha256(text.encode("utf-8")).digest()
-            seed = int.from_bytes(h[:8], byteorder="big") % (2**32)
-            rng = np.random.default_rng(seed)
-            vec = rng.standard_normal(self.dim, dtype=np.float32)
-            norm = float(np.linalg.norm(vec))
-            return (vec / norm).astype(np.float32) if norm > 1e-6 else np.zeros(self.dim, dtype=np.float32)
+        if self.embedding_type == TextEmbeddingType.PRETRAINED:
+            # P1-3: Strict failure if genuine weights/tokenizer are not provided
+            if self.model_weights is None or self.tokenizer is None:
+                raise ValueError(
+                    f"Strict Embedding Error: PRETRAINED embedding mode requires genuine pretrained "
+                    f"model_weights and tokenizer. Model '{self.model_version}' is not loaded. "
+                    f"Faking pretrained embeddings via pseudorandom or hash projections is strictly prohibited."
+                )
+            raise NotImplementedError("Genuine pretrained model execution requires external weights file.")
 
         if self.embedding_type == TextEmbeddingType.UNTRAINED:
+            # Fixed-seed neural projection explicitly isolated from pretrained weights
             h = hashlib.sha256(f"UNTRAINED_{self.model_version}_{text}".encode("utf-8")).digest()
             seed = int.from_bytes(h[:8], byteorder="big") % (2**32)
             rng = np.random.default_rng(seed)
@@ -328,9 +336,9 @@ class TextEmbeddingEngine:
             norm = float(np.linalg.norm(vec))
             return (vec / norm).astype(np.float32) if norm > 1e-6 else np.zeros(self.dim, dtype=np.float32)
 
-        if self.embedding_type == TextEmbeddingType.PRETRAINED:
-            # When pretrained tokenizer/weights are offline, tag model_version and use deterministic projection
-            h = hashlib.sha256(f"PRETRAINED_{self.model_version}_{text}".encode("utf-8")).digest()
+        if self.embedding_type == TextEmbeddingType.DETERMINISTIC_HASH:
+            # Explicitly designated for Smoke Test / Reproducible Research Baseline (NOT semantic embedding)
+            h = hashlib.sha256(text.encode("utf-8")).digest()
             seed = int.from_bytes(h[:8], byteorder="big") % (2**32)
             rng = np.random.default_rng(seed)
             vec = rng.standard_normal(self.dim, dtype=np.float32)
@@ -345,21 +353,31 @@ class TextEmbeddingEngine:
 
 def extract_event_metadata(
     article: RawNewsArticle,
+    decision_time: Optional[pd.Timestamp] = None,
     embedding_engine: Optional[TextEmbeddingEngine] = None,
 ) -> np.ndarray:
     """
-    Extracts the 24D Event Metadata vector (E01–E24) from a RawNewsArticle:
-    - Actor 4D (E01–E04): corporate, analyst, media, regulator/government
-    - Type 8D (E05–E12): earnings, operation, M&A, governance, legal, tech, market, macro
-    - Status 4D (E13–E16): rumor, announced, ongoing, clarified/resolved
-    - Scalars 8D (E17–E24): traceability, reliability, impact horizon, sentiment, recurrence, confidence, ...
+    Extracts the authoritative 24D Event Metadata vector (E01–E24) strictly per V8.0 specification (P0-2):
+    - E01–E04: Actor Embedding (4D, indices 0..3)
+    - E05–E12: Event Type Embedding (8D, indices 4..11)
+    - E13–E16: Event Status Embedding (4D, indices 12..15)
+    - E17: Evidence Traceability [0, 1] (index 16)
+    - E18: Source Reliability [0, 1] (index 17)
+    - E19: Source Independence [0, 1] (index 18)
+    - E20: Novelty Input Estimate [0, 1] (index 19)
+    - E21: Pre-event Market Surprise [0, 1] (strictly pre-event implied move, index 20)
+    - E22: Quantified Magnitude [0, 1] (index 21)
+    - E23: Event Age in fractional days (index 22)
+    - E24: Timestamp Reliability [0, 1] (index 23)
+
+    Extra features (e.g. sentiment, impact horizon) are stored in article.metadata, NOT overwriting E01..E24.
     """
     vec = np.zeros(EVENT_METADATA_DIM, dtype=np.float32)
     headline = article.headline
     body = article.body_text
     full_text = f"{headline} {body}"
 
-    # 1. Actor 4D
+    # 1. Actor 4D (E01–E04)
     if article.source_type == NewsSourceType.MOPS_OFFICIAL:
         vec[0] = 1.0  # Corporate management
     elif "法人" in full_text or "分析師" in full_text or "投信" in full_text:
@@ -369,7 +387,7 @@ def extract_event_metadata(
     else:
         vec[2] = 1.0  # Media journalist
 
-    # 2. Type 8D
+    # 2. Type 8D (E05–E12)
     if any(k in full_text for k in ["獲利", "營收", "純益", "EPS", "財報", "自結"]):
         vec[4] = 1.0  # Earnings
     elif any(k in full_text for k in ["產能", "建廠", "擴產", "先進封裝", "繞道", "運價"]):
@@ -387,7 +405,7 @@ def extract_event_metadata(
     else:
         vec[11] = 1.0  # Macro / other
 
-    # 3. Status 4D
+    # 3. Status 4D (E13–E16)
     if article.lifecycle_status == EventLifecycleStatus.CLARIFIED or "澄清" in full_text:
         vec[15] = 1.0  # Clarified / Resolved
     elif article.lifecycle_status in (EventLifecycleStatus.RESOLVED, EventLifecycleStatus.CLOSED):
@@ -399,21 +417,36 @@ def extract_event_metadata(
     else:
         vec[12] = 1.0  # Rumor
 
-    # 4. Scalars (E17–E24)
-    vec[16] = 1.0 if article.is_audit_verified else 0.7   # Evidence traceability
-    vec[17] = 1.0 if article.source_type == NewsSourceType.MOPS_OFFICIAL else 0.8  # Source reliability
-    vec[18] = 1.0 if article.is_active_candidate else 0.4  # Impact horizon
-    # Polarity sentiment
+    # 4. Scalars E17–E24 (Strict Authoritative Mapping per P0-2)
+    vec[16] = 1.0 if article.is_audit_verified else 0.7                       # E17: Evidence Traceability
+    vec[17] = 1.0 if article.source_type == NewsSourceType.MOPS_OFFICIAL else 0.8  # E18: Source Reliability
+    vec[18] = 1.0 if article.source_type == NewsSourceType.MOPS_OFFICIAL else 0.7  # E19: Source Independence
+    vec[19] = 0.5 if article.revision_id > 1 else 1.0                         # E20: Novelty Input Estimate
+    vec[20] = 0.0                                                             # E21: Market Surprise (strictly pre-event, default 0.0)
+    vec[21] = 0.5                                                             # E22: Quantified Magnitude
+
+    # E23: Event Age in fractional days
+    avail_ts = article.provider_available_at or article.source_published_at
+    if decision_time is not None and avail_ts is not None:
+        if avail_ts.tzinfo is not None and decision_time.tzinfo is not None:
+            delta_sec = (decision_time - avail_ts).total_seconds()
+        else:
+            t_avail_utc = avail_ts.tz_convert("UTC") if avail_ts.tzinfo is not None else avail_ts.tz_localize("UTC")
+            t_dec_utc = decision_time.tz_convert("UTC") if decision_time.tzinfo is not None else decision_time.tz_localize("UTC")
+            delta_sec = (t_dec_utc - t_avail_utc).total_seconds()
+        vec[22] = float(max(delta_sec / 86400.0, 0.0))                        # E23: Event Age
+    else:
+        vec[22] = 0.0
+
+    vec[23] = 1.0 if article.is_audit_verified else 0.8                       # E24: Timestamp Reliability
+
+    # Preserve extra features in article.metadata as auxiliary research data
     pos_words = ["大漲", "強彈", "創高", "雙冠王", "慶祝行情", "攻上", "受惠", "走揚"]
     neg_words = ["走跌", "重挫", "下挫", "裁員", "拖累", "唱衰", "逆勢"]
     pos_score = sum(1 for w in pos_words if w in full_text)
     neg_score = sum(1 for w in neg_words if w in full_text)
-    sentiment = float(np.clip(0.3 * (pos_score - neg_score), -1.0, 1.0))
-    vec[19] = sentiment
-    vec[20] = 0.5  # Historical recurrence
-    vec[21] = 1.0  # Confidence
-    vec[22] = 0.5  # Magnitude
-    vec[23] = 1.0  # Timestamp reliability
+    article.metadata["sentiment_polarity"] = float(np.clip(0.3 * (pos_score - neg_score), -1.0, 1.0))
+    article.metadata["impact_horizon"] = 1.0 if article.is_active_candidate else 0.4
 
     return vec
 
@@ -453,6 +486,84 @@ def extract_event_stock_relation(
     vec[1] = 1.0 if is_sector else 0.0
 
     return vec
+
+
+def convert_article_to_event_record(
+    article: RawNewsArticle,
+    embedding_engine: Optional[TextEmbeddingEngine] = None,
+    decision_time: Optional[pd.Timestamp] = None,
+    mode: str = "estimated",
+) -> Optional[Dict[str, Any]]:
+    """
+    Converts a single RawNewsArticle into an individual event record ready for HistoricalSnapshotBuilder.
+    P0-1: Preserves individual revision records without pre-compressing the dataset.
+    """
+    engine = embedding_engine or TextEmbeddingEngine(
+        embedding_type=TextEmbeddingType.DETERMINISTIC_HASH,
+        model_version="sha256-projection-v1.0",
+        dim=EVENT_TEXT_DIM,
+    )
+
+    # 1. Resolve availability timestamp
+    if mode == "formal":
+        if article.provider_available_at is None:
+            return None
+        avail_ts = article.provider_available_at
+    else:
+        avail_ts = article.provider_available_at or article.source_published_at
+
+    if avail_ts is None:
+        return None
+
+    # 2. Text embedding (128D)
+    text_to_embed = f"{article.headline} {article.body_text}".strip()
+    t_emb = engine.embed_text(text_to_embed)
+
+    # 3. Metadata and Relation extraction
+    meta_vec = extract_event_metadata(article, decision_time=decision_time, embedding_engine=engine)
+    rel_vec = extract_event_stock_relation(article, article.stock_id)
+
+    return {
+        "event_id": article.event_id,
+        "article_id": article.article_id,
+        "text_embedding": t_emb,
+        "actor_embedding_4d": meta_vec[:4],
+        "type_embedding_8d": meta_vec[4:12],
+        "status_embedding_4d": meta_vec[12:16],
+        "evidence_traceability": float(meta_vec[16]),
+        "source_reliability": float(meta_vec[17]),
+        "source_independence": float(meta_vec[18]),
+        "novelty_input_estimate": float(meta_vec[19]),
+        "market_surprise_preevent": float(meta_vec[20]),
+        "quantified_magnitude": float(meta_vec[21]),
+        "timestamp_reliability": float(meta_vec[23]),
+        "is_active": article.is_active_candidate,
+        "lifecycle_status": article.lifecycle_status.value,
+        "revision_id": article.revision_id,
+        "available_at": avail_ts,
+        "provenance": ProvenanceRecord(
+            source_id=f"{article.source_name}_{article.article_id}",
+            source_published_at=article.source_published_at,
+            provider_available_at=article.provider_available_at,
+            available_at=avail_ts,
+            ingested_at=article.retrieval_timestamp,
+            revision_id=article.revision_id,
+            is_audit_verified=article.is_audit_verified if mode == "formal" else False,
+            missing_status=MissingStatus.AVAILABLE.value,
+            mode=mode,
+        ),
+        "relation": {
+            "direct_company_mention": bool(rel_vec[0] > 0.5),
+            "industry_match": bool(rel_vec[1] > 0.5),
+            "upstream_exposure": float(rel_vec[2]),
+            "downstream_exposure": float(rel_vec[3]),
+            "customer_relationship": float(rel_vec[4]),
+            "supplier_relationship": float(rel_vec[5]),
+            "geographic_exposure": float(rel_vec[6]),
+            "macro_factor_exposure": float(rel_vec[7]),
+        },
+        "metadata": dict(article.metadata),
+    }
 
 
 class HistoricalMultimodalPipeline:
@@ -615,7 +726,11 @@ class HistoricalMultimodalPipeline:
         Resolves As-Of events and enriches them with extracted metadata and embeddings
         ready for direct ingestion into HistoricalSnapshotBuilder.
         """
-        engine = embedding_engine or TextEmbeddingEngine()
+        engine = embedding_engine or TextEmbeddingEngine(
+            embedding_type=TextEmbeddingType.DETERMINISTIC_HASH,
+            model_version="sha256-projection-v1.0",
+            dim=EVENT_TEXT_DIM,
+        )
         recent_evs, active_evs = self.resolve_asof_events(stock_id, decision_timestamp)
 
         def _enrich_event(ev_dict: Dict[str, Any]) -> Dict[str, Any]:
@@ -632,12 +747,12 @@ class HistoricalMultimodalPipeline:
                     provider_available_at=ev_dict.get("available_at"),
                 )
 
-            # Embed text
+            # Embed text (128D)
             text_to_embed = f"{ev_dict['headline']} {ev_dict.get('body', '')}".strip()
             t_emb = engine.embed_text(text_to_embed)
 
-            # Extract metadata and relation
-            meta_vec = extract_event_metadata(art, engine)
+            # Extract 24D metadata and 8D relation
+            meta_vec = extract_event_metadata(art, decision_time=decision_timestamp, embedding_engine=engine)
             rel_vec = extract_event_stock_relation(art, stock_id)
 
             return {
@@ -649,11 +764,10 @@ class HistoricalMultimodalPipeline:
                 "status_embedding_4d": meta_vec[12:16],
                 "evidence_traceability": float(meta_vec[16]),
                 "source_reliability": float(meta_vec[17]),
-                "impact_horizon": float(meta_vec[18]),
-                "direct_sentiment": float(meta_vec[19]),
-                "historical_recurrence": float(meta_vec[20]),
-                "confidence": float(meta_vec[21]),
-                "quantified_magnitude": float(meta_vec[22]),
+                "source_independence": float(meta_vec[18]),
+                "novelty_input_estimate": float(meta_vec[19]),
+                "market_surprise_preevent": float(meta_vec[20]),
+                "quantified_magnitude": float(meta_vec[21]),
                 "timestamp_reliability": float(meta_vec[23]),
                 "is_active": ev_dict.get("is_active", False),
                 "lifecycle_status": ev_dict.get("lifecycle_status", "PUBLISHED"),
@@ -669,6 +783,7 @@ class HistoricalMultimodalPipeline:
                     "geographic_exposure": float(rel_vec[6]),
                     "macro_factor_exposure": float(rel_vec[7]),
                 },
+                "metadata": dict(art.metadata),
             }
 
         enriched_recent = [_enrich_event(e) for e in recent_evs]
@@ -681,6 +796,7 @@ def load_micro_news_dataset(
 ) -> List[RawNewsArticle]:
     """
     Loads curated micro historical news articles from historical_news_micro.json.
+    P1-4: Preserves evidence, licensing, and explicit event clustering metadata.
     """
     if file_path is None:
         file_path = os.path.join(
@@ -722,6 +838,13 @@ def load_micro_news_dataset(
             is_audit_verified=bool(r.get("is_audit_verified", False)),
             article_id=r.get("article_id"),
             event_id=r.get("event_id"),
+            event_clustering_method=str(r.get("event_clustering_method", "human_annotated")),
+            metadata={
+                "event_clustering_method": r.get("event_clustering_method", "human_annotated"),
+                "automated_canonical_event_id": compute_canonical_event_id(
+                    str(r.get("stock_id", "")), r.get("headline", ""), r.get("parent_event_id")
+                ),
+            }
         )
         articles.append(art)
 
