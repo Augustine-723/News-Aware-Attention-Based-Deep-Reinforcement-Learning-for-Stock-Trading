@@ -50,6 +50,15 @@ class OfficialSourceChannel(str, Enum):
     COMMERCIAL_VENDOR_FEEDS = "COMMERCIAL_VENDOR_FEEDS"    # Commercial vendor feed (TEJ / Bloomberg / Refinitiv)
 
 
+class ExecutionMode(str, Enum):
+    """
+    P0-3: Execution mode distinguishing simulated queries from authentic live network queries.
+    Simulated attempts can only enter simulation_metrics and cannot count towards real_collection_coverage.
+    """
+    SIMULATED = "SIMULATED"
+    AUTHENTIC = "AUTHENTIC"
+
+
 class QueryResolutionStatus(str, Enum):
     """
     Resolution status for systematic historical news retrieval queries.
@@ -61,6 +70,8 @@ class QueryResolutionStatus(str, Enum):
     AUTHENTIC_NO_ANNOUNCEMENT_CONFIRMED = "AUTHENTIC_NO_ANNOUNCEMENT_CONFIRMED"  # Exchange records cross-audited; confirmed zero material announcements on market
     ANNOUNCEMENTS_RETRIEVED = "ANNOUNCEMENTS_RETRIEVED"                          # Official announcements successfully retrieved and validated
     QUERY_FAILED = "QUERY_FAILED"                                                # Query failed due to network timeout or rate limiting
+    QUERY_FAILED_HTTP = "QUERY_FAILED_HTTP"                                      # Query failed due to non-200 HTTP response code (P0-2)
+    QUERY_FAILED_PARSE = "QUERY_FAILED_PARSE"                                    # Query succeeded at HTTP level but payload parsing failed (P0-2)
 
 
 @dataclass
@@ -82,6 +93,7 @@ class QueryAttemptRecord:
     error_info: Optional[str] = None
     retry_info: Optional[str] = None
     raw_bytes_len: Optional[int] = None
+    execution_mode: ExecutionMode = ExecutionMode.SIMULATED
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -98,6 +110,7 @@ class QueryAttemptRecord:
             "error_info": self.error_info,
             "retry_info": self.retry_info,
             "raw_bytes_len": self.raw_bytes_len,
+            "execution_mode": self.execution_mode.value if hasattr(self.execution_mode, "value") else str(self.execution_mode),
         }
 
 
@@ -436,6 +449,7 @@ class OfficialHistoricalNewsCollector:
                         error_info=None,
                         retry_info=None,
                         raw_bytes_len=None,
+                        execution_mode=ExecutionMode.AUTHENTIC,
                     )
                 )
         return attempts
@@ -452,6 +466,7 @@ class OfficialHistoricalNewsCollector:
         Records honest query timings, HTTP status, and actual raw payload hash.
         Fails closed with honest error details if network is unreachable or blocked.
         Does NOT fabricate HTTP responses or coverage.
+        Registers genuine session in RetrievalSessionRegistry upon HTTP 200 (P0-1).
         """
         endpoint = "https://openapi.twse.com.tw/v1/opendata/t187ap04_L"
         start_time = pd.Timestamp.now(tz="Asia/Taipei")
@@ -470,13 +485,38 @@ class OfficialHistoricalNewsCollector:
 
                 # Parse JSON array if available
                 result_count = 0
+                parse_failed = False
                 try:
                     data = json.loads(raw_bytes.decode("utf-8"))
                     if isinstance(data, list):
                         stock_records = [d for d in data if str(d.get("公司代號", "")).strip() == target_stock]
                         result_count = len(stock_records)
+                    else:
+                        parse_failed = True
                 except Exception:
-                    result_count = 0
+                    parse_failed = True
+
+                if http_status != 200:
+                    res_status = QueryResolutionStatus.QUERY_FAILED_HTTP
+                elif parse_failed:
+                    res_status = QueryResolutionStatus.QUERY_FAILED_PARSE
+                else:
+                    res_status = QueryResolutionStatus.QUERY_COMPLETED_SUCCESS
+
+                # Register genuine session in RetrievalSessionRegistry if HTTP 200 (P0-1)
+                if http_status == 200:
+                    from stock_rl.evaluation.pilot_dataset import RetrievalSessionRegistry
+                    RetrievalSessionRegistry.register_genuine_session(
+                        source_channel="TWSE_OPENAPI",
+                        endpoint_url=endpoint,
+                        request_start_time=start_time,
+                        response_end_time=end_time,
+                        http_status=http_status,
+                        raw_response_bytes=raw_bytes,
+                        parsed_summary={"target_stock": target_stock, "result_count": result_count},
+                        source_identity="TWSE_OPENAPI_HTTPS_CLIENT",
+                        announcement_ids=[],
+                    )
 
                 return QueryAttemptRecord(
                     target_date=target_date,
@@ -486,15 +526,18 @@ class OfficialHistoricalNewsCollector:
                     query_start_time=start_time,
                     query_end_time=end_time,
                     http_status=http_status,
-                    response_status=QueryResolutionStatus.QUERY_COMPLETED_SUCCESS if http_status == 200 else QueryResolutionStatus.QUERY_FAILED,
+                    response_status=res_status,
                     actual_raw_response_hash=raw_hash,
                     result_count=result_count,
                     raw_bytes_len=len(raw_bytes),
                     error_info=None,
                     retry_info=None,
+                    execution_mode=ExecutionMode.AUTHENTIC,
                 )
         except Exception as e:
             end_time = pd.Timestamp.now(tz="Asia/Taipei")
+            http_code = getattr(e, "code", None) if hasattr(e, "code") else None
+            res_status = QueryResolutionStatus.QUERY_FAILED_HTTP if http_code is not None else QueryResolutionStatus.QUERY_FAILED
             return QueryAttemptRecord(
                 target_date=target_date,
                 stock_id=target_stock,
@@ -502,13 +545,14 @@ class OfficialHistoricalNewsCollector:
                 endpoint=endpoint,
                 query_start_time=start_time,
                 query_end_time=end_time,
-                http_status=getattr(e, "code", None) if hasattr(e, "code") else None,
-                response_status=QueryResolutionStatus.QUERY_FAILED,
+                http_status=http_code,
+                response_status=res_status,
                 actual_raw_response_hash=None,
                 result_count=0,
                 raw_bytes_len=0,
                 error_info=str(e),
                 retry_info="NOT_RETRIED",
+                execution_mode=ExecutionMode.AUTHENTIC,
             )
 
     @classmethod
@@ -645,54 +689,62 @@ class OfficialHistoricalNewsCollector:
         cls,
         sessions_to_query: Optional[List[str]] = None,
         simulate_success: bool = True,
+        target_stocks: Optional[List[str]] = None,
     ) -> List[QueryAttemptRecord]:
         """
         Generates simulated query attempt records for engineering validation of coverage metrics.
-        All records are auditable QueryAttemptRecord instances.
+        All records are auditable QueryAttemptRecord instances marked with execution_mode=SIMULATED (P0-3).
         """
         sessions = cls.get_q1_2024_trading_sessions()
         if sessions_to_query is None:
             sessions_to_query = sessions
+        if target_stocks is None:
+            target_stocks = ["2330"]
 
         candidate_records = cls.get_candidate_inventory()
-        candidate_dates = set(r.filing_datetime.strftime("%Y-%m-%d") for r in candidate_records if r.filing_datetime)
 
         attempts: List[QueryAttemptRecord] = []
         now = pd.Timestamp.now(tz="Asia/Taipei")
         for s in sessions:
-            if s in sessions_to_query:
-                is_hit = s in candidate_dates
-                res_status = QueryResolutionStatus.QUERY_COMPLETED_SUCCESS if simulate_success else QueryResolutionStatus.QUERY_FAILED
-                http_code = 200 if simulate_success else 500
-                res_count = 1 if (is_hit and simulate_success) else 0
-                payload_sim = f"SIMULATED_RESPONSE_{s}".encode("utf-8")
-                raw_hash = hashlib.sha256(payload_sim).hexdigest()
-                attempts.append(
-                    QueryAttemptRecord(
-                        target_date=s,
-                        stock_id="2330",
-                        source_channel=OfficialSourceChannel.TWSE_MOPS_HTML_ARCHIVE,
-                        endpoint="https://mops.twse.com.tw/mops/web/t05st01",
-                        query_start_time=now,
-                        query_end_time=now,
-                        http_status=http_code,
-                        response_status=res_status,
-                        actual_raw_response_hash=raw_hash,
-                        result_count=res_count,
-                        raw_bytes_len=len(payload_sim),
-                        error_info=None if simulate_success else "Simulated server failure",
+            for stk in target_stocks:
+                if s in sessions_to_query:
+                    is_hit = any(
+                        r.company_id == stk and r.filing_datetime and r.filing_datetime.strftime("%Y-%m-%d") == s
+                        for r in candidate_records
                     )
-                )
-            else:
-                attempts.append(
-                    QueryAttemptRecord(
-                        target_date=s,
-                        stock_id="2330",
-                        source_channel=OfficialSourceChannel.TWSE_MOPS_HTML_ARCHIVE,
-                        endpoint="https://mops.twse.com.tw/mops/web/t05st01",
-                        response_status=QueryResolutionStatus.NOT_ATTEMPTED,
+                    res_status = QueryResolutionStatus.QUERY_COMPLETED_SUCCESS if simulate_success else QueryResolutionStatus.QUERY_FAILED
+                    http_code = 200 if simulate_success else 500
+                    res_count = 1 if (is_hit and simulate_success) else 0
+                    payload_sim = f"SIMULATED_RESPONSE_{stk}_{s}".encode("utf-8")
+                    raw_hash = hashlib.sha256(payload_sim).hexdigest()
+                    attempts.append(
+                        QueryAttemptRecord(
+                            target_date=s,
+                            stock_id=stk,
+                            source_channel=OfficialSourceChannel.TWSE_MOPS_HTML_ARCHIVE,
+                            endpoint="https://mops.twse.com.tw/mops/web/t05st01",
+                            query_start_time=now,
+                            query_end_time=now,
+                            http_status=http_code,
+                            response_status=res_status,
+                            actual_raw_response_hash=raw_hash,
+                            result_count=res_count,
+                            raw_bytes_len=len(payload_sim),
+                            error_info=None if simulate_success else "Simulated server failure",
+                            execution_mode=ExecutionMode.SIMULATED,
+                        )
                     )
-                )
+                else:
+                    attempts.append(
+                        QueryAttemptRecord(
+                            target_date=s,
+                            stock_id=stk,
+                            source_channel=OfficialSourceChannel.TWSE_MOPS_HTML_ARCHIVE,
+                            endpoint="https://mops.twse.com.tw/mops/web/t05st01",
+                            response_status=QueryResolutionStatus.NOT_ATTEMPTED,
+                            execution_mode=ExecutionMode.SIMULATED,
+                        )
+                    )
         return attempts
 
     @classmethod
@@ -702,69 +754,203 @@ class OfficialHistoricalNewsCollector:
         """
         Measures coverage, retrieval quality, deduplication, revision lineage,
         and failure rates across the 56 authentic trading sessions in 2024 Q1.
-        Strictly computes coverage dynamically from QueryAttemptRecord (P0-1):
+        Strictly computes coverage dynamically from QueryAttemptRecord (P0-1, P0-2, P0-3):
         - When query_attempts is None (default offline prototype state):
           All 56 sessions default to NOT_ATTEMPTED, sessions_queried=0, coverage=0.0,
-          collection_status='NOT_EXECUTED_OFFLINE_PROTOTYPE'.
-        - When query_attempts is provided:
-          Dynamically resolves NOT_ATTEMPTED, QUERY_COMPLETED_ZERO_RESULTS,
-          AUTHENTIC_NO_ANNOUNCEMENT_CONFIRMED, and ANNOUNCEMENTS_RETRIEVED.
+          collection_status='NOT_EXECUTED_OFFLINE_PROTOTYPE', retrieval metrics strictly 0.
+        - Dedicated candidate_inventory_metrics isolates candidate fixtures (12 items, 9 sessions).
+        - Segregates simulated query metrics from real authentic collection coverage.
+        - Tracks Stock-Day units across 2330, 2603, 2881 (56 * 3 = 168 planned units).
         """
         records = cls.get_candidate_inventory()
         total_sessions = cls.Q1_2024_TOTAL_TRADING_SESSIONS
         all_sessions = cls.get_q1_2024_trading_sessions()
+        target_constituents = ["2330", "2603", "2881"]
+        total_planned_stock_day_units = total_sessions * len(target_constituents)  # 168
 
         if query_attempts is None:
             # P0-1: Default offline state prior to network execution
-            query_attempts = cls.initialize_q1_query_attempts()
+            query_attempts = cls.initialize_q1_query_attempts(target_constituents)
 
-        # Group attempts by session date
+        # Segregate authentic vs simulated query attempts (P0-3)
+        authentic_attempts = [
+            a for a in query_attempts
+            if getattr(a, "execution_mode", ExecutionMode.AUTHENTIC) == ExecutionMode.AUTHENTIC
+        ]
+        simulated_attempts = [
+            a for a in query_attempts
+            if getattr(a, "execution_mode", ExecutionMode.AUTHENTIC) == ExecutionMode.SIMULATED
+        ]
+
+        # Candidate inventory metrics (P0-2: dedicated isolation)
+        candidate_dates = sorted(list(set(r.filing_datetime.strftime("%Y-%m-%d") for r in records if r.filing_datetime)))
+        n_candidate_days = len(candidate_dates)
+        candidate_inventory_metrics = {
+            "candidate_fixture_announcements": len(records),  # 12
+            "candidate_fixture_sessions": n_candidate_days,   # 9
+            "candidate_fixture_density": round(n_candidate_days / total_sessions, 4),  # 0.1607
+            "candidate_dates": candidate_dates,
+            "isolation_note": "Candidate fixture inventory metrics are strictly isolated from genuine retrieval counts (P0-2).",
+        }
+
+        # Real collection coverage (P0-3: based strictly on authentic attempts)
+        executed_authentic = [a for a in authentic_attempts if a.response_status != QueryResolutionStatus.NOT_ATTEMPTED]
+
+        stock_breakdown_real = {}
+        for stk in target_constituents:
+            stk_attempts = [a for a in executed_authentic if a.stock_id == stk]
+            stock_breakdown_real[stk] = {
+                "sessions_planned": total_sessions,
+                "sessions_queried": len(stk_attempts),
+                "coverage_ratio": round(len(stk_attempts) / total_sessions, 4),
+            }
+
+        real_stock_days_queried = len(executed_authentic)
+        real_collection_coverage_ratio = round(real_stock_days_queried / total_planned_stock_day_units, 4)
+
+        authentic_queried_sessions = set(a.target_date for a in executed_authentic)
+        sessions_queried_count = len(authentic_queried_sessions)
+
+        if real_stock_days_queried == 0:
+            real_collection_status = "NOT_EXECUTED_OFFLINE_PROTOTYPE"
+        elif real_stock_days_queried == total_planned_stock_day_units:
+            real_collection_status = "FULLY_EXECUTED"
+        else:
+            real_collection_status = "PARTIALLY_EXECUTED"
+
+        real_collection_coverage = {
+            "stock_days_planned": total_planned_stock_day_units,  # 168
+            "stock_days_queried": real_stock_days_queried,
+            "sessions_planned": total_sessions,                    # 56
+            "sessions_queried": sessions_queried_count,
+            "collection_coverage_ratio": real_collection_coverage_ratio,
+            "collection_status": real_collection_status,
+            "stock_breakdown": stock_breakdown_real,
+            "description": "Proportion of planned 2024 Q1 stock-day units (56 sessions * 3 stocks = 168 units) with authentic queries executed.",
+        }
+
+        # Simulation metrics (P0-3)
+        executed_sim = [a for a in simulated_attempts if a.response_status != QueryResolutionStatus.NOT_ATTEMPTED]
+        sim_stock_breakdown = {}
+        for stk in target_constituents:
+            stk_sim = [a for a in executed_sim if a.stock_id == stk]
+            sim_stock_breakdown[stk] = {
+                "sessions_planned": total_sessions,
+                "sessions_queried": len(stk_sim),
+                "coverage_ratio": round(len(stk_sim) / total_sessions, 4),
+            }
+        sim_stock_days_queried = len(executed_sim)
+        sim_coverage_ratio = round(sim_stock_days_queried / total_planned_stock_day_units, 4)
+        if sim_stock_days_queried == 0:
+            sim_status = "NOT_EXECUTED"
+        elif sim_stock_days_queried == total_planned_stock_day_units:
+            sim_status = "FULLY_EXECUTED"
+        else:
+            sim_status = "PARTIALLY_EXECUTED"
+
+        # Simulated resolution
+        sim_attempts_by_session: Dict[str, List[QueryAttemptRecord]] = {s: [] for s in all_sessions}
+        for a in simulated_attempts:
+            if a.target_date in sim_attempts_by_session:
+                sim_attempts_by_session[a.target_date].append(a)
+
+        sim_not_attempted = 0
+        sim_zero_result = 0
+        sim_announcements_retrieved = 0
+        for s, s_attempts in sim_attempts_by_session.items():
+            exec_s = [a for a in s_attempts if a.response_status != QueryResolutionStatus.NOT_ATTEMPTED]
+            if not exec_s:
+                sim_not_attempted += 1
+            else:
+                total_hits_sim = sum(a.result_count for a in exec_s)
+                if total_hits_sim > 0:
+                    sim_announcements_retrieved += 1
+                else:
+                    sim_zero_result += 1
+
+        simulation_metrics = {
+            "simulated_stock_days_planned": total_planned_stock_day_units,
+            "simulated_stock_days_queried": sim_stock_days_queried,
+            "simulated_coverage_ratio": sim_coverage_ratio,
+            "simulation_status": sim_status,
+            "simulated_stock_breakdown": sim_stock_breakdown,
+            "simulated_three_way_session_resolution": {
+                "NOT_ATTEMPTED": sim_not_attempted,
+                "QUERY_COMPLETED_ZERO_RESULTS": sim_zero_result,
+                "ANNOUNCEMENTS_RETRIEVED": sim_announcements_retrieved,
+            },
+            "note": "Simulated query attempts are strictly segregated and cannot inflate real collection coverage (P0-3).",
+        }
+
+        # Retrieval coverage: strictly from authentic executed queries (P0-2)
+        if real_stock_days_queried == 0:
+            sessions_with_announcements = 0
+            retrieval_coverage_ratio = 0.0
+            total_announcements_retrieved = 0
+            retrieved_announcement_dates = []
+        else:
+            hits_by_session: Dict[str, int] = {}
+            for a in executed_authentic:
+                if a.result_count > 0:
+                    hits_by_session[a.target_date] = hits_by_session.get(a.target_date, 0) + a.result_count
+            sessions_with_announcements = len(hits_by_session)
+            retrieval_coverage_ratio = round(sessions_with_announcements / total_sessions, 4)
+            total_announcements_retrieved = sum(hits_by_session.values())
+            retrieved_announcement_dates = sorted(list(hits_by_session.keys()))
+
+        retrieval_coverage = {
+            "sessions_with_announcements": sessions_with_announcements,
+            "retrieval_coverage_ratio": retrieval_coverage_ratio,
+            "total_announcements_retrieved": total_announcements_retrieved,
+            "announcement_dates": retrieved_announcement_dates,
+            "description": "Proportion of trading sessions yielding corporate disclosures from authentic retrieval (P0-2).",
+        }
+
+        # Three-way session resolution (P0-2, P0-3)
         attempts_by_session: Dict[str, List[QueryAttemptRecord]] = {s: [] for s in all_sessions}
-        for a in query_attempts:
+        for a in authentic_attempts:
             if a.target_date in attempts_by_session:
                 attempts_by_session[a.target_date].append(a)
 
-        # Dynamic session resolution
         n_not_attempted = 0
         n_zero_result = 0
         n_authentic_confirmed_zero = 0
-        n_announcements_retrieved = 0
-        queried_sessions_set = set()
+        n_announcements_retrieved_sess = 0
 
         for s, s_attempts in attempts_by_session.items():
             executed = [a for a in s_attempts if a.response_status != QueryResolutionStatus.NOT_ATTEMPTED]
             if not executed:
                 n_not_attempted += 1
             else:
-                queried_sessions_set.add(s)
                 total_hits = sum(a.result_count for a in executed)
                 if total_hits > 0:
-                    n_announcements_retrieved += 1
+                    n_announcements_retrieved_sess += 1
                 else:
-                    # Check if confirmed with authentic receipt
-                    all_authentic = all(
-                        a.response_status == QueryResolutionStatus.QUERY_COMPLETED_SUCCESS
-                        and a.actual_raw_response_hash is not None
-                        for a in executed
+                    all_success = (
+                        len(executed) == len(target_constituents)
+                        and all(
+                            a.response_status == QueryResolutionStatus.QUERY_COMPLETED_SUCCESS
+                            and a.actual_raw_response_hash is not None
+                            for a in executed
+                        )
                     )
-                    if all_authentic and len(executed) > 0:
+                    if all_success:
                         n_authentic_confirmed_zero += 1
                     else:
                         n_zero_result += 1
 
-        sessions_queried = len(queried_sessions_set)
-        collection_coverage_ratio = round(sessions_queried / total_sessions, 4) if total_sessions > 0 else 0.0
-
-        if sessions_queried == 0:
-            collection_status = "NOT_EXECUTED_OFFLINE_PROTOTYPE"
-        elif sessions_queried == total_sessions:
-            collection_status = "FULLY_EXECUTED"
-        else:
-            collection_status = "PARTIALLY_EXECUTED"
-
-        # Dates with at least one local candidate disclosure
-        candidate_dates = sorted(list(set(r.filing_datetime.strftime("%Y-%m-%d") for r in records if r.filing_datetime)))
-        n_candidate_days = len(candidate_dates)
+        three_way_session_resolution = {
+            "NOT_ATTEMPTED": n_not_attempted,
+            "QUERY_COMPLETED_ZERO_RESULTS": n_zero_result,
+            "AUTHENTIC_NO_ANNOUNCEMENT_CONFIRMED": n_authentic_confirmed_zero,
+            "ANNOUNCEMENTS_RETRIEVED": n_announcements_retrieved_sess,
+            "semantic_clarification": (
+                f"Dynamic session status: {n_not_attempted} NOT_ATTEMPTED, "
+                f"{n_zero_result} completed with zero results, "
+                f"{n_authentic_confirmed_zero} authentic confirmed zero, "
+                f"{n_announcements_retrieved_sess} with disclosures retrieved."
+            ),
+        }
 
         # Cluster deduplication and revisions
         clusters: Dict[str, int] = {}
@@ -779,33 +965,37 @@ class OfficialHistoricalNewsCollector:
         historical_avail_count = sum(1 for r in records if r.historical_provider_availability_included)
         verified_source_count = sum(1 for r in records if r.verification_status == SourceVerificationStatus.VERIFIED_SOURCE)
 
-        # Query failure metrics
-        executed_queries = [a for a in query_attempts if a.response_status != QueryResolutionStatus.NOT_ATTEMPTED]
-        failed_queries = [a for a in executed_queries if a.response_status == QueryResolutionStatus.QUERY_FAILED]
-        rate_limit_blocks = [a for a in executed_queries if a.http_status in [403, 429]]
-        failure_rate = round(len(failed_queries) / len(executed_queries), 4) if executed_queries else 0.0
+        # Query failure metrics with fine-grained error segregation (P0-2)
+        failed_http = [a for a in executed_authentic if a.response_status == QueryResolutionStatus.QUERY_FAILED_HTTP]
+        failed_parse = [a for a in executed_authentic if a.response_status == QueryResolutionStatus.QUERY_FAILED_PARSE]
+        failed_other = [a for a in executed_authentic if a.response_status == QueryResolutionStatus.QUERY_FAILED]
+        all_failed = failed_http + failed_parse + failed_other
+        rate_limit_blocks = [a for a in executed_authentic if a.http_status in [403, 429]]
+        failure_rate = round(len(all_failed) / len(executed_authentic), 4) if executed_authentic else 0.0
+
+        source_failure_rate = {
+            "total_queries_executed": len(executed_authentic),
+            "failed_queries": len(all_failed),
+            "failed_queries_http": len(failed_http),
+            "failed_queries_parse": len(failed_parse),
+            "failed_queries_other": len(failed_other),
+            "failure_rate": failure_rate,
+            "rate_limit_blocks": len(rate_limit_blocks),
+            "execution_status": real_collection_status,
+        }
 
         return {
             "pilot_scope": {
                 "period": "2024-01-01 to 2024-03-31 (2024 Q1)",
-                "target_constituents": ["2330", "2603", "2881"],
+                "target_constituents": target_constituents,
                 "total_trading_sessions": total_sessions,
+                "total_planned_stock_day_units": total_planned_stock_day_units,
             },
-            "collection_coverage": {
-                "sessions_planned": total_sessions,
-                "sessions_queried": sessions_queried,
-                "collection_coverage_ratio": collection_coverage_ratio,
-                "collection_status": collection_status,
-                "description": "Proportion of planned 2024 Q1 trading sessions where official MOPS queries were executed.",
-            },
-            "retrieval_coverage": {
-                "sessions_with_announcements": n_announcements_retrieved if sessions_queried > 0 else n_candidate_days,
-                "retrieval_coverage_ratio": round((n_announcements_retrieved if sessions_queried > 0 else n_candidate_days) / total_sessions, 4),
-                "total_announcements_retrieved": sum(a.result_count for a in executed_queries) if sessions_queried > 0 else len(records),
-                "candidate_fixture_announcements": len(records),
-                "announcement_dates": candidate_dates,
-                "description": "Proportion of trading sessions yielding corporate disclosures.",
-            },
+            "real_collection_coverage": real_collection_coverage,
+            "collection_coverage": real_collection_coverage,  # Backwards compatibility alias
+            "simulation_metrics": simulation_metrics,
+            "candidate_inventory_metrics": candidate_inventory_metrics,
+            "retrieval_coverage": retrieval_coverage,
             "historical_availability_coverage": {
                 "announcements_with_provider_receipts": historical_avail_count,
                 "historical_availability_coverage_ratio": round(historical_avail_count / len(records), 4) if records else 0.0,
@@ -818,18 +1008,7 @@ class OfficialHistoricalNewsCollector:
                 "CURATED_UNVERIFIED": 0,
                 "note": "All 12 Q1 candidate disclosures remain MOPS_CANDIDATE_UNVERIFIED pending authentic vendor feed receipts.",
             },
-            "three_way_session_resolution": {
-                "NOT_ATTEMPTED": n_not_attempted,
-                "QUERY_COMPLETED_ZERO_RESULTS": n_zero_result,
-                "AUTHENTIC_NO_ANNOUNCEMENT_CONFIRMED": n_authentic_confirmed_zero,
-                "ANNOUNCEMENTS_RETRIEVED": n_announcements_retrieved if sessions_queried > 0 else n_candidate_days,
-                "semantic_clarification": (
-                    f"Dynamic session status: {n_not_attempted} NOT_ATTEMPTED, "
-                    f"{n_zero_result} completed with zero results, "
-                    f"{n_authentic_confirmed_zero} authentic confirmed zero, "
-                    f"{n_announcements_retrieved} with disclosures retrieved."
-                ),
-            },
+            "three_way_session_resolution": three_way_session_resolution,
             "event_cluster_deduplication": {
                 "total_announcements": len(records),
                 "total_unique_clusters": len(clusters),
@@ -853,13 +1032,7 @@ class OfficialHistoricalNewsCollector:
                     },
                 },
             },
-            "source_failure_rate": {
-                "total_queries_executed": len(executed_queries),
-                "failed_queries": len(failed_queries),
-                "failure_rate": failure_rate,
-                "rate_limit_blocks": len(rate_limit_blocks),
-                "execution_status": collection_status,
-            },
+            "source_failure_rate": source_failure_rate,
             "no_recorded_event_days": {
                 "no_recorded_event_days_count": total_sessions - n_candidate_days,
                 "no_recorded_event_days_ratio": round((total_sessions - n_candidate_days) / total_sessions, 4),

@@ -235,6 +235,92 @@ class ExternalSourceAdapterReceipt:
 
 
 @dataclass
+class RetrievalSessionRecord:
+    """
+    Auditable record of a genuine HTTPS network retrieval session.
+    P0-1: Only actual HTTPS network queries can register a valid session in RetrievalSessionRegistry.
+    """
+    session_id: str
+    source_channel: str                 # e.g., "TWSE_OPENAPI", "TWSE_MOPS_HTML_ARCHIVE"
+    endpoint_url: str
+    request_start_time: pd.Timestamp
+    response_end_time: pd.Timestamp
+    http_status: int
+    raw_response_hash: str
+    raw_bytes_len: int
+    raw_response_bytes: Optional[bytes] = None
+    parsed_summary: Dict[str, Any] = field(default_factory=dict)
+    source_identity: str = "OFFICIAL_EXCHANGE_HTTPS_CLIENT"
+    is_genuine_network_retrieval: bool = True
+    announcement_ids: List[str] = field(default_factory=list)
+
+
+class RetrievalSessionRegistry:
+    """
+    P0-1: Trusted registry for authentic HTTPS retrieval sessions.
+    Prohibits caller self-attestation by requiring valid session registration from actual network calls.
+    """
+    _sessions: Dict[str, RetrievalSessionRecord] = {}
+
+    @classmethod
+    def register_genuine_session(
+        cls,
+        source_channel: str,
+        endpoint_url: str,
+        request_start_time: pd.Timestamp,
+        response_end_time: pd.Timestamp,
+        http_status: int,
+        raw_response_bytes: bytes,
+        parsed_summary: Optional[Dict[str, Any]] = None,
+        source_identity: str = "OFFICIAL_EXCHANGE_HTTPS_CLIENT",
+        announcement_ids: Optional[List[str]] = None,
+    ) -> RetrievalSessionRecord:
+        """
+        Registers an auditable HTTPS retrieval session.
+        Only genuine network queries can write to this registry.
+        """
+        if not isinstance(raw_response_bytes, bytes) or len(raw_response_bytes) == 0:
+            raise ValueError("raw_response_bytes must be non-empty bytes.")
+        if http_status != 200:
+            raise ValueError(f"HTTP status must be 200 for genuine registered session, got {http_status}.")
+
+        raw_hash = hashlib.sha256(raw_response_bytes).hexdigest()
+        session_id = f"REG-SESS-{pd.Timestamp.now(tz='Asia/Taipei').strftime('%Y%m%d%H%M%S')}-{raw_hash[:8]}"
+
+        rec = RetrievalSessionRecord(
+            session_id=session_id,
+            source_channel=source_channel,
+            endpoint_url=endpoint_url,
+            request_start_time=request_start_time,
+            response_end_time=response_end_time,
+            http_status=http_status,
+            raw_response_hash=raw_hash,
+            raw_bytes_len=len(raw_response_bytes),
+            raw_response_bytes=raw_response_bytes,
+            parsed_summary=parsed_summary or {},
+            source_identity=source_identity,
+            is_genuine_network_retrieval=True,
+            announcement_ids=announcement_ids or [],
+        )
+        cls._sessions[session_id] = rec
+        return rec
+
+    @classmethod
+    def get_session(cls, session_id: Optional[str]) -> Optional[RetrievalSessionRecord]:
+        if not session_id:
+            return None
+        return cls._sessions.get(session_id)
+
+    @classmethod
+    def list_sessions(cls) -> List[RetrievalSessionRecord]:
+        return list(cls._sessions.values())
+
+    @classmethod
+    def clear(cls) -> None:
+        cls._sessions.clear()
+
+
+@dataclass
 class MOPSSourceEvidence:
     """
     Auditable evidence bundle for MOPS corporate disclosure verification.
@@ -265,6 +351,7 @@ ALLOWED_OFFICIAL_HOSTS: Set[str] = {
     "mops.twse.com.tw",
     "www.twse.com.tw",
     "data.gov.tw",
+    "openapi.twse.com.tw",
 }
 
 
@@ -296,6 +383,9 @@ def validate_official_url(url: Optional[str]) -> Tuple[bool, str]:
     elif hostname == "data.gov.tw":
         if not (parsed.path.startswith("/dataset/") or parsed.path.startswith("/")):
             return False, f"Open data URL path '{parsed.path}' is invalid."
+    elif hostname == "openapi.twse.com.tw":
+        if not (parsed.path.startswith("/v1/") or parsed.path.startswith("/")):
+            return False, f"OpenAPI URL path '{parsed.path}' is invalid."
 
     return True, "Valid official URL."
 
@@ -850,11 +940,66 @@ class TrustedSourceCertifier:
                 "Verification rejected: Adapter receipt lacks verified live external retrieval evidence (is_authentic flag alone cannot certify without genuine HTTP 200 and raw response bytes).",
             )
 
-        if not getattr(evidence.adapter_receipt, "retrieval_session_id", None):
+        session_id = getattr(evidence.adapter_receipt, "retrieval_session_id", None)
+        if not session_id:
             return (
                 SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
                 None,
                 "Verification rejected: Adapter receipt lacks valid retrieval_session_id.",
+            )
+
+        # Cross-audit against trusted RetrievalSessionRegistry (P0-1)
+        session = RetrievalSessionRegistry.get_session(session_id)
+        if session is None:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                f"Verification rejected: Session ID '{session_id}' not found in trusted RetrievalSessionRegistry (self-attested or unregistered session IDs are strictly prohibited).",
+            )
+
+        if not session.is_genuine_network_retrieval:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                "Verification rejected: Session is not marked as genuine network retrieval in registry.",
+            )
+
+        if session.http_status != 200:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                f"Verification rejected: Session HTTP status {session.http_status} != 200.",
+            )
+
+        # Scope & Channel check (P0-1 item 8)
+        # Real OpenAPI HTTP probe cannot certify 2024 Q1 historical MOPS disclosures or historical provider availability
+        if session.source_channel == "TWSE_OPENAPI":
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                "Verification rejected: Live TWSE_OPENAPI probe session cannot certify historical MOPS disclosure existence or historical provider availability (P0-1).",
+            )
+
+        if session.raw_response_hash != evidence.adapter_receipt.raw_response_hash:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                f"Verification rejected: Session raw response hash mismatch ({session.raw_response_hash} vs {evidence.adapter_receipt.raw_response_hash}).",
+            )
+
+        if session.endpoint_url != evidence.external_reference_url:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                f"Verification rejected: Session endpoint URL mismatch ({session.endpoint_url} vs {evidence.external_reference_url}).",
+            )
+
+        # Announcement presence check
+        if session.announcement_ids and evidence.announcement_id not in session.announcement_ids:
+            return (
+                SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                None,
+                f"Verification rejected: Announcement ID '{evidence.announcement_id}' was not retrieved in session '{session.session_id}'.",
             )
 
         if getattr(evidence.adapter_receipt, "raw_http_status", None) != 200:
@@ -2337,6 +2482,9 @@ class DatasetExpansionReadinessAssessor:
         return {
             "simulation_method": "CLUSTER_BOOTSTRAP_CORRELATED_SPEARMAN_SIMULATION",
             "power_curve_type": "ASSUMPTION_BASED_ILLUSTRATION",
+            "calibration_type": "ASSUMPTION_BASED",
+            "power_status": "POWER_NOT_ESTABLISHED",
+            "empirical_calibration_status": "FORMAL_EMPIRICAL_CALIBRATION_PENDING",
             "hypothesized_delta_rho": hypothesized_delta_rho,
             "inter_cluster_correlation_icc": icc,
             "purging_loss_ratio": purging_loss_ratio,
@@ -2469,12 +2617,16 @@ class DatasetExpansionReadinessAssessor:
             "hypothesis": "H0: delta_rho = 0.0",
             "nominal_alpha": 0.05,
             "calibration_type": "ASSUMPTION_BASED",
+            "power_status": "POWER_NOT_ESTABLISHED",
+            "empirical_calibration_status": "FORMAL_EMPIRICAL_CALIBRATION_PENDING",
             "oracle_simulation_calibration": {
                 "hypothesis": "H0: delta_rho = 0.0",
                 "nominal_alpha": 0.05,
                 "overall_mean_type_1_error": round(overall_mean_oracle, 4),
                 "is_type_1_error_calibrated": abs(overall_mean_oracle - 0.05) < 0.02,
                 "calibration_status": "CALIBRATED_NOMINAL_5_PERCENT",
+                "calibration_type": "ASSUMPTION_BASED",
+                "empirical_calibration_status": "FORMAL_EMPIRICAL_CALIBRATION_PENDING",
                 "results_by_sample_size": oracle_res,
             },
             "implemented_test_calibration": {
@@ -2484,6 +2636,8 @@ class DatasetExpansionReadinessAssessor:
                 "overall_mean_type_1_error": round(overall_mean_implemented, 4),
                 "is_type_1_error_calibrated": abs(overall_mean_implemented - 0.05) < 0.04,
                 "calibration_status": "CALIBRATED_WITHIN_DATASET_CLUSTER_BOOTSTRAP",
+                "calibration_type": "ASSUMPTION_BASED",
+                "empirical_calibration_status": "FORMAL_EMPIRICAL_CALIBRATION_PENDING",
                 "results_by_sample_size": implemented_res,
             },
             "overall_mean_type_1_error": round(overall_mean_oracle, 4),
@@ -2660,6 +2814,8 @@ class DatasetExpansionReadinessAssessor:
             "is_statistically_underpowered": True,
             "power_status": "POWER_NOT_ESTABLISHED",
             "power_curve_type": "ASSUMPTION_BASED_ILLUSTRATION",
+            "calibration_type": "ASSUMPTION_BASED",
+            "empirical_calibration_status": "FORMAL_EMPIRICAL_CALIBRATION_PENDING",
             "observed_se_delta_rho": 0.3141,
             "planning_sample_target": "250-300 (PROVISIONAL_PLANNING_TARGET_ONLY)",
             "heuristic_planning_sample_target": "250-300 (HEURISTIC_PLANNING_TARGET_ONLY)",  # backwards compatibility

@@ -40,10 +40,12 @@ from stock_rl.evaluation.pilot_dataset import (
     TrustedSourceCertifier,
     DatasetExpansionReadinessAssessor,
     MOPSSourceEvidence,
+    RetrievalSessionRegistry,
     RAW_PILOT_EVENTS,
 )
 from stock_rl.evaluation.official_source_collector import (
     OfficialSourceChannel,
+    ExecutionMode,
     QueryResolutionStatus,
     OfficialAnnouncementRecord,
     OfficialHistoricalNewsCollector,
@@ -138,13 +140,25 @@ def test_simulated_receipt_rejection_and_fail_closed():
 
     # 7. Genuine live retrieval evidence -> Elevates to VERIFIED_SOURCE when verified
     live_raw_bytes = ev_target.get("body_text", "").encode("utf-8")
+    session_rec = RetrievalSessionRegistry.register_genuine_session(
+        source_channel="TWSE_MOPS_HTML_ARCHIVE",
+        endpoint_url="https://mops.twse.com.tw/mops/web/t05st01",
+        request_start_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=live_raw_bytes,
+        parsed_summary={"announcement_count": 1},
+        source_identity="OFFICIAL_MOPS_HTTPS_CLIENT",
+        announcement_ids=["MOPS-2330-20230606-AGM"],
+    )
+
     authentic_evidence = TrustedExternalSourceAdapter.certify_with_live_retrieval_evidence(
         announcement_id="MOPS-2330-20230606-AGM",
         company_id="2330",
         announcement_datetime=ev_dt,
         raw_content=ev_target.get("body_text", ""),
         raw_http_response_bytes=live_raw_bytes,
-        retrieval_session_id="SESS-TWSE-2024Q1-LIVE-001",
+        retrieval_session_id=session_rec.session_id,
         headline=ev_target["headline"],
         payload_hash=ev_hash,
         endpoint_url="https://mops.twse.com.tw/mops/web/t05st01",
@@ -155,7 +169,7 @@ def test_simulated_receipt_rejection_and_fail_closed():
     assert authentic_evidence.adapter_receipt.is_simulated is False
     assert authentic_evidence.adapter_receipt.is_live_adapter_call is True
     assert authentic_evidence.adapter_receipt.is_verified_live_retrieval is True
-    assert authentic_evidence.adapter_receipt.retrieval_session_id == "SESS-TWSE-2024Q1-LIVE-001"
+    assert authentic_evidence.adapter_receipt.retrieval_session_id == session_rec.session_id
     assert authentic_evidence.adapter_receipt.raw_http_status == 200
 
     auth_status, auth_dict, auth_notes = TrustedSourceCertifier.verify_evidence(ev_target, authentic_evidence)
@@ -165,6 +179,90 @@ def test_simulated_receipt_rejection_and_fail_closed():
     assert auth_dict["is_simulated"] is False
     assert auth_dict["is_verified_live_retrieval"] is True
     assert "Verified authentic MOPS corporate disclosure" in auth_notes
+    RetrievalSessionRegistry.clear()
+
+
+def test_counterexample_raw_pilot_events_as_http_bytes_rejection():
+    """
+    P0-1 Item 7 Counterexample Test:
+    Taking RAW_PILOT_EVENTS body text as raw HTTP bytes and filling in a self-minted
+    or unregistered retrieval_session_id MUST be rejected and cannot achieve VERIFIED_SOURCE.
+    """
+    ev_target = [e for e in RAW_PILOT_EVENTS if e["event_id"] == "EV-2330-01"][0]
+    ev_dt = pd.Timestamp(f"{ev_target['date_str']} {ev_target['pub_time_str']}", tz="Asia/Taipei")
+    ev_hash = compute_normalized_content_hash(ev_target["headline"], ev_target.get("body_text", ""))
+    fake_raw_bytes = ev_target.get("body_text", "").encode("utf-8")
+
+    # Caller attempts to self-attest an authentic receipt with arbitrary un-registered session ID
+    fake_session_id = "SELF-MINTED-SESS-TWSE-2024Q1-001"
+    evidence_with_fake_session = TrustedExternalSourceAdapter.certify_with_live_retrieval_evidence(
+        announcement_id="MOPS-2330-20230606-AGM",
+        company_id="2330",
+        announcement_datetime=ev_dt,
+        raw_content=ev_target.get("body_text", ""),
+        raw_http_response_bytes=fake_raw_bytes,
+        retrieval_session_id=fake_session_id,
+        headline=ev_target["headline"],
+        payload_hash=ev_hash,
+        endpoint_url="https://mops.twse.com.tw/mops/web/t05st01",
+        is_existence_verified=True,
+        is_availability_verified=False,
+    )
+
+    # Verification MUST fail closed
+    status, evidence_dict, notes = TrustedSourceCertifier.verify_evidence(ev_target, evidence_with_fake_session)
+    assert status == SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED
+    assert evidence_dict is None
+    assert "not found in trusted RetrievalSessionRegistry" in notes
+    assert "self-attested or unregistered session IDs are strictly prohibited" in notes
+
+
+def test_openapi_probe_cannot_certify_historical_mops_announcements():
+    """
+    P0-1 Item 8 Test:
+    A live OpenAPI query probe session cannot certify historical MOPS disclosure existence
+    or historical provider availability (differing channel/scope and lack of historical vendor receipt; fails closed).
+    """
+    openapi_raw_bytes = b'[{"\xe5\x85\xac\xe5\x8f\xb8\xe4\xbb\xa3\xe8\x99\x9f": "2330"}]'
+    openapi_endpoint = "https://openapi.twse.com.tw/v1/opendata/t187ap04_L"
+    openapi_content = openapi_raw_bytes.decode("utf-8")
+
+    ev_target = dict([e for e in RAW_PILOT_EVENTS if e["event_id"] == "EV-2330-01"][0])
+    ev_target["body_text"] = openapi_content
+    ev_dt = pd.Timestamp(f"{ev_target['date_str']} {ev_target['pub_time_str']}", tz="Asia/Taipei")
+    ev_hash = compute_normalized_content_hash(ev_target["headline"], openapi_content)
+
+    openapi_session = RetrievalSessionRegistry.register_genuine_session(
+        source_channel="TWSE_OPENAPI",
+        endpoint_url=openapi_endpoint,
+        request_start_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=openapi_raw_bytes,
+        parsed_summary={"target_stock": "2330", "result_count": 1},
+        source_identity="TWSE_OPENAPI_HTTPS_CLIENT",
+        announcement_ids=["MOPS-2330-20230606-AGM"],
+    )
+
+    openapi_evidence = TrustedExternalSourceAdapter.certify_with_live_retrieval_evidence(
+        announcement_id="MOPS-2330-20230606-AGM",
+        company_id="2330",
+        announcement_datetime=ev_dt,
+        raw_content=openapi_content,
+        raw_http_response_bytes=openapi_raw_bytes,
+        retrieval_session_id=openapi_session.session_id,
+        headline=ev_target["headline"],
+        payload_hash=ev_hash,
+        endpoint_url=openapi_endpoint,
+        is_existence_verified=True,
+        is_availability_verified=False,
+    )
+
+    status, evidence_dict, notes = TrustedSourceCertifier.verify_evidence(ev_target, openapi_evidence)
+    assert status == SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED
+    assert evidence_dict is None
+    assert "Live TWSE_OPENAPI probe session cannot certify historical MOPS disclosure existence" in notes
+    RetrievalSessionRegistry.clear()
 
 
 def test_self_attested_authentic_receipt_rejection():
@@ -288,17 +386,28 @@ def test_coverage_and_collection_quality_metrics():
     assert scope["period"] == "2024-01-01 to 2024-03-31 (2024 Q1)"
     assert scope["target_constituents"] == ["2330", "2603", "2881"]
     assert scope["total_trading_sessions"] == 56
+    assert scope["total_planned_stock_day_units"] == 168
 
-    # 1. Collection coverage (Honest 0 queries executed offline)
-    assert metrics["collection_coverage"]["sessions_planned"] == 56
-    assert metrics["collection_coverage"]["sessions_queried"] == 0
-    assert metrics["collection_coverage"]["collection_coverage_ratio"] == 0.0
-    assert metrics["collection_coverage"]["collection_status"] == "NOT_EXECUTED_OFFLINE_PROTOTYPE"
+    # 1. Real collection coverage (Honest 0 queries executed offline - P0-1, P0-3)
+    assert metrics["real_collection_coverage"]["sessions_planned"] == 56
+    assert metrics["real_collection_coverage"]["sessions_queried"] == 0
+    assert metrics["real_collection_coverage"]["stock_days_planned"] == 168
+    assert metrics["real_collection_coverage"]["stock_days_queried"] == 0
+    assert metrics["real_collection_coverage"]["collection_coverage_ratio"] == 0.0
+    assert metrics["real_collection_coverage"]["collection_status"] == "NOT_EXECUTED_OFFLINE_PROTOTYPE"
 
-    # 2. Retrieval coverage
-    assert metrics["retrieval_coverage"]["candidate_fixture_announcements"] == 12
-    assert metrics["retrieval_coverage"]["sessions_with_announcements"] == 9
-    assert len(metrics["retrieval_coverage"]["announcement_dates"]) == 9
+    # 2. Retrieval coverage (P0-2: when unqueried, all retrieval success metrics are strictly 0)
+    assert metrics["retrieval_coverage"]["sessions_with_announcements"] == 0
+    assert metrics["retrieval_coverage"]["retrieval_coverage_ratio"] == 0.0
+    assert metrics["retrieval_coverage"]["total_announcements_retrieved"] == 0
+    assert metrics["retrieval_coverage"]["announcement_dates"] == []
+
+    # 2b. Candidate inventory metrics (P0-2: dedicated isolation from retrieval counts)
+    cand_inv = metrics["candidate_inventory_metrics"]
+    assert cand_inv["candidate_fixture_announcements"] == 12
+    assert cand_inv["candidate_fixture_sessions"] == 9
+    assert cand_inv["candidate_fixture_density"] == 0.1607
+    assert len(cand_inv["candidate_dates"]) == 9
 
     # 3. Historical availability coverage (0% - MOPS lacks downstream vendor feed timestamps)
     assert metrics["historical_availability_coverage"]["announcements_with_provider_receipts"] == 0
@@ -309,11 +418,12 @@ def test_coverage_and_collection_quality_metrics():
     assert metrics["verification_status_summary"]["VERIFIED_SOURCE"] == 0
     assert metrics["verification_status_summary"]["MOPS_CANDIDATE_UNVERIFIED"] == 12
 
-    # 5. Three-way session resolution (56 NOT_ATTEMPTED in offline mode)
+    # 5. Three-way session resolution (P0-2: 56 NOT_ATTEMPTED, 0 ANNOUNCEMENTS_RETRIEVED in offline mode)
     three_way = metrics["three_way_session_resolution"]
     assert three_way["NOT_ATTEMPTED"] == 56
     assert three_way["QUERY_COMPLETED_ZERO_RESULTS"] == 0
     assert three_way["AUTHENTIC_NO_ANNOUNCEMENT_CONFIRMED"] == 0
+    assert three_way["ANNOUNCEMENTS_RETRIEVED"] == 0
 
     # 6. Deduplication & Revisions
     dedup = metrics["event_cluster_deduplication"]
@@ -333,28 +443,45 @@ def test_coverage_and_collection_quality_metrics():
     assert metrics["source_failure_rate"]["failure_rate"] == 0.0
     assert metrics["source_failure_rate"]["execution_status"] == "NOT_EXECUTED_OFFLINE_PROTOTYPE"
 
-    # 8. Dynamic computation with simulated query attempts
-    sim_attempts = OfficialHistoricalNewsCollector.create_simulated_audit_query_attempts()
+    # 8. Dynamic computation with simulated query attempts (P0-3)
+    # Partial execution test: simulate only 2330 (56 / 168 = 33.33% -> PARTIALLY_EXECUTED)
+    sim_attempts = OfficialHistoricalNewsCollector.create_simulated_audit_query_attempts(target_stocks=["2330"])
     sim_metrics = OfficialHistoricalNewsCollector.evaluate_q1_2024_collection_metrics(query_attempts=sim_attempts)
-    assert sim_metrics["collection_coverage"]["sessions_planned"] == 56
-    assert sim_metrics["collection_coverage"]["sessions_queried"] == 56
-    assert sim_metrics["collection_coverage"]["collection_coverage_ratio"] == 1.0
-    assert sim_metrics["collection_coverage"]["collection_status"] == "FULLY_EXECUTED"
-    assert sim_metrics["three_way_session_resolution"]["NOT_ATTEMPTED"] == 0
-    assert sim_metrics["three_way_session_resolution"]["ANNOUNCEMENTS_RETRIEVED"] == 9
-    assert sim_metrics["source_failure_rate"]["total_queries_executed"] == 56
-    assert sim_metrics["source_failure_rate"]["failed_queries"] == 0
+    assert sim_metrics["simulation_metrics"]["simulated_stock_days_planned"] == 168
+    assert sim_metrics["simulation_metrics"]["simulated_stock_days_queried"] == 56
+    assert sim_metrics["simulation_metrics"]["simulated_coverage_ratio"] == 0.3333
+    assert sim_metrics["simulation_metrics"]["simulation_status"] == "PARTIALLY_EXECUTED"
+    # Simulated queries CANNOT inflate real collection coverage! (P0-3)
+    assert sim_metrics["real_collection_coverage"]["stock_days_queried"] == 0
+    assert sim_metrics["real_collection_coverage"]["collection_coverage_ratio"] == 0.0
+    assert sim_metrics["real_collection_coverage"]["collection_status"] == "NOT_EXECUTED_OFFLINE_PROTOTYPE"
+
+    # Full execution test: simulate all 3 stocks (168 / 168 = 100% -> FULLY_EXECUTED)
+    sim_all = OfficialHistoricalNewsCollector.create_simulated_audit_query_attempts(target_stocks=["2330", "2603", "2881"])
+    sim_all_metrics = OfficialHistoricalNewsCollector.evaluate_q1_2024_collection_metrics(query_attempts=sim_all)
+    assert sim_all_metrics["simulation_metrics"]["simulated_stock_days_queried"] == 168
+    assert sim_all_metrics["simulation_metrics"]["simulated_coverage_ratio"] == 1.0
+    assert sim_all_metrics["simulation_metrics"]["simulation_status"] == "FULLY_EXECUTED"
+    assert sim_all_metrics["simulation_metrics"]["simulated_three_way_session_resolution"]["NOT_ATTEMPTED"] == 0
+    assert sim_all_metrics["real_collection_coverage"]["stock_days_queried"] == 0
 
     # 9. Genuine Live OpenAPI Query Probe (single session lawful audit probe)
     probe_rec = OfficialHistoricalNewsCollector.execute_live_openapi_query_probe(target_stock="2330")
     assert probe_rec.stock_id == "2330"
     assert probe_rec.source_channel == OfficialSourceChannel.TWSE_OPENAPI
     assert probe_rec.endpoint == "https://openapi.twse.com.tw/v1/opendata/t187ap04_L"
-    assert probe_rec.response_status in [QueryResolutionStatus.QUERY_COMPLETED_SUCCESS, QueryResolutionStatus.QUERY_FAILED]
+    assert probe_rec.execution_mode == ExecutionMode.AUTHENTIC
+    assert probe_rec.response_status in [
+        QueryResolutionStatus.QUERY_COMPLETED_SUCCESS,
+        QueryResolutionStatus.QUERY_FAILED,
+        QueryResolutionStatus.QUERY_FAILED_HTTP,
+        QueryResolutionStatus.QUERY_FAILED_PARSE,
+    ]
     if probe_rec.http_status == 200:
         assert probe_rec.actual_raw_response_hash is not None
         assert len(probe_rec.actual_raw_response_hash) == 64
         assert probe_rec.raw_bytes_len is not None and probe_rec.raw_bytes_len > 0
+    RetrievalSessionRegistry.clear()
 
 
 # ==============================================================================

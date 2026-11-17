@@ -55,6 +55,7 @@ from stock_rl.evaluation.pilot_dataset import (
     validate_official_url,
     TrustedSourceCertifier,
     TrustedCertifierAuthority,
+    RetrievalSessionRegistry,
     UsageRightsCategory,
     DatasetExpansionReadinessAssessor,
     RAW_PILOT_EVENTS,
@@ -298,16 +299,30 @@ def test_event_existence_vs_historical_availability_distinction():
     ev_dt = pd.Timestamp(f"{ev_target['date_str']} {ev_target['pub_time_str']}", tz="Asia/Taipei")
     ev_hash = compute_normalized_content_hash(ev_target["headline"], ev_target.get("body_text", ""))
 
+    target_endpoint = "https://mops.twse.com.tw/mops/web/t05st01"
+    raw_bytes = ev_target.get("body_text", "").encode("utf-8")
+    session_rec = RetrievalSessionRegistry.register_genuine_session(
+        source_channel="TWSE_MOPS_HTML_ARCHIVE",
+        endpoint_url=target_endpoint,
+        request_start_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=raw_bytes,
+        parsed_summary={"announcement_count": 1},
+        source_identity="OFFICIAL_MOPS_HTTPS_CLIENT",
+        announcement_ids=["MOPS-2330-20230606-AGM"],
+    )
+
     valid_evidence = TrustedExternalSourceAdapter.certify_with_live_retrieval_evidence(
         announcement_id="MOPS-2330-20230606-AGM",
         company_id="2330",
         announcement_datetime=ev_dt,
         raw_content=ev_target.get("body_text", ""),
-        raw_http_response_bytes=ev_target.get("body_text", "").encode("utf-8"),
-        retrieval_session_id="SESS-LIVE-20230606-001",
+        raw_http_response_bytes=raw_bytes,
+        retrieval_session_id=session_rec.session_id,
         headline=ev_target["headline"],
         payload_hash=ev_hash,
-        endpoint_url="https://mops.twse.com.tw/mops/web/t05st01",
+        endpoint_url=target_endpoint,
         is_existence_verified=True,
         is_availability_verified=False,  # Segregated! No historical vendor feed receipt
         audit_notes="Authentic exchange filing verified against raw disclosure archive.",
@@ -320,6 +335,7 @@ def test_event_existence_vs_historical_availability_distinction():
     assert rec.verification_evidence["is_availability_verified"] is False
     assert rec.verification_evidence["provider_available_at"] is None
     assert "Existence verified: True; Provider availability verified: False" in rec.notes
+    RetrievalSessionRegistry.clear()
 
 
 # ==============================================================================
