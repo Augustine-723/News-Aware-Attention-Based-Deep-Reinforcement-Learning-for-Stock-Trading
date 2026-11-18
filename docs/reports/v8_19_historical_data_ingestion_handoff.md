@@ -60,3 +60,9 @@ for key in source_index primary_document; do
   printf '%s  %s\n' "$digest" "$private/$key" | sha256sum --check
 done
 ```
+
+## Taiwan cutoff evidence for the same event
+
+CNA's article 202402060275 displays February 6, 18:48 Taipei as publication and February 7, 14:58 as its update. This places publisher-reported coverage 72 minutes before the February 6 decision. The currently accessible article is a later revision. Its precise original text and delivery to a research feed remain unverified. Only citation metadata and a digest of the observed response are recorded. This is corroboration of the existing event, with no additional disclosure counted.
+
+The issuer page for release 3105 displays the date only. Its HTML contains a 1970 datePublished, a dateModified of 20:46:32 Taipei and a date-display element with a UTC time equivalent to 20:00 Taipei. These fields do not establish first publication. No matching official MOPS row with a filing timestamp was located. Keep the SEC, press and MOPS clocks separate. Public-report chronology is ready for a case study. Empirical text replay still needs a timestamped original version and provider receipt.

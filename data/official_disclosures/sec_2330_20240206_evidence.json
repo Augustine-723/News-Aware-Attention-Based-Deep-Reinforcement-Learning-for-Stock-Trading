@@ -23,5 +23,15 @@
     "observed_file_write_completed_at": "2026-11-18T08:10:55.798052+00:00"
   },
   "issuer_corroboration_url": "https://pr.tsmc.com/chinese/news/3105",
-  "reuse_reference": "https://www.sec.gov/about/webmaster-frequently-asked-questions"
+  "reuse_reference": "https://www.sec.gov/about/webmaster-frequently-asked-questions",
+  "public_reporting_corroboration": {
+    "source": "Central News Agency (Taiwan)",
+    "url": "https://www.cna.com.tw/news/afe/202402060275.aspx",
+    "source_locator": "Displayed publication and update line directly below headline",
+    "published_local_minute": "2024-02-06T18:48+08:00",
+    "updated_local_minute": "2024-02-07T14:58+08:00",
+    "observed_response_bytes": 123796,
+    "observed_response_sha256": "c7e855484786a4c280fdc515b0a8a152e47c26055698d90e5176b400257083b5",
+    "historical_original_version_verified": false
+  }
 }
