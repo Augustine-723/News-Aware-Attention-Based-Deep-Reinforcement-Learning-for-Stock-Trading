@@ -44,6 +44,8 @@ from stock_rl.evaluation.pilot_dataset import (
     RetrievalSessionRecord,
     ProviderAvailabilityEvidence,
     ProviderVerificationStatus,
+    SourceEvidenceLevel,
+    TrustedProviderEvidenceAdapter,
 )
 from stock_rl.evaluation.provenance import (
     load_trusted_pretrained_embedding_engine,
@@ -62,8 +64,9 @@ class OfficialSourceChannel(str, Enum):
     """
     TWSE_MOPS_HTML_ARCHIVE = "TWSE_MOPS_HTML_ARCHIVE"      # Public Information Observation Station (MOPS) Web Archive (t05st01)
     TWSE_OPENAPI = "TWSE_OPENAPI"                          # Taiwan Stock Exchange OpenAPI Service (openapi.twse.com.tw)
-    TAIWAN_GOV_OPEN_DATA = "TAIWAN_GOV_OPEN_DATA"          # Government Open Data Platform (data.gov.tw / dataset 11549)
+    TAIWAN_GOV_OPEN_DATA = "TAIWAN_GOV_OPEN_DATA"          # Government Open Data Platform (data.gov.tw / dataset 18415 上市公司每日重大訊息; note: 11549 is 個股日成交資訊)
     COMMERCIAL_VENDOR_FEEDS = "COMMERCIAL_VENDOR_FEEDS"    # Commercial vendor feed (TEJ / Bloomberg / Refinitiv)
+    SECURITIES_FUTURES_INSTITUTE = "SECURITIES_FUTURES_INSTITUTE" # Securities & Futures Institute (SFI 證基會)
 
 
 class ExecutionMode(str, Enum):
@@ -338,6 +341,14 @@ class EvidenceManifest:
 
     def add_entry(self, entry: EvidenceManifestEntry) -> None:
         self.entries.append(entry)
+
+    @classmethod
+    def verify_entry_integrity_standalone(cls, entry: EvidenceManifestEntry) -> Tuple[bool, str]:
+        """
+        P0-2: Standalone verification of an EvidenceManifestEntry without requiring a pre-existing manifest instance.
+        """
+        inst = cls(manifest_id=f"PIT-STANDALONE-{getattr(entry, 'announcement_id', 'ENTRY')[:16]}")
+        return inst.verify_entry_integrity(entry)
 
     def verify_entry_integrity(self, entry: EvidenceManifestEntry) -> Tuple[bool, str]:
         # 1. Required fields check (P1-4 item 7)
@@ -930,24 +941,54 @@ class OfficialHistoricalNewsCollector:
     @classmethod
     def get_official_source_survey(cls) -> Dict[str, Any]:
         """
-        Survey of public official sources for Taiwan financial news and disclosures.
-        Assesses:
-        - Queryable historical date range
-        - Available announcement volume
-        - Legality of query method & rate limits
-        - Availability of historical downstream provider feed receipts
-        - Licensing terms and commercial usage rights
+        P1-3: Comprehensive survey and technical audit of Taiwan financial news and disclosure sources.
+        Categorizes each source by formal EvidenceLevel:
+        - OFFICIALLY_DOCUMENTED
+        - PROVIDER_CONFIRMATION_REQUIRED
+        - PROJECT_ACCESS_VERIFIED
+        - UNAVAILABLE_OR_BLOCKED
+        Strictly prohibits equating theoretical data existence with research lawful accessibility.
         """
         return {
             "sources": {
+                "TWSE_OPENAPI": {
+                    "source_name": "臺灣證券交易所 OpenAPI (openapi.twse.com.tw)",
+                    "official_url": "https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+                    "evidence_level": {
+                        "rolling_current_window": SourceEvidenceLevel.PROJECT_ACCESS_VERIFIED.value,
+                        "historical_2024_q1": SourceEvidenceLevel.UNAVAILABLE_OR_BLOCKED.value,
+                    },
+                    "confirmed_query_capabilities": (
+                        "RESTful JSON API via t187ap04_L endpoint confirmed functional in project service; "
+                        "retrieved authentic 155,496 Bytes snapshot (SHA-256: 949d1b51...) with 94 current disclosures."
+                    ),
+                    "historical_limitations": (
+                        "Strictly rolling window (current/near-term ~30 days); no historical query parameters "
+                        "or backfill interface available for 2024 Q1 (0% historical coverage)."
+                    ),
+                    "query_interface": "RESTful JSON API",
+                    "access_legality": "合法公開免費用戶端介面 (政府資料開放授權條款 v1.0)",
+                    "rate_limits_and_crawler_restrictions": "標準 API 呼叫頻率限制 (約 5 次/秒/IP)",
+                    "historical_provider_availability_evidence": False,
+                    "provider_availability_explanation": "不提供 2024 年第一季等遠期歷史重大訊息之回溯 API，亦無下游資料商落地日誌。",
+                    "evaluation_verdict": "PROJECT_VERIFIED_FOR_LIVE_ROLLING_BUT_UNSUITABLE_FOR_2024_Q1_HISTORICAL",
+                },
                 "TWSE_MOPS_HTML_ARCHIVE": {
                     "source_name": "臺灣證券交易所 公開資訊觀測站 (MOPS) 歷史重大訊息查詢",
                     "official_url": "https://mops.twse.com.tw/mops/web/t05st01",
-                    "queryable_date_range": "1999-01-01 to Present (民國88年迄今完整重大訊息存檔)",
-                    "estimated_annual_volume": "約 50,000 ~ 80,000 則重大訊息公告 (上市/上櫃全體公司)",
+                    "evidence_level": {
+                        "theoretical_statutory_coverage": SourceEvidenceLevel.OFFICIALLY_DOCUMENTED.value,
+                        "project_automated_access": SourceEvidenceLevel.UNAVAILABLE_OR_BLOCKED.value,
+                    },
+                    "queryable_date_range": "1999-01-01 to Present (民國88年迄今完整重大訊息存檔，約5萬-8萬則/年)",
+                    "theoretical_coverage": "1999-01-01 to Present (民國88年迄今完整重大訊息存檔，約5萬-8萬則/年)",
+                    "project_accessible_scope": (
+                        "0 筆重大訊息可透過自動化程式取得。受 WAF 安全防護機制阻擋 (HTTP 403 / 'FOR SECURITY REASONS')。"
+                        "專案治理嚴格禁止偽造標頭或繞過存取控制，故在獲得官方許可前維持 UNAVAILABLE_OR_BLOCKED。"
+                    ),
                     "query_interface": "HTTP POST/GET Form Query (year, month, co_id, step=1)",
-                    "access_legality": "合法公開查詢 (證券交易法第36條規定公開揭露資訊，供投資人查詢)",
-                    "rate_limits_and_crawler_restrictions": "設有 IP 速率限制與防爬機制；高頻抓取會觸發 HTTP 403 或驗證碼阻擋；須採用低頻尊重型檢索",
+                    "access_legality": "證券交易法第36條規定公開揭露資訊，供投資人個別查閱；未開放未授權之批次自動化爬蟲",
+                    "rate_limits_and_crawler_restrictions": "設有嚴格 WAF 速率限制與防爬機制；批次查詢即時觸發 HTTP 403 阻擋",
                     "historical_provider_availability_evidence": False,
                     "provider_availability_explanation": (
                         "MOPS 僅記錄發行公司上傳申報時間（filing_datetime），無記錄下游量化交易系統或資料商之即時串流接收時間。"
@@ -958,24 +999,10 @@ class OfficialHistoricalNewsCollector:
                     "commercial_redistribution_eligible": False,
                     "evaluation_verdict": "FEASIBLE_FOR_HISTORICAL_AUDIT_BUT_LACKS_VENDOR_FEED_RECEIPTS",
                 },
-                "TWSE_OPENAPI": {
-                    "source_name": "臺灣證券交易所 OpenAPI (openapi.twse.com.tw)",
-                    "official_url": "https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
-                    "queryable_date_range": "滾動近期資料 (當日或近 30 日重大訊息，無完整多年歷史封存介面)",
-                    "estimated_annual_volume": "即時流動資料；歷史回測支援有限",
-                    "query_interface": "RESTful JSON API",
-                    "access_legality": "合法公開免費用戶端介面",
-                    "rate_limits_and_crawler_restrictions": "標準 API 呼叫頻率限制 (約 5 次/秒/IP)",
-                    "historical_provider_availability_evidence": False,
-                    "provider_availability_explanation": "不提供 2024 年第一季等遠期歷史重大訊息之回溯 API。",
-                    "licensing_terms": "政府資料開放授權條款 v1.0",
-                    "licensing_status": LicenseVerificationStatus.NEEDS_LEGAL_REVIEW.value,
-                    "commercial_redistribution_eligible": False,
-                    "evaluation_verdict": "UNSUITABLE_FOR_MULTI_YEAR_HISTORICAL_BACKTESTING",
-                },
                 "COMMERCIAL_VENDOR_FEEDS": {
                     "source_name": "商業資料庫廠商 (TEJ 台灣經濟新報 / Bloomberg B-PIPE / Refinitiv)",
                     "official_url": "https://www.tej.com.tw / https://www.bloomberg.com",
+                    "evidence_level": SourceEvidenceLevel.PROVIDER_CONFIRMATION_REQUIRED.value,
                     "queryable_date_range": "完整 20 年以上台灣上市櫃公司新聞、公告與財務數據",
                     "estimated_annual_volume": "> 100,000 則/年 (含新聞轉載、法說會紀要與重大訊息)",
                     "query_interface": "專用 API (Python SDK / FTP / RESTful)",
@@ -988,7 +1015,65 @@ class OfficialHistoricalNewsCollector:
                     "commercial_redistribution_eligible": False,
                     "evaluation_verdict": "FORMAL_PIT_CAPABLE_BUT_REQUIRES_INSTITUTIONAL_SUBSCRIPTION",
                 },
+                "DATA_GOV_TW_DATASET_18415": {
+                    "source_name": "政府資料開放平台 上市公司每日重大訊息 (data.gov.tw/dataset/18415)",
+                    "official_url": "https://data.gov.tw/dataset/18415",
+                    "evidence_level": SourceEvidenceLevel.OFFICIALLY_DOCUMENTED.value,
+                    "dataset_clarification": (
+                        "P1-3 校正：dataset/18415 才是「上市公司每日重大訊息」；"
+                        "先前引述之 dataset/11549 實際為「個股日成交資訊」(Stock Daily Trading Data)。"
+                        "兩者皆僅提供當日/近期開放資料，無 2024 Q1 歷史存檔。"
+                    ),
+                    "historical_provider_availability_evidence": False,
+                    "evaluation_verdict": "OFFICIALLY_DOCUMENTED_CATALOG_MIRROR_NO_HISTORICAL_ARCHIVE",
+                },
+                "TEJ_TAIWAN_ECONOMIC_JOURNAL": {
+                    "source_name": "台灣經濟新報 (TEJ) 臺灣重大訊息與事件資料庫",
+                    "official_url": "https://www.tej.com.tw/",
+                    "evidence_level": SourceEvidenceLevel.PROVIDER_CONFIRMATION_REQUIRED.value,
+                    "queryable_date_range": "1990 年迄今完整台灣上市櫃重大訊息與事件存檔",
+                    "vendor_confirmation_items": {
+                        "millisecond_feed_receipts": "PROVIDER_CONFIRMATION_REQUIRED",
+                        "actual_schema_columns": "PROVIDER_CONFIRMATION_REQUIRED",
+                        "q1_2024_completeness": "PROVIDER_CONFIRMATION_REQUIRED",
+                        "academic_license_scope": "PROVIDER_CONFIRMATION_REQUIRED",
+                    },
+                    "historical_provider_availability_evidence": "PENDING_VENDOR_CONFIRMATION",
+                    "provider_availability_explanation": (
+                        "商用資料商理論上具備 Vendor Ingestion/Release Timestamp，但實際資料表欄位、"
+                        "歷史 Dropcopy 日誌精準度及 2024 Q1 交付格式均需向 TEJ 正式確認，不得逕行推定。"
+                    ),
+                    "evaluation_verdict": "PROBABLE_FORMAL_PIT_PATH_BUT_REQUIRES_INSTITUTIONAL_CONTRACT_AND_VERIFICATION",
+                },
+                "BLOOMBERG_LSEG": {
+                    "source_name": "Bloomberg Terminal (B-PIPE) / LSEG DataScope Select",
+                    "official_url": "https://www.bloomberg.com / https://www.lseg.com",
+                    "evidence_level": SourceEvidenceLevel.PROVIDER_CONFIRMATION_REQUIRED.value,
+                    "vendor_confirmation_items": {
+                        "announcement_time_fields": "PROVIDER_CONFIRMATION_REQUIRED",
+                        "historical_availability_evidence": "PROVIDER_CONFIRMATION_REQUIRED",
+                        "commercial_license_terms": "PROVIDER_CONFIRMATION_REQUIRED",
+                    },
+                    "evaluation_verdict": "ENTERPRISE_GRADE_BUT_EXCEEDS_RESEARCH_BUDGET_AND_REQUIRES_CONFIRMATION",
+                },
+                "SECURITIES_FUTURES_INSTITUTE": {
+                    "source_name": "證券暨期貨市場發展基金會 (SFI) 研究資料集",
+                    "official_url": "https://www.sfi.org.tw/",
+                    "evidence_level": SourceEvidenceLevel.PROVIDER_CONFIRMATION_REQUIRED.value,
+                    "vendor_confirmation_items": {
+                        "dataset_catalog_verification": "PROVIDER_CONFIRMATION_REQUIRED",
+                        "q1_2024_historical_coverage": "PROVIDER_CONFIRMATION_REQUIRED",
+                        "academic_authorization_terms": "PROVIDER_CONFIRMATION_REQUIRED",
+                    },
+                    "evaluation_verdict": "POTENTIAL_ACADEMIC_PARTNERSHIP_PATH_PENDING_CATALOG_CONFIRMATION",
+                },
             },
+            "theoretical_vs_accessible_governance_barrier": (
+                "CRITICAL GOVERNANCE BARRIER (P1-3): Theoretical existence of data on exchange websites "
+                "CANNOT be equated with research lawful accessibility. Without sanctioned API access, "
+                "formal licensing, and downstream vendor feed receipts, all 2024 Q1 disclosures remain "
+                "strictly UNVERIFIED (VERIFIED_SOURCE: 0, PROVIDER_AVAILABILITY_VERIFIED: 0, FORMAL_PIT: NO-GO)."
+            ),
             "curated_pilot_events_conflation_warning": (
                 "CRITICAL GOVERNANCE BARRIER: The existing 50 curated pilot events are internal engineering fixtures. "
                 "They MUST NOT be conflated with verified official data. Even if matched to MOPS schemas, they lack "
@@ -1806,16 +1891,31 @@ def execute_minimal_pipeline_integration(
                 effective_available_at = None
                 effective_availability_source = "UNAVAILABLE_NO_VERIFIED_PROVIDER_EVIDENCE"
                 pit_evidence_level = "EVIDENCE_MISSING_UNVERIFIED"
+            elif getattr(provider_ev, "is_schema_simulation_test", False):
+                is_available_as_of = False
+                rejection_reason = "EVIDENCE_VERIFIED_ASOF rejected: Provider evidence is marked SIMULATED_SCHEMA_TEST (schema test fixtures cannot grant formal PIT)."
+                effective_available_at = None
+                effective_availability_source = "SIMULATED_SCHEMA_TEST"
+                pit_evidence_level = "SIMULATED_PROVIDER_FIXTURE"
             elif provider_ev.is_simulated:
                 is_available_as_of = False
                 rejection_reason = "EVIDENCE_VERIFIED_ASOF rejected: Simulated feed fixture cannot be used for formal PIT validation."
                 effective_available_at = None
                 effective_availability_source = "SIMULATED_FEED_FIXTURE"
                 pit_evidence_level = "SIMULATED_PROVIDER_FIXTURE"
+            elif not provider_ev.content_payload_hash:
+                is_available_as_of = False
+                rejection_reason = "EVIDENCE_VERIFIED_ASOF rejected: Content payload hash is missing: formal PIT verification requires non-empty content_payload_hash to verify announcement binding (fail-closed)."
+                effective_available_at = None
+                effective_availability_source = "REJECTED_MISSING_CONTENT_HASH"
+                pit_evidence_level = "PROVIDER_EVIDENCE_REJECTED"
             else:
                 is_p_valid, p_err = provider_ev.verify_against_entry(
                     announcement_id=entry.announcement_id,
                     content_payload_hash=entry.parsed_payload_hash,
+                    decision_cutoff=decision_ts,
+                    filing_datetime=filing_dt,
+                    require_raw_receipt_bytes=True,
                 )
                 if not is_p_valid:
                     is_available_as_of = False
@@ -1838,7 +1938,44 @@ def execute_minimal_pipeline_integration(
             effective_availability_source = "UNAVAILABLE_NO_VERIFIED_PROVIDER_EVIDENCE"
             pit_evidence_level = "EVIDENCE_MISSING_UNVERIFIED"
 
-        # 4. Provider observed availability cutoff check
+        # 4. Source Existence Verification Gate (P0-2)
+        # Enforces EvidenceManifest entry integrity AND authentic non-simulated retrieval session!
+        if is_available_as_of:
+            # 4a. Standalone EvidenceManifest integrity check
+            is_entry_valid, entry_err = EvidenceManifest.verify_entry_integrity_standalone(entry)
+            if not is_entry_valid:
+                is_available_as_of = False
+                rejection_reason = f"Source Existence Verification Gate rejected: EvidenceManifest integrity check failed: {entry_err}"
+            else:
+                # 4b. Retrieval session existence and authenticity check in RetrievalSessionRegistry
+                session = RetrievalSessionRegistry.get_session(entry.retrieval_session_id)
+                if session is None:
+                    is_available_as_of = False
+                    rejection_reason = (
+                        f"Source Existence Verification Gate rejected: Retrieval session '{entry.retrieval_session_id}' "
+                        "not found in RetrievalSessionRegistry (unverified source existence)."
+                    )
+                elif session.is_simulated:
+                    is_available_as_of = False
+                    rejection_reason = (
+                        f"Source Existence Verification Gate rejected: Retrieval session is marked simulated "
+                        f"(session.is_simulated=True, provenance='{session.service_provenance}'). "
+                        "Simulated retrieval session cannot grant formal PIT validation."
+                    )
+                elif not session.is_production_certified:
+                    is_available_as_of = False
+                    rejection_reason = (
+                        "Source Existence Verification Gate rejected: Retrieval session is not production certified "
+                        "(session.is_production_certified=False)."
+                    )
+                elif entry.verification_status not in (SourceVerificationStatus.SOURCE_EXISTENCE_VERIFIED, SourceVerificationStatus.VERIFIED_SOURCE):
+                    is_available_as_of = False
+                    rejection_reason = (
+                        f"Source Existence Verification Gate rejected: Entry verification status '{entry.verification_status}' "
+                        "is not SOURCE_EXISTENCE_VERIFIED or VERIFIED_SOURCE."
+                    )
+
+        # 5. Provider observed availability cutoff check
         if is_available_as_of and effective_available_at is not None:
             if effective_available_at > decision_ts:
                 is_available_as_of = False
@@ -1857,8 +1994,15 @@ def execute_minimal_pipeline_integration(
         provider_ev = getattr(entry, "provider_evidence", None)
         if provider_ev is not None and provider_ev.observed_available_at is not None:
             effective_available_at = provider_ev.observed_available_at
-            effective_availability_source = f"VERIFIED_PROVIDER_FEED[{provider_ev.provider_id}]" if (provider_ev.is_verified_feed and not provider_ev.is_simulated) else "FEED_EVIDENCE"
-            pit_evidence_level = "VERIFIED_PROVIDER_FEED" if (provider_ev.is_verified_feed and not provider_ev.is_simulated) else "UNVERIFIED_PROVIDER_FEED"
+            if getattr(provider_ev, "is_schema_simulation_test", False):
+                effective_availability_source = "SIMULATED_SCHEMA_TEST"
+                pit_evidence_level = "SIMULATED_PROVIDER_FIXTURE"
+            elif provider_ev.is_verified_feed and not provider_ev.is_simulated:
+                effective_availability_source = f"VERIFIED_PROVIDER_FEED[{provider_ev.provider_id}]"
+                pit_evidence_level = "VERIFIED_PROVIDER_FEED"
+            else:
+                effective_availability_source = "FEED_EVIDENCE"
+                pit_evidence_level = "UNVERIFIED_PROVIDER_FEED"
         elif verified_provider_available_at is not None:
             effective_available_at = verified_provider_available_at
             effective_availability_source = "VERIFIED_PROVIDER_FEED"

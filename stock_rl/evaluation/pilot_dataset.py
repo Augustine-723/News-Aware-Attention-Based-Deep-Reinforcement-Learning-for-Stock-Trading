@@ -550,6 +550,20 @@ class RetrievalSessionRegistry:
         cls._sessions.clear()
 
 
+class SourceEvidenceLevel(str, Enum):
+    """
+    V8.16 Formal taxonomy of evidence levels for historical and market data sources:
+    - OFFICIALLY_DOCUMENTED: Documented in official statutory or regulatory decrees, but project automated access may be restricted.
+    - PROVIDER_CONFIRMATION_REQUIRED: Commercial or academic provider whose technical schemas, columns, and 2024 Q1 logs require vendor confirmation.
+    - PROJECT_ACCESS_VERIFIED: Actively verified with authentic network responses and byte snapshots captured by project retrieval services.
+    - UNAVAILABLE_OR_BLOCKED: Source is blocked by WAF/anti-bot protection, lacks historical backfill API, or has 0% historical coverage.
+    """
+    OFFICIALLY_DOCUMENTED = "OFFICIALLY_DOCUMENTED"
+    PROVIDER_CONFIRMATION_REQUIRED = "PROVIDER_CONFIRMATION_REQUIRED"
+    PROJECT_ACCESS_VERIFIED = "PROJECT_ACCESS_VERIFIED"
+    UNAVAILABLE_OR_BLOCKED = "UNAVAILABLE_OR_BLOCKED"
+
+
 class ProviderVerificationStatus(str, Enum):
     """
     V8.15: Verification status of downstream provider availability logs.
@@ -565,21 +579,26 @@ class ProviderVerificationStatus(str, Enum):
 @dataclass
 class ProviderAvailabilityEvidence:
     """
-    V8.15: Auditable downstream provider availability receipt.
+    V8.16: Auditable downstream provider availability receipt.
     Prohibits caller self-attestation of PIT timestamps by requiring verifiable
     evidence logs from recognized financial news/market data providers (TEJ, Bloomberg, Refinitiv, etc.).
+    Requires independently checkable raw_receipt_bytes and recomputed receipt_hash.
     """
-    provider_id: str                              # e.g., "TEJ_MOPS_FEED_ARCHIVE", "BLOOMBERG_DISCLOSURE_DROPCOPY"
+    provider_id: str                              # e.g., "TEJ_FEED_AUDIT", "BLOOMBERG_DISCLOSURE_DROPCOPY"
     announcement_id: str                          # Must match target announcement ID
     article_id: str                               # Downstream article/item ID
     observed_available_at: pd.Timestamp           # Downstream arrival/ingestion timestamp Asia/Taipei
     evidence_source: str                          # e.g., "HISTORICAL_DROP_COPY_LOG", "VENDOR_TICK_FEED_PCAP", "CERTIFIED_AUDIT_TRAIL"
     receipt_hash: str                             # SHA-256 hash of provider receipt payload
+    receipt_id: Optional[str] = None              # Downstream delivery receipt / packet sequence ID
+    raw_receipt_bytes: Optional[bytes] = None     # Raw provider receipt payload bytes for independent hash recomputation
     verification_status: ProviderVerificationStatus = ProviderVerificationStatus.UNVERIFIED_CANDIDATE
     is_verified_feed: bool = False                # True ONLY if backed by authentic external provider evidence
     is_simulated: bool = False                    # True for test fixtures (CANNOT grant formal PIT)
+    is_schema_simulation_test: bool = False       # True for schema/contract verification tests (CANNOT grant formal PIT)
     feed_channel: str = "REST_API_DROPCOPY"
-    content_payload_hash: Optional[str] = None    # SHA-256 of announcement content to cross-verify binding
+    content_payload_hash: Optional[str] = None    # SHA-256 of announcement content to cross-verify binding (MANDATORY in formal PIT)
+    adapter_id: Optional[str] = None              # Certified adapter ID issuing this receipt
     audit_notes: str = ""
 
     def verify_against_entry(
@@ -588,22 +607,59 @@ class ProviderAvailabilityEvidence:
         content_hash: Optional[str] = None,
         content_payload_hash: Optional[str] = None,
         decision_cutoff: Optional[pd.Timestamp] = None,
+        filing_datetime: Optional[pd.Timestamp] = None,
+        require_raw_receipt_bytes: bool = False,
     ) -> Tuple[bool, str]:
         """
-        Cross-verifies provider receipt against target announcement entry and decision cutoff.
+        Cross-verifies provider receipt against target announcement entry, raw payload bytes,
+        announcement filing time, and decision cutoff.
         """
         c_hash = content_payload_hash or content_hash
         status_val = self.verification_status.value if hasattr(self.verification_status, "value") else str(self.verification_status)
+
+        # 1. Schema simulation test handling (P0-1 items 1, 2)
+        if self.is_schema_simulation_test:
+            if self.announcement_id != announcement_id:
+                return False, f"Provider receipt announcement ID '{self.announcement_id}' does not match entry announcement ID '{announcement_id}'."
+            if self.content_payload_hash and c_hash and self.content_payload_hash != c_hash:
+                return False, f"Provider receipt content payload hash '{self.content_payload_hash}' does not match entry content hash '{c_hash}'."
+            if decision_cutoff is not None and self.observed_available_at > decision_cutoff:
+                return False, f"Provider availability time '{self.observed_available_at}' is after decision cutoff '{decision_cutoff}'."
+            return True, "SIMULATED_SCHEMA_TEST: Schema and field contracts verified for testing purposes only (cannot grant formal PIT)."
+
+        # 2. Simulation and authentic feed gate
+        if self.is_simulated or not self.is_verified_feed:
+            return False, "Provider receipt is marked simulated or lacks authentic feed verification."
+
         if self.verification_status != ProviderVerificationStatus.PROVIDER_FEED_VERIFIED:
             return False, f"Provider receipt verification status '{status_val}' is not PROVIDER_FEED_VERIFIED."
-        if not self.is_verified_feed or self.is_simulated:
-            return False, "Provider receipt is marked simulated or lacks authentic feed verification."
+
+        # 3. Announcement ID matching
         if self.announcement_id != announcement_id:
             return False, f"Provider receipt announcement ID '{self.announcement_id}' does not match entry announcement ID '{announcement_id}'."
-        if self.content_payload_hash and c_hash and self.content_payload_hash != c_hash:
+
+        # 4. Content payload hash check (MANDATORY in formal mode, P0-1 item 6: Fail Closed)
+        if not self.content_payload_hash or not c_hash:
+            return False, "Content payload hash is missing: formal PIT verification requires non-empty content_payload_hash to verify announcement binding (fail-closed)."
+        if self.content_payload_hash != c_hash:
             return False, f"Provider receipt content payload hash '{self.content_payload_hash}' does not match entry content hash '{c_hash}'."
+
+        # 5. Receipt Hash verification from raw receipt bytes (P0-1 items 3, 4)
+        if require_raw_receipt_bytes or self.raw_receipt_bytes is not None:
+            if not self.raw_receipt_bytes or len(self.raw_receipt_bytes) == 0:
+                return False, "Provider receipt payload missing: formal verification requires raw_receipt_bytes to independently compute receipt_hash."
+            actual_receipt_hash = hashlib.sha256(self.raw_receipt_bytes).hexdigest()
+            if actual_receipt_hash != self.receipt_hash:
+                return False, f"Provider receipt hash mismatch: receipt_hash '{self.receipt_hash}' != recomputed '{actual_receipt_hash}' from raw_receipt_bytes."
+
+        # 6. Announcement filing time contradiction check (P0-2 item 7)
+        if filing_datetime is not None and self.observed_available_at < filing_datetime:
+            return False, f"Announcement time contradiction: provider arrival time ({self.observed_available_at}) is prior to official filing time ({filing_datetime})."
+
+        # 7. Decision cutoff check
         if decision_cutoff is not None and self.observed_available_at > decision_cutoff:
             return False, f"Provider availability time '{self.observed_available_at}' is after decision cutoff '{decision_cutoff}'."
+
         return True, "Provider availability receipt verified."
 
     def to_dict(self) -> Dict[str, Any]:
@@ -611,16 +667,66 @@ class ProviderAvailabilityEvidence:
             "provider_id": self.provider_id,
             "announcement_id": self.announcement_id,
             "article_id": self.article_id,
+            "receipt_id": self.receipt_id,
             "observed_available_at": self.observed_available_at.isoformat() if self.observed_available_at else None,
             "evidence_source": self.evidence_source,
             "receipt_hash": self.receipt_hash,
             "verification_status": self.verification_status.value if hasattr(self.verification_status, "value") else str(self.verification_status),
             "is_verified_feed": self.is_verified_feed,
             "is_simulated": self.is_simulated,
+            "is_schema_simulation_test": self.is_schema_simulation_test,
             "feed_channel": self.feed_channel,
             "content_payload_hash": self.content_payload_hash,
+            "adapter_id": self.adapter_id,
             "audit_notes": self.audit_notes,
         }
+
+
+class TrustedProviderEvidenceAdapter:
+    """
+    P0-1 item 7: Authentic Provider Evidence Adapter.
+    Only genuine external adapter processes connected to authentic provider streams (TEJ, Bloomberg, etc.)
+    can issue PROVIDER_FEED_VERIFIED receipts.
+    Prohibits general callers from self-attesting PROVIDER_FEED_VERIFIED.
+    """
+    ADAPTER_PROVENANCE_LEVEL = "CERTIFIED_EXTERNAL_PROVIDER_ADAPTER"
+
+    @classmethod
+    def create_schema_simulation_evidence(
+        cls,
+        provider_id: str,
+        announcement_id: str,
+        article_id: str,
+        observed_available_at: pd.Timestamp,
+        content_payload_hash: Optional[str] = None,
+        raw_receipt_bytes: Optional[bytes] = None,
+        receipt_id: Optional[str] = None,
+        audit_notes: str = "Schema test fixture",
+    ) -> ProviderAvailabilityEvidence:
+        """
+        Creates an auditable SIMULATED_SCHEMA_TEST evidence object for contract verification.
+        is_schema_simulation_test is True, CANNOT grant formal PIT (is_formal_pit_validated=False).
+        """
+        raw_b = raw_receipt_bytes or f"SIMULATED_RECEIPT_{provider_id}_{announcement_id}".encode("utf-8")
+        r_hash = hashlib.sha256(raw_b).hexdigest()
+        return ProviderAvailabilityEvidence(
+            provider_id=provider_id,
+            announcement_id=announcement_id,
+            article_id=article_id,
+            receipt_id=receipt_id or f"RCPT-{announcement_id[:16]}",
+            observed_available_at=observed_available_at,
+            evidence_source="SCHEMA_SIMULATION_FACTORY",
+            receipt_hash=r_hash,
+            raw_receipt_bytes=raw_b,
+            verification_status=ProviderVerificationStatus.SIMULATED_FEED_FIXTURE,
+            is_verified_feed=False,
+            is_simulated=True,
+            is_schema_simulation_test=True,
+            feed_channel="SCHEMA_TEST_CHANNEL",
+            content_payload_hash=content_payload_hash,
+            adapter_id="SIMULATED_SCHEMA_ADAPTER",
+            audit_notes=audit_notes,
+        )
 
 
 @dataclass

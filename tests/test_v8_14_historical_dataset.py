@@ -42,6 +42,8 @@ from stock_rl.evaluation.pilot_dataset import (
     MOPSSourceEvidence,
     ProviderVerificationStatus,
     ProviderAvailabilityEvidence,
+    SourceEvidenceLevel,
+    TrustedProviderEvidenceAdapter,
 )
 from stock_rl.evaluation.official_source_collector import (
     OfficialSourceChannel,
@@ -1233,7 +1235,14 @@ def test_p0_2_pit_modes_separation_estimated_replay_vs_evidence_verified_asof():
     trading_calendar = ["2024-03-15", "2024-03-18"]
     headline = "富邦金董事會決議股利分派"
     content = "富邦金控公告董事會決議發放現金股利。"
-    raw_bytes = content.encode("utf-8")
+    raw_json_obj = [{
+        "公司代號": "2881",
+        "主旨": headline,
+        "說明": content,
+        "發言日期": "1130315",
+        "發言時間": "160000",
+    }]
+    raw_bytes = json.dumps(raw_json_obj, ensure_ascii=False).encode("utf-8")
     raw_hash = hashlib.sha256(raw_bytes).hexdigest()
     parsed_hash = compute_normalized_content_hash(headline, content)
 
@@ -1580,7 +1589,14 @@ def test_v8_15_formal_pit_requires_provider_availability_evidence():
     trading_calendar = ["2024-03-15", "2024-03-18"]
     headline = "富邦金董事會決議股利分派"
     content = "富邦金控公告董事會決議發放現金股利。"
-    raw_bytes = content.encode("utf-8")
+    raw_json_obj = [{
+        "公司代號": "2881",
+        "主旨": headline,
+        "說明": content,
+        "發言日期": "1130315",
+        "發言時間": "160000",
+    }]
+    raw_bytes = json.dumps(raw_json_obj, ensure_ascii=False).encode("utf-8")
     raw_hash = hashlib.sha256(raw_bytes).hexdigest()
     parsed_hash = compute_normalized_content_hash(headline, content)
     ann_id = "OPENAPI-2881-20240315-DIVIDEND"
@@ -1709,13 +1725,16 @@ def test_v8_15_formal_pit_requires_provider_availability_evidence():
     assert "verification failed" in res_mismatch["rejection_reason"]
 
     # 4. Counterexample: Availability after cutoff (20:15 > 20:00)
+    raw_late_b = b'{"provider": "TEJ_FEED_AUDIT", "seq": 9999, "arrival": "2024-03-15T20:15:00"}'
+    late_rcpt_hash = hashlib.sha256(raw_late_b).hexdigest()
     late_evidence = ProviderAvailabilityEvidence(
         provider_id="TEJ_FEED_AUDIT",
         announcement_id=ann_id,
         article_id=f"ART-{ann_id}",
         observed_available_at=pd.Timestamp("2024-03-15 20:15:00", tz="Asia/Taipei"),  # After 20:00 cutoff!
         evidence_source="VENDOR_STREAM_LOG",
-        receipt_hash="late_receipt_hash_9999",
+        receipt_hash=late_rcpt_hash,
+        raw_receipt_bytes=raw_late_b,
         verification_status=ProviderVerificationStatus.PROVIDER_FEED_VERIFIED,
         is_verified_feed=True,
         is_simulated=False,
@@ -1750,22 +1769,33 @@ def test_v8_15_formal_pit_requires_provider_availability_evidence():
     assert res_late["slot_ingested"] is False
     assert "after decision cutoff" in res_late["rejection_reason"]
 
-    # 5. Authentic Case: Verified provider feed before cutoff
-    valid_evidence = ProviderAvailabilityEvidence(
+    # 5. Schema Simulation Test (P0-1 items 1, 2):
+    # Tests using self-constructed ProviderAvailabilityEvidence objects are explicitly marked SIMULATED_SCHEMA_TEST.
+    # In EVIDENCE_VERIFIED_ASOF, simulated schema objects are strictly rejected from formal PIT (is_formal_pit_validated=False).
+    # In ESTIMATED_REPLAY, schema contracts can be validated for testing, but is_formal_pit_validated remains False.
+    raw_rcpt_b = b'{"provider": "TEJ_FEED_AUDIT", "ann_id": "OPENAPI-2881-20240315-DIVIDEND", "seq": 1001}'
+    sim_schema_evidence = TrustedProviderEvidenceAdapter.create_schema_simulation_evidence(
         provider_id="TEJ_FEED_AUDIT",
         announcement_id=ann_id,
         article_id=f"ART-{ann_id}",
-        observed_available_at=pd.Timestamp("2024-03-15 16:05:00", tz="Asia/Taipei"),  # Before cutoff!
-        evidence_source="VENDOR_STREAM_LOG",
-        receipt_hash="valid_receipt_hash_5678",
-        verification_status=ProviderVerificationStatus.PROVIDER_FEED_VERIFIED,
-        is_verified_feed=True,
-        is_simulated=False,
-        feed_channel="TEJ_STREAMING_API",
+        observed_available_at=pd.Timestamp("2024-03-15 16:05:00", tz="Asia/Taipei"),
         content_payload_hash=parsed_hash,
-        audit_notes="Verified downstream provider ingestion receipt.",
+        raw_receipt_bytes=raw_rcpt_b,
+        receipt_id="RCPT-SIM-001",
+        audit_notes="Schema test fixture (V8.16 P0-1).",
     )
-    entry_valid = EvidenceManifestEntry(
+    assert sim_schema_evidence.is_schema_simulation_test is True
+
+    # Standalone verification passes contract check for schema tests
+    is_contract_valid, contract_msg = sim_schema_evidence.verify_against_entry(
+        announcement_id=ann_id,
+        content_payload_hash=parsed_hash,
+        decision_cutoff=pd.Timestamp("2024-03-15 20:00:00", tz="Asia/Taipei"),
+    )
+    assert is_contract_valid is True
+    assert "SIMULATED_SCHEMA_TEST" in contract_msg
+
+    entry_schema = EvidenceManifestEntry(
         announcement_id=ann_id,
         stock_id="2881",
         filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
@@ -1778,21 +1808,34 @@ def test_v8_15_formal_pit_requires_provider_availability_evidence():
         raw_response_hash=raw_hash,
         parsed_payload_hash=parsed_hash,
         retrieval_session_id=session.session_id,
-        provider_evidence=valid_evidence,
+        provider_evidence=sim_schema_evidence,
     )
-    res_valid = execute_minimal_pipeline_integration(
-        entry_valid,
+
+    # In EVIDENCE_VERIFIED_ASOF: MUST BE REJECTED! (P0-1 item 2)
+    res_schema_formal = execute_minimal_pipeline_integration(
+        entry_schema,
         target_stock_id="2881",
         decision_cutoff_str="20:00:00",
         decision_date_str="2024-03-15",
         pit_mode=PITExecutionMode.EVIDENCE_VERIFIED_ASOF,
         trading_calendar=trading_calendar,
     )
-    assert res_valid["is_formal_pit_validated"] is True
-    assert res_valid["slot_ingested"] is True
-    assert res_valid["is_available_as_of"] is True
-    assert res_valid["effective_availability_source"] == "VERIFIED_PROVIDER_FEED[TEJ_FEED_AUDIT]"
-    assert res_valid["pit_evidence_level"] == "FORMAL_AS_OF_VERIFIED"
+    assert res_schema_formal["is_formal_pit_validated"] is False
+    assert res_schema_formal["slot_ingested"] is False
+    assert "SIMULATED_SCHEMA_TEST" in res_schema_formal["rejection_reason"]
+
+    # In ESTIMATED_REPLAY: ingested for schema/contract evaluation, but is_formal_pit_validated is strictly False
+    res_schema_replay = execute_minimal_pipeline_integration(
+        entry_schema,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.ESTIMATED_REPLAY,
+        trading_calendar=trading_calendar,
+    )
+    assert res_schema_replay["slot_ingested"] is True
+    assert res_schema_replay["is_formal_pit_validated"] is False
+    assert res_schema_replay["effective_availability_source"] == "SIMULATED_SCHEMA_TEST"
 
     # 6. Formal Verified Count remains strictly 0
     metrics = OfficialHistoricalNewsCollector.evaluate_q1_2024_collection_metrics()
@@ -2053,6 +2096,311 @@ def test_v8_15_multiple_announcements_and_identical_headlines():
     valid_cross, msg_cross = manifest.verify_entry_integrity(entry_cross)
     assert valid_cross is False
     assert ("raw_content mismatch" in msg_cross or "publication datetime mismatch" in msg_cross)
+
+
+# ==============================================================================
+# 12. V8.16 Historical Source Access Decision & Formal PIT Evidence Gate Tests
+# ==============================================================================
+
+def test_v8_16_p0_1_provider_receipt_hash_recomputed_and_content_hash_required():
+    """
+    P0-1:
+    1. Receipt hash MUST be recomputed from raw_receipt_bytes; arbitrary forged strings fail closed.
+    2. Content hash missing in formal mode MUST fail closed.
+    3. Provider arrival before announcement filing time is an announcement time contradiction and fails closed.
+    """
+    trading_calendar = ["2024-03-15", "2024-03-18"]
+    ann_id = "OPENAPI-2881-20240315-DIVIDEND"
+    content = "富邦金控公告董事會決議發放現金股利。"
+    headline = "富邦金董事會決議股利分派"
+    raw_bytes = content.encode("utf-8")
+    parsed_hash = compute_normalized_content_hash(headline, content)
+
+    # Valid raw receipt bytes
+    raw_rcpt_b = b'{"provider": "TEJ", "seq": 1001, "arrival": "2024-03-15T16:05:00", "payload": "dropcopy"}'
+    correct_rcpt_hash = hashlib.sha256(raw_rcpt_b).hexdigest()
+
+    # 1. Forged receipt hash (recomputed hash != receipt_hash)
+    forged_evidence = ProviderAvailabilityEvidence(
+        provider_id="TEJ_FEED_AUDIT",
+        announcement_id=ann_id,
+        article_id=f"ART-{ann_id}",
+        observed_available_at=pd.Timestamp("2024-03-15 16:05:00", tz="Asia/Taipei"),
+        evidence_source="VENDOR_STREAM_LOG",
+        receipt_hash="forged_arbitrary_hash_value_12345",  # Forged string!
+        raw_receipt_bytes=raw_rcpt_b,
+        verification_status=ProviderVerificationStatus.PROVIDER_FEED_VERIFIED,
+        is_verified_feed=True,
+        is_simulated=False,
+        feed_channel="TEJ_STREAMING_API",
+        content_payload_hash=parsed_hash,
+    )
+    is_valid, msg = forged_evidence.verify_against_entry(
+        announcement_id=ann_id,
+        content_payload_hash=parsed_hash,
+        decision_cutoff=pd.Timestamp("2024-03-15 20:00:00", tz="Asia/Taipei"),
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+        require_raw_receipt_bytes=True,
+    )
+    assert is_valid is False
+    assert "Provider receipt hash mismatch" in msg
+
+    # 2. Missing raw_receipt_bytes when require_raw_receipt_bytes=True
+    missing_raw_evidence = ProviderAvailabilityEvidence(
+        provider_id="TEJ_FEED_AUDIT",
+        announcement_id=ann_id,
+        article_id=f"ART-{ann_id}",
+        observed_available_at=pd.Timestamp("2024-03-15 16:05:00", tz="Asia/Taipei"),
+        evidence_source="VENDOR_STREAM_LOG",
+        receipt_hash=correct_rcpt_hash,
+        raw_receipt_bytes=None,  # Missing raw bytes!
+        verification_status=ProviderVerificationStatus.PROVIDER_FEED_VERIFIED,
+        is_verified_feed=True,
+        is_simulated=False,
+        feed_channel="TEJ_STREAMING_API",
+        content_payload_hash=parsed_hash,
+    )
+    is_valid_mr, msg_mr = missing_raw_evidence.verify_against_entry(
+        announcement_id=ann_id,
+        content_payload_hash=parsed_hash,
+        decision_cutoff=pd.Timestamp("2024-03-15 20:00:00", tz="Asia/Taipei"),
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+        require_raw_receipt_bytes=True,
+    )
+    assert is_valid_mr is False
+    assert "Provider receipt payload missing" in msg_mr
+
+    # 3. Missing content hash (Fail Closed)
+    missing_ch_evidence = ProviderAvailabilityEvidence(
+        provider_id="TEJ_FEED_AUDIT",
+        announcement_id=ann_id,
+        article_id=f"ART-{ann_id}",
+        observed_available_at=pd.Timestamp("2024-03-15 16:05:00", tz="Asia/Taipei"),
+        evidence_source="VENDOR_STREAM_LOG",
+        receipt_hash=correct_rcpt_hash,
+        raw_receipt_bytes=raw_rcpt_b,
+        verification_status=ProviderVerificationStatus.PROVIDER_FEED_VERIFIED,
+        is_verified_feed=True,
+        is_simulated=False,
+        feed_channel="TEJ_STREAMING_API",
+        content_payload_hash=None,  # Missing content hash!
+    )
+    is_valid_mch, msg_mch = missing_ch_evidence.verify_against_entry(
+        announcement_id=ann_id,
+        content_payload_hash=None,
+        decision_cutoff=pd.Timestamp("2024-03-15 20:00:00", tz="Asia/Taipei"),
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+    )
+    assert is_valid_mch is False
+    assert "Content payload hash is missing" in msg_mch
+
+    # 4. Announcement time contradiction (observed arrival 15:30 < filing time 16:00)
+    contradiction_evidence = ProviderAvailabilityEvidence(
+        provider_id="TEJ_FEED_AUDIT",
+        announcement_id=ann_id,
+        article_id=f"ART-{ann_id}",
+        observed_available_at=pd.Timestamp("2024-03-15 15:30:00", tz="Asia/Taipei"),  # Before filing!
+        evidence_source="VENDOR_STREAM_LOG",
+        receipt_hash=correct_rcpt_hash,
+        raw_receipt_bytes=raw_rcpt_b,
+        verification_status=ProviderVerificationStatus.PROVIDER_FEED_VERIFIED,
+        is_verified_feed=True,
+        is_simulated=False,
+        feed_channel="TEJ_STREAMING_API",
+        content_payload_hash=parsed_hash,
+    )
+    is_valid_ct, msg_ct = contradiction_evidence.verify_against_entry(
+        announcement_id=ann_id,
+        content_payload_hash=parsed_hash,
+        decision_cutoff=pd.Timestamp("2024-03-15 20:00:00", tz="Asia/Taipei"),
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+    )
+    assert is_valid_ct is False
+    assert "Announcement time contradiction" in msg_ct
+
+
+def test_v8_16_p0_2_source_existence_gate_rejects_unverified_sources_and_simulated_sessions():
+    """
+    P0-2:
+    1. Missing retrieval session in registry rejected by Source Existence Verification Gate.
+    2. Simulated retrieval session (is_simulated=True) rejected by Source Existence Verification Gate.
+    3. Manifest integrity failure rejected by Source Existence Verification Gate.
+    4. General caller self-populating SOURCE_EXISTENCE_VERIFIED cannot bypass authentic session requirement.
+    """
+    trading_calendar = ["2024-03-15", "2024-03-18"]
+    headline = "富邦金董事會決議股利分派"
+    content = "富邦金控公告董事會決議發放現金股利。"
+    raw_json_obj = [{
+        "公司代號": "2881",
+        "主旨": headline,
+        "說明": content,
+        "發言日期": "1130315",
+        "發言時間": "160000",
+    }]
+    raw_bytes = json.dumps(raw_json_obj, ensure_ascii=False).encode("utf-8")
+    raw_hash = hashlib.sha256(raw_bytes).hexdigest()
+    parsed_hash = compute_normalized_content_hash(headline, content)
+    ann_id = "OPENAPI-2881-20240315-DIVIDEND"
+
+    raw_rcpt_b = b'{"provider": "TEJ", "seq": 1001, "arrival": "2024-03-15T16:05:00"}'
+    correct_rcpt_hash = hashlib.sha256(raw_rcpt_b).hexdigest()
+    valid_provider_ev = ProviderAvailabilityEvidence(
+        provider_id="TEJ_FEED_AUDIT",
+        announcement_id=ann_id,
+        article_id=f"ART-{ann_id}",
+        observed_available_at=pd.Timestamp("2024-03-15 16:05:00", tz="Asia/Taipei"),
+        evidence_source="VENDOR_STREAM_LOG",
+        receipt_hash=correct_rcpt_hash,
+        raw_receipt_bytes=raw_rcpt_b,
+        verification_status=ProviderVerificationStatus.PROVIDER_FEED_VERIFIED,
+        is_verified_feed=True,
+        is_simulated=False,
+        feed_channel="TEJ_STREAMING_API",
+        content_payload_hash=parsed_hash,
+    )
+
+    # 1. Real source missing: retrieval session does not exist in registry
+    entry_missing_session = EvidenceManifestEntry(
+        announcement_id=ann_id,
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-15 16:01:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id="NON_EXISTENT_SESSION_9999",  # Session does not exist!
+        verification_status=SourceVerificationStatus.SOURCE_EXISTENCE_VERIFIED,
+        provider_evidence=valid_provider_ev,
+    )
+    res_ms = execute_minimal_pipeline_integration(
+        entry_missing_session,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.EVIDENCE_VERIFIED_ASOF,
+        trading_calendar=trading_calendar,
+    )
+    assert res_ms["is_formal_pit_validated"] is False
+    assert res_ms["slot_ingested"] is False
+    assert "Source Existence Verification Gate rejected" in res_ms["rejection_reason"]
+    assert "not found in registry" in res_ms["rejection_reason"]
+
+    # 2. Simulated retrieval session (is_simulated=True) rejected in formal mode
+    sim_session = RetrievalSessionRegistry.register_simulated_session(
+        source_channel="TWSE_OPENAPI",
+        endpoint_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        request_start_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=raw_bytes,
+    )
+    entry_sim_session = EvidenceManifestEntry(
+        announcement_id=ann_id,
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-15 16:01:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=sim_session.session_id,  # Simulated session!
+        verification_status=SourceVerificationStatus.SOURCE_EXISTENCE_VERIFIED,
+        provider_evidence=valid_provider_ev,
+    )
+    res_ss = execute_minimal_pipeline_integration(
+        entry_sim_session,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.EVIDENCE_VERIFIED_ASOF,
+        trading_calendar=trading_calendar,
+    )
+    assert res_ss["is_formal_pit_validated"] is False
+    assert res_ss["slot_ingested"] is False
+    assert "Source Existence Verification Gate rejected" in res_ss["rejection_reason"]
+    assert "session is marked simulated" in res_ss["rejection_reason"]
+
+    # 3. Entry integrity failure (tampered parsed_payload_hash)
+    tampered_provider_ev = ProviderAvailabilityEvidence(
+        provider_id="TEJ_FEED_AUDIT",
+        announcement_id=ann_id,
+        article_id=f"ART-{ann_id}",
+        observed_available_at=pd.Timestamp("2024-03-15 16:05:00", tz="Asia/Taipei"),
+        evidence_source="VENDOR_STREAM_LOG",
+        receipt_hash=correct_rcpt_hash,
+        raw_receipt_bytes=raw_rcpt_b,
+        verification_status=ProviderVerificationStatus.PROVIDER_FEED_VERIFIED,
+        is_verified_feed=True,
+        is_simulated=False,
+        feed_channel="TEJ_STREAMING_API",
+        content_payload_hash="tampered_hash_value_9999",
+    )
+    entry_tampered = EvidenceManifestEntry(
+        announcement_id=ann_id,
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-15 16:01:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash="tampered_hash_value_9999",  # Tampered hash!
+        retrieval_session_id=sim_session.session_id,
+        verification_status=SourceVerificationStatus.SOURCE_EXISTENCE_VERIFIED,
+        provider_evidence=tampered_provider_ev,
+    )
+    res_tamp = execute_minimal_pipeline_integration(
+        entry_tampered,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.EVIDENCE_VERIFIED_ASOF,
+        trading_calendar=trading_calendar,
+    )
+    assert res_tamp["is_formal_pit_validated"] is False
+    assert res_tamp["slot_ingested"] is False
+    assert "Source Existence Verification Gate rejected" in res_tamp["rejection_reason"]
+
+
+def test_v8_16_p1_3_source_survey_evidence_levels_and_dataset_18415():
+    """
+    P1-3:
+    1. Confirms dataset 18415 is '上市公司每日重大訊息' and dataset 11549 is '個股日成交資訊'.
+    2. Verifies all 6 candidate sources are classified by formal SourceEvidenceLevel.
+    3. Confirms theoretical existence is explicitly decoupled from project lawful accessibility.
+    """
+    survey = OfficialHistoricalNewsCollector.get_official_source_survey()
+    sources = survey["sources"]
+
+    # 1. data.gov.tw dataset 18415 correction
+    assert "DATA_GOV_TW_DATASET_18415" in sources
+    gov_meta = sources["DATA_GOV_TW_DATASET_18415"]
+    assert "18415" in gov_meta["source_name"]
+    assert "11549" in gov_meta["dataset_clarification"]
+    assert "個股日成交資訊" in gov_meta["dataset_clarification"]
+
+    # 2. EvidenceLevel taxonomy check
+    assert sources["TWSE_OPENAPI"]["evidence_level"]["rolling_current_window"] == SourceEvidenceLevel.PROJECT_ACCESS_VERIFIED.value
+    assert sources["TWSE_OPENAPI"]["evidence_level"]["historical_2024_q1"] == SourceEvidenceLevel.UNAVAILABLE_OR_BLOCKED.value
+    assert sources["TWSE_MOPS_HTML_ARCHIVE"]["evidence_level"]["theoretical_statutory_coverage"] == SourceEvidenceLevel.OFFICIALLY_DOCUMENTED.value
+    assert sources["TWSE_MOPS_HTML_ARCHIVE"]["evidence_level"]["project_automated_access"] == SourceEvidenceLevel.UNAVAILABLE_OR_BLOCKED.value
+    assert sources["TEJ_TAIWAN_ECONOMIC_JOURNAL"]["evidence_level"] == SourceEvidenceLevel.PROVIDER_CONFIRMATION_REQUIRED.value
+    assert sources["BLOOMBERG_LSEG"]["evidence_level"] == SourceEvidenceLevel.PROVIDER_CONFIRMATION_REQUIRED.value
+    assert sources["SECURITIES_FUTURES_INSTITUTE"]["evidence_level"] == SourceEvidenceLevel.PROVIDER_CONFIRMATION_REQUIRED.value
+
+    # 3. Governance barrier check
+    assert "CRITICAL GOVERNANCE BARRIER" in survey["theoretical_vs_accessible_governance_barrier"]
+    assert "CANNOT be equated with research lawful accessibility" in survey["theoretical_vs_accessible_governance_barrier"]
+
 
 
 
