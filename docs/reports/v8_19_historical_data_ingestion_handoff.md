@@ -40,3 +40,23 @@ Python read_snapshot returns existing EvidenceManifestEntry objects consumable b
 
 The temporal and import subset passed 14 tests, covering the existing rollover and tau checks, exact timestamp import, digest mismatch, fixture classification and formal rejection. The previously failing V8.10 multi-seed assertion was reproduced on the clean baseline using the pinned BGE weights. Its test now computes the expected exploratory verdict from all three control results. The research scoring rule is unchanged.
 Full suite: 259 passed, 2 warnings (150.16 seconds), CPU PyTorch 2.5.1 and the pinned BGE model.
+
+## Follow-up acquisition — first alternative-channel historical disclosure
+
+One 2330 Form 6-K was acquired from EDGAR. The accession index identifies TSMC, the primary HTML and the February 6 acceptance time. The issuer's Chinese release independently corroborates the JASM Kumamoto expansion. The committed evidence JSON under data/official_disclosures records the URLs, byte lengths, SHA-256 values and observed file completion times. Raw HTML stays outside Git. The SEC webmaster FAQ describes EDGAR public filing content as free to access and reuse.
+
+Count one historical issuer filing for SEC source-quality research. Count zero verified MOPS filings and zero provider receipts. SEC acceptance converts to 20:55:14 in Taipei, after the decision cutoff. First dissemination time and any earlier MOPS posting remain unknown. Keep this specimen outside the TWSE-schema importer and empirical replay. The next useful comparison is the corresponding original MOPS filing and its actual publication time.
+
+To reproduce the two hash checks from the repository root, use a private directory. A changed server response requires inspection.
+
+```bash
+set -e
+evidence=data/official_disclosures/sec_2330_20240206_evidence.json
+private=$(mktemp -d)
+for key in source_index primary_document; do
+  url=$(jq -r ".$key.url" "$evidence")
+  digest=$(jq -r ".$key.sha256" "$evidence")
+  curl --fail --silent --show-error "$url" -o "$private/$key"
+  printf '%s  %s\n' "$digest" "$private/$key" | sha256sum --check
+done
+```

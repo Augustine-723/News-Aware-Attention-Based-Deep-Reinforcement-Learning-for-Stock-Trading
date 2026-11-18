@@ -1,0 +1,27 @@
+{
+  "stock_id": "2330",
+  "source_channel": "SEC_EDGAR",
+  "form": "6-K",
+  "announcement_id": "0001046179-24-000012",
+  "source_locator": "Document Format Files / sequence 1",
+  "event_summary": "JASM Kumamoto expansion and second fab investment plan",
+  "sec_accepted_at": "2024-02-06T07:55:14-05:00",
+  "sec_accepted_at_taipei": "2024-02-06T20:55:14+08:00",
+  "verified_provider_available_at": null,
+  "mops_filing_datetime": null,
+  "formal_pit_eligible": false,
+  "source_index": {
+    "url": "https://www.sec.gov/Archives/edgar/data/1046179/000104617924000012/0001046179-24-000012-index.htm",
+    "bytes": 7365,
+    "sha256": "c09a5e86ab008098e1bc142747fb68a748b2df91095f3bdb90cb584223d501ca",
+    "observed_file_write_completed_at": "2026-11-18T08:10:49.598061+00:00"
+  },
+  "primary_document": {
+    "url": "https://www.sec.gov/Archives/edgar/data/1046179/000104617924000012/tsm-boardx20240206x6kx2.htm",
+    "bytes": 30248,
+    "sha256": "b4ed2843c3401d2cbd8cf1afc203e34f358854746fae8809ff90da52d53c8b33",
+    "observed_file_write_completed_at": "2026-11-18T08:10:55.798052+00:00"
+  },
+  "issuer_corroboration_url": "https://pr.tsmc.com/chinese/news/3105",
+  "reuse_reference": "https://www.sec.gov/about/webmaster-frequently-asked-questions"
+}
