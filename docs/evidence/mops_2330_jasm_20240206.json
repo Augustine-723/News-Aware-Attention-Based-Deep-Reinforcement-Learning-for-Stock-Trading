@@ -1,0 +1,28 @@
+{
+  "stock_id": "2330",
+  "market": "sii",
+  "sequence": 3,
+  "headline": "JASM計畫於日本熊本進行擴建",
+  "filing_datetime": "2024-02-06T18:55:24+08:00",
+  "entry_url": "https://mopsov.twse.com.tw/mops/web/t05st01",
+  "method": "POST",
+  "endpoint": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01",
+  "source_locator": "sii/2330/20240206/3/185524; detail table row 說明",
+  "status": "official historical detail observed retrospectively",
+  "original_revision_verified": false,
+  "verified_provider_available_at": null,
+  "license_status": "unverified",
+  "formal_pit": false,
+  "listing": {
+    "form_data": "step=1&firstin=ture&off=1&queryName=co_id&inpuType=co_id&TYPEK=all&co_id=2330&year=113&month=02&b_date=06&e_date=06",
+    "raw_sha256": "f3f58f6c08ee9e2bde84adce10a9c7e55ce44f374f6042195426eecf20b19c90",
+    "bytes": 16310,
+    "observed_retrieved_at": "2026-11-18T12:29:33.183432+00:00"
+  },
+  "detail": {
+    "form_data": "firstin=1&step=2&seq_no=3&spoke_time=185524&spoke_date=20240206&co_id=2330&TYPEK=sii",
+    "raw_sha256": "0f9e2af9ef608ab10b612f2fc5e89be4ee3835999ce37f72c3eb86b80ff3cd8b",
+    "bytes": 7514,
+    "observed_retrieved_at": "2026-11-18T12:30:02.176542+00:00"
+  }
+}
