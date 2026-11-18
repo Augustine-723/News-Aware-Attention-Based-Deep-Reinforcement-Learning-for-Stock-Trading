@@ -10,3 +10,13 @@ def test_estimated_split_coverage_and_holiday_rollover():
     assert holiday["first_decision"] == "2024-02-15T20:00:00+08:00"
     assert holiday["next_open"] == "2024-02-16T09:00:00+08:00"
     assert all("phase" not in r for r in report["ledger"] if r["status"] != "estimated_candidate")
+
+
+def test_after_cutoff_fubon_case_enters_following_decision():
+    report = build_report()
+    fubon = next(row for row in report["ledger"]
+                 if row.get("phase") == "validation" and row["stock"] == "2881")
+    assert fubon["estimated_available_at"] == "2024-01-10T20:18:04+08:00"
+    assert fubon["first_decision"] == "2024-01-11T20:00:00+08:00"
+    assert fubon["next_open"] == "2024-01-12T09:00:00+08:00"
+    assert fubon["verified_provider_available_at"] is None

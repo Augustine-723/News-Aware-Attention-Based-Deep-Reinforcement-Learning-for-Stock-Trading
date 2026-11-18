@@ -1,0 +1,65 @@
+[
+  {
+    "date": "2023-11-17",
+    "stock": "2881",
+    "raw_sha256": "d58fc460b0061859d08592fc65aac2e625b0e62572d62c1c92c3da023a73c444",
+    "rows": 66,
+    "api": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=2881&start_date=2023-11-17",
+    "probe": {
+      "locator": "data[14]",
+      "url": "https://news.cnyes.com/news/id/5385853",
+      "observed_at": "2026-11-18T12:02:19.509000+00:00",
+      "http": "200 https://news.cnyes.com/news/id/5385853",
+      "exit_code": 0,
+      "response_sha256": "184694f7c358a49cb1c30c782bbb09259bd3661269e55e39b6a62cbaf5bc8401",
+      "matched_title_and_article_paragraphs": true,
+      "og_published_time": [
+        "2023-11-17T09:17:21.000Z"
+      ],
+      "license_status": "unverified",
+      "verified_provider_available_at": null
+    }
+  },
+  {
+    "date": "2024-01-10",
+    "stock": "2881",
+    "raw_sha256": "fc840a462668edee28295d2420c50a243abd6749c4994809633403e1029da314",
+    "rows": 33,
+    "api": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=2881&start_date=2024-01-10",
+    "probe": {
+      "locator": "data[2]",
+      "url": "https://news.cnyes.com/news/id/5427940",
+      "observed_at": "2026-11-18T12:02:19.768671+00:00",
+      "http": "200 https://news.cnyes.com/news/id/5427940",
+      "exit_code": 0,
+      "response_sha256": "a6fe95f22887683ddb54ff085fc7db5d2ceaa06994bc3278e84573fee06a3d59",
+      "matched_title_and_article_paragraphs": true,
+      "og_published_time": [
+        "2024-01-10T12:13:04.000Z"
+      ],
+      "license_status": "unverified",
+      "verified_provider_available_at": null
+    }
+  },
+  {
+    "date": "2024-01-18",
+    "stock": "2330",
+    "raw_sha256": "83c8f58db072c3200505699dcf67ee5c237cacc1fabbc7e02a92a13df6dc1d23",
+    "rows": 92,
+    "api": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=2330&start_date=2024-01-18",
+    "probe": {
+      "locator": "data[3]",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/4555851",
+      "observed_at": "2026-11-18T12:02:17.600344+00:00",
+      "http": "200 https://ec.ltn.com.tw/article/breakingnews/4555851",
+      "exit_code": 0,
+      "response_sha256": "0d4c85f11ba6ad1cb67c084db69c73e45d6505a322eeb84dc5845cea660cf4d4",
+      "matched_title_and_article_paragraphs": true,
+      "og_published_time": [
+        "2024-01-18T11:20:40+08:00"
+      ],
+      "license_status": "unverified",
+      "verified_provider_available_at": null
+    }
+  }
+]
