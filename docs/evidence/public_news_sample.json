@@ -1,0 +1,194 @@
+{
+  "cnyes_pages": [
+    {
+      "day": "2023-10-19",
+      "source_url": "https://api.cnyes.com/media/api/v1/newslist/category/tw_stock?startAt=1697644800&endAt=1697731199&limit=5&page=1",
+      "observed_retrieved_at": "2026-11-18T11:22:51.696950+00:00",
+      "raw_response_sha256": "2d81b4e0f97f56213272f554a87edc7b9596c9c93fc7a432f78db6acec71dd51",
+      "category_total": 47,
+      "sampled": 5,
+      "matches": [],
+      "license_status": "unverified",
+      "formal_pit": false
+    },
+    {
+      "day": "2023-10-19",
+      "source_url": "https://api.cnyes.com/media/api/v1/newslist/category/tw_stock?startAt=1697644800&endAt=1697731199&limit=5&page=2",
+      "observed_retrieved_at": "2026-11-18T11:22:57.299907+00:00",
+      "raw_response_sha256": "1f2d307b167ebf3567b54d0c5c1d31229286950da0d901b9fc0aa925a39a3431",
+      "category_total": 47,
+      "sampled": 5,
+      "matches": [],
+      "license_status": "unverified",
+      "formal_pit": false
+    },
+    {
+      "day": "2024-01-18",
+      "source_url": "https://api.cnyes.com/media/api/v1/newslist/category/tw_stock?startAt=1705507200&endAt=1705593599&limit=5&page=1",
+      "observed_retrieved_at": "2026-11-18T11:23:02.890193+00:00",
+      "raw_response_sha256": "4528eef83cf94a77d9ef80e8eb9506a87cbd1c7c240bfd47774b9c04cbca7e66",
+      "category_total": 68,
+      "sampled": 5,
+      "matches": [],
+      "license_status": "unverified",
+      "formal_pit": false
+    },
+    {
+      "day": "2024-01-18",
+      "source_url": "https://api.cnyes.com/media/api/v1/newslist/category/tw_stock?startAt=1705507200&endAt=1705593599&limit=5&page=2",
+      "observed_retrieved_at": "2026-11-18T11:23:08.807543+00:00",
+      "raw_response_sha256": "83b2660e5fe60738f76fbf7d70b8ee89adfc688ada366b7a2d4e8af12ec45066",
+      "category_total": 68,
+      "sampled": 5,
+      "matches": [],
+      "license_status": "unverified",
+      "formal_pit": false
+    },
+    {
+      "day": "2024-02-06",
+      "source_url": "https://api.cnyes.com/media/api/v1/newslist/category/tw_stock?startAt=1707148800&endAt=1707235199&limit=5&page=1",
+      "observed_retrieved_at": "2026-11-18T11:23:14.747957+00:00",
+      "raw_response_sha256": "b9b342dcc8f27d90a50fb9d11bd4170274d4b5fa33104b7747d85904574d9a45",
+      "category_total": 48,
+      "sampled": 5,
+      "matches": [],
+      "license_status": "unverified",
+      "formal_pit": false
+    },
+    {
+      "day": "2024-02-06",
+      "source_url": "https://api.cnyes.com/media/api/v1/newslist/category/tw_stock?startAt=1707148800&endAt=1707235199&limit=5&page=2",
+      "observed_retrieved_at": "2026-11-18T11:23:20.743298+00:00",
+      "raw_response_sha256": "8d0b0344e4eb06bf4848adb05f94f6f692999fcea5276ce3c765138f7703a730",
+      "category_total": 48,
+      "sampled": 5,
+      "matches": [
+        {
+          "news_id": 5447931,
+          "stock_ids": [
+            "2330"
+          ],
+          "source_locator": "items.data[0]",
+          "source_published_at": "2024-02-06T18:47:17+08:00",
+          "published_by_2000": true,
+          "verified_provider_available_at": null
+        }
+      ],
+      "license_status": "unverified",
+      "formal_pit": false
+    }
+  ],
+  "finmind_index": {
+    "source_url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=2330&start_date=2024-02-06",
+    "observed_retrieved_at": "2026-11-18T11:23:46.143519+00:00",
+    "raw_response_sha256": "68f24fde37aa7cead5650148c6d5aca44c534d43def8eac20b54675d4a3658e2",
+    "stock_id": "2330",
+    "day": "2024-02-06",
+    "entries": [
+      {
+        "source_locator": "data[0]",
+        "publisher": "豐雲學堂",
+        "source_time_as_reported": "2024-02-06 01:28:12",
+        "link_sha256": "57beaec3d1a3c6432d4a12244e92a7e8dfa5edbb25b91501197691ed62f01645"
+      },
+      {
+        "source_locator": "data[1]",
+        "publisher": "好房網News",
+        "source_time_as_reported": "2024-02-06 01:36:00",
+        "link_sha256": "7f237a7bd209b7044b70f5054ebb5cb460f1ad881831e40297ff24e51b145bef"
+      },
+      {
+        "source_locator": "data[2]",
+        "publisher": "Yahoo奇摩股市",
+        "source_time_as_reported": "2024-02-06 03:41:21",
+        "link_sha256": "92cb888be48e7c6239eab4eec2bdedf73889ae4a157b6496f313c07c60f60e57"
+      },
+      {
+        "source_locator": "data[3]",
+        "publisher": "聯合新聞網",
+        "source_time_as_reported": "2024-02-06 07:38:24",
+        "link_sha256": "3ae4220812921473a7b356d251eefa6345392f99e2ff17f4a449a9e2c966ecac"
+      },
+      {
+        "source_locator": "data[4]",
+        "publisher": "udn.com",
+        "source_time_as_reported": "2024-02-06 07:38:24",
+        "link_sha256": "3ae4220812921473a7b356d251eefa6345392f99e2ff17f4a449a9e2c966ecac"
+      },
+      {
+        "source_locator": "data[5]",
+        "publisher": "Anue鉅亨",
+        "source_time_as_reported": "2024-02-06 10:54:40",
+        "link_sha256": "c972fb184ee21b1899acceb09e645331258fb2adc4b1d451829832ebc3233cc0"
+      },
+      {
+        "source_locator": "data[6]",
+        "publisher": "Yahoo奇摩股市",
+        "source_time_as_reported": "2024-02-06 10:55:56",
+        "link_sha256": "ae4a64e5c57fa03b5d04a097413ba420ebac3dd2502dfdf91986bbaec3e8a349"
+      },
+      {
+        "source_locator": "data[7]",
+        "publisher": "Yahoo奇摩新聞",
+        "source_time_as_reported": "2024-02-06 10:55:56",
+        "link_sha256": "87531d10053462dad7e76010b973867dccabca8313395637e24b873e6cea267c"
+      },
+      {
+        "source_locator": "data[8]",
+        "publisher": "經濟日報",
+        "source_time_as_reported": "2024-02-06 11:36:39",
+        "link_sha256": "6a97c6723644b8c055fad2f4bb28ac57e62dbccf10eb7169fc8dabec5c27950e"
+      },
+      {
+        "source_locator": "data[9]",
+        "publisher": "Yahoo奇摩新聞",
+        "source_time_as_reported": "2024-02-06 11:59:34",
+        "link_sha256": "6b36a8e3fdfeb826381e9eb03103587a893c586abf3437b4a20dbd2915b61bf2"
+      },
+      {
+        "source_locator": "data[10]",
+        "publisher": "Anue鉅亨",
+        "source_time_as_reported": "2024-02-06 12:00:37",
+        "link_sha256": "a8b5ac6cf545109d66fa76fec84f835883390ede1679224c79792f9e5367f2bf"
+      },
+      {
+        "source_locator": "data[11]",
+        "publisher": "自由財經",
+        "source_time_as_reported": "2024-02-06 12:09:27",
+        "link_sha256": "451d8ce8be55a2b53e7b3a676f299bb81a774f7882504347c90f4ac9849f1aa2"
+      },
+      {
+        "source_locator": "data[12]",
+        "publisher": "Yahoo奇摩新聞",
+        "source_time_as_reported": "2024-02-06 13:50:00",
+        "link_sha256": "23a847f73f34c564474fd2cb74972bcda51833a2432413ee370be724a9dc0caf"
+      },
+      {
+        "source_locator": "data[13]",
+        "publisher": "聯合新聞網",
+        "source_time_as_reported": "2024-02-06 14:11:35",
+        "link_sha256": "040a24059931f4afdceb834145a265a121b11ee0781f3c53351d485707a8d98c"
+      },
+      {
+        "source_locator": "data[14]",
+        "publisher": "Yahoo奇摩新聞",
+        "source_time_as_reported": "2024-02-06 14:22:50",
+        "link_sha256": "464cc49616c7d6b2bb2605ce045a860a2efeb73826984aefb8a6ed76289d3ee4"
+      },
+      {
+        "source_locator": "data[15]",
+        "publisher": "旺得富",
+        "source_time_as_reported": "2024-02-06 18:33:56",
+        "link_sha256": "3df9802f096ea019ade1e24c1bf9a414249dadba8503b4f1d8753a56387b1852"
+      },
+      {
+        "source_locator": "data[16]",
+        "publisher": "經濟日報",
+        "source_time_as_reported": "2024-02-06 18:56:43",
+        "link_sha256": "77ca43bb9c618a529f6eac27a2beffe6b63552f35ea663bfb78b60612fd020ee"
+      }
+    ],
+    "verified_provider_available_at": null,
+    "formal_pit": false
+  }
+}
