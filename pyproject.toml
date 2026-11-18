@@ -21,6 +21,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+mops = ["lxml>=4.9"]
 test = [
     "pytest>=7.4.0",
 ]

@@ -1,0 +1,128 @@
+[
+  {
+    "stock_id": "2330",
+    "sequence": 3,
+    "headline": "JASM計畫於日本熊本進行擴建",
+    "filing_datetime": "2024-02-06T18:55:24+08:00",
+    "endpoint": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01",
+    "listing": {
+      "params": {
+        "step": "1",
+        "firstin": "1",
+        "off": "1",
+        "TYPEK": "all",
+        "co_id": "2330",
+        "year": "113",
+        "month": "02",
+        "b_date": "06",
+        "e_date": "06"
+      },
+      "bytes": 16310,
+      "sha256": "f3f58f6c08ee9e2bde84adce10a9c7e55ce44f374f6042195426eecf20b19c90",
+      "observed_at": "2026-11-18T12:34:11.524795+00:00"
+    },
+    "detail": {
+      "params": {
+        "firstin": "1",
+        "step": "2",
+        "seq_no": "3",
+        "spoke_time": "185524",
+        "spoke_date": "20240206",
+        "co_id": "2330",
+        "TYPEK": "sii"
+      },
+      "bytes": 7514,
+      "sha256": "0f9e2af9ef608ab10b612f2fc5e89be4ee3835999ce37f72c3eb86b80ff3cd8b",
+      "observed_at": "2026-11-18T12:34:17.915918+00:00"
+    },
+    "body_chars": 850,
+    "verified_provider_available_at": null,
+    "original_revision_verified": false,
+    "license_status": "unverified",
+    "formal_pit": false
+  },
+  {
+    "stock_id": "2603",
+    "sequence": 1,
+    "headline": "公告本公司112年度合併財務報告",
+    "filing_datetime": "2024-03-14T17:50:20+08:00",
+    "endpoint": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01",
+    "listing": {
+      "params": {
+        "step": "1",
+        "firstin": "1",
+        "off": "1",
+        "TYPEK": "all",
+        "co_id": "2603",
+        "year": "113",
+        "month": "03",
+        "b_date": "14",
+        "e_date": "14"
+      },
+      "bytes": 14354,
+      "sha256": "3919e5c0b3ba3454c57652ff69c3ac1e52ccf1e292b1ee8b713dd35e12d1503c",
+      "observed_at": "2026-11-18T12:34:11.998531+00:00"
+    },
+    "detail": {
+      "params": {
+        "firstin": "1",
+        "step": "2",
+        "seq_no": "1",
+        "spoke_time": "175020",
+        "spoke_date": "20240314",
+        "co_id": "2603",
+        "TYPEK": "sii"
+      },
+      "bytes": 6390,
+      "sha256": "41d5f4a89b951b5d00698c46dff55b8049e60ea06b9a5990449cf4b09c61d116",
+      "observed_at": "2026-11-18T12:34:20.119170+00:00"
+    },
+    "body_chars": 467,
+    "verified_provider_available_at": null,
+    "original_revision_verified": false,
+    "license_status": "unverified",
+    "formal_pit": false
+  },
+  {
+    "stock_id": "2881",
+    "sequence": 1,
+    "headline": "公告本公司暨主要子公司112年12月合併自結損益",
+    "filing_datetime": "2024-01-10T16:10:15+08:00",
+    "endpoint": "https://mopsov.twse.com.tw/mops/web/ajax_t05st01",
+    "listing": {
+      "params": {
+        "step": "1",
+        "firstin": "1",
+        "off": "1",
+        "TYPEK": "all",
+        "co_id": "2881",
+        "year": "113",
+        "month": "01",
+        "b_date": "10",
+        "e_date": "10"
+      },
+      "bytes": 6131,
+      "sha256": "3a15021d8b1f20936d318f9d7708f757104b87899ce6b14e879c6cc7170b8b10",
+      "observed_at": "2026-11-18T12:34:10.899536+00:00"
+    },
+    "detail": {
+      "params": {
+        "firstin": "1",
+        "step": "2",
+        "seq_no": "1",
+        "spoke_time": "161015",
+        "spoke_date": "20240110",
+        "co_id": "2881",
+        "TYPEK": "sii"
+      },
+      "bytes": 6990,
+      "sha256": "55744d5a8fdad437d2b83fd024bfbf450e31799c8ec038a4c968d40e97d77951",
+      "observed_at": "2026-11-18T12:34:18.453433+00:00"
+    },
+    "body_chars": 688,
+    "verified_provider_available_at": null,
+    "original_revision_verified": false,
+    "license_status": "unverified",
+    "formal_pit": false
+  }
+]

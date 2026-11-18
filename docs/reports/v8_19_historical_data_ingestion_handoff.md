@@ -72,3 +72,17 @@ The issuer page for release 3105 displays the date only. Its HTML contains a 197
 Codex ran DesignValidityPreflightAuditor.get_effective_decision_day against each of taiex.csv and 2330_ohlcv.csv. Both calendars jump from February 5 to February 15. For calendar sensitivity only, both February 6 clock inputs (18:48 and 20:55:14 Taipei, tau=0) resolve to February 15 at 20:00 and the next session opens February 16. February 6 had no decision sample in this builder. This corrects the earlier description of an evening decision and does not certify either timestamp as provider availability.
 
 Antigravity completed the local source search at c1ed3ec. See [the reviewed evidence record](../evidence/ev_2330_jasm_expansion_20240206.md). Codex independently matched both retained EDGAR files to their recorded SHA-256 values and checked the investment and process figures against the filing. Counts: one SEC filing, zero verified MOPS originals and zero historical provider receipts. No pilot promotion. Next external dependency: an authorized historical export with original version, permissions and, for formal replay, version-linked distribution evidence.
+
+## Public historical form acquisition update
+
+The MOPS historical form now yielded three Q1 detailed filings, one per pilot stock. These results supersede the earlier zero count for retrievable MOPS historical pages. Index and detail were matched on issuer, sequence, date, time and subject. All detail pages contained nonempty explanations. The earlier JASM case reproduced both raw hashes. The three records include that prior case, for two net new filings. No version-linked provider receipts were obtained.
+
+Install the optional HTML parser with `python -m pip install -e '.[mops]'`. To reproduce from the repository root:
+
+```bash
+python -m stock_rl.evaluation.mops_history_sample 2330 2024-02-06 3
+python -m stock_rl.evaluation.mops_history_sample 2603 2024-03-14 1
+python -m stock_rl.evaluation.mops_history_sample 2881 2024-01-10 1
+```
+
+The collector checks one listing and one detail page per request and outputs metadata without article bodies. Inspect the [receipts](../evidence/mops_three_stock_q1_sample.json) and the [updated inquiry](../inquiries/twse_historical_disclosure_inquiry.md). Formal historical replay still requires historical version and availability evidence, research rights, and coverage of the training period.
