@@ -1594,8 +1594,13 @@ class PilotSourceManifest:
         cls,
         raw_events: Optional[List[Dict[str, Any]]] = None,
         evidence_registry: Optional[Dict[str, MOPSSourceEvidence]] = None,
+        enforce_quarantine: bool = True,
     ) -> Dict[str, EventSourceRecord]:
         events = raw_events if raw_events is not None else RAW_PILOT_EVENTS
+        if enforce_quarantine:
+            from stock_rl.evaluation.design_preflight import DesignValidityPreflightAuditor
+            DesignValidityPreflightAuditor.validate_empirical_dataset_pre_ingestion(events)
+
         records: Dict[str, EventSourceRecord] = {}
         for ev in events:
             eid = ev["event_id"]
@@ -2653,15 +2658,22 @@ class PilotDatasetBuilder:
         raw_events: Optional[List[Dict[str, Any]]] = None,
         verify_holdout: bool = True,
         target_name: Optional[str] = None,
+        tau_minutes: int = 0,
     ) -> List[PilotEventSample]:
         """
         Builds the supervised pilot dataset across all raw curated events.
         Produces 3 independent supervision targets with ZERO silent fallback.
+        Enforces Quarantine Gate before empirical sample construction (V8.18 P1-4).
         """
         events = raw_events or RAW_PILOT_EVENTS
+
+        # Quarantine Enforcement Gate (V8.18 P1-4)
+        from stock_rl.evaluation.design_preflight import DesignValidityPreflightAuditor
+        DesignValidityPreflightAuditor.validate_empirical_dataset_pre_ingestion(events)
+
         target_field = target_name or self.default_target
         samples: List[PilotEventSample] = []
-        manifest = PilotSourceManifest.generate_manifest(events)
+        manifest = PilotSourceManifest.generate_manifest(events, enforce_quarantine=False)
 
         # 1. First verify holdout contamination
         if verify_holdout:
@@ -2680,7 +2692,7 @@ class PilotDatasetBuilder:
 
             t_decision = pd.Timestamp(f"{d_str} 20:00:00", tz="Asia/Taipei")
             t_published = pd.Timestamp(f"{d_str} {pub_time_str}", tz="Asia/Taipei")
-            t_available = t_published  # Estimated-PIT: published time == available time
+            t_available = t_published + pd.Timedelta(minutes=tau_minutes)  # Parameterized Estimated-PIT (V8.18 P1-3)
 
             stock_df = self.market_dfs[stock_id]
             market_df = self.taiex_df

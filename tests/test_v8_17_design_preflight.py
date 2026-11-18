@@ -8,7 +8,11 @@ robust fragility metrics, and chronological fold alignment.
 
 import pytest
 import pandas as pd
-from stock_rl.evaluation.pilot_dataset import RAW_PILOT_EVENTS
+from stock_rl.evaluation.pilot_dataset import (
+    RAW_PILOT_EVENTS,
+    PilotSourceManifest,
+    PilotDatasetBuilder,
+)
 from stock_rl.evaluation.design_preflight import (
     DesignValidityPreflightAuditor,
     PreflightStatus,
@@ -118,12 +122,21 @@ def test_v8_17_p0_2_latency_unidentifiable_on_real_events(twse_trading_calendar)
         assert tau_comp["changed_stock_days_count"] == 0
         assert tau_comp["differing_trading_days_count"] == 0
 
-    # Metadata audit checks (P1-B)
+    # Metadata audit checks (P1-B & V8.18 P1-3)
     meta_audit = audit["metadata_features_audit"]
     assert meta_audit["state_tensor_equality_status"] == PreflightStatus.FULL_STATE_EQUALITY_NOT_TESTED.value
     assert meta_audit["raw_dict_contains_availability_timestamp"] is False
     assert meta_audit["contains_tau_dependent_decay_feature"] is True
     assert meta_audit["dynamic_metadata_audit_status"] == PreflightStatus.TIME_DEPENDENT_FEATURE_DETECTED.value
+    assert meta_audit["numerical_contract_audit"] is not None
+    assert (
+        meta_audit["numerical_contract_audit"]["numerical_verification_status"]
+        == PreflightStatus.METADATA_NUMERICAL_DIFFERENCE_VERIFIED.value
+    )
+    assert (
+        meta_audit["numerical_contract_audit"]["static_dependency_status"]
+        == PreflightStatus.STATIC_ENCODER_DEPENDENCY_CONFIRMED.value
+    )
 
     # Standalone unverified encoder audit check
     unverified_meta = DesignValidityPreflightAuditor.audit_metadata_encoder_features(verify_encoder=False)
@@ -314,3 +327,102 @@ def test_v8_17_p1_2_and_p1_5_chronological_fold_alignment_and_leakage(twse_tradi
     assert "design_hypotheses" in fold_audit
     assert fold_audit["design_hypotheses"]["adequacy_status"] == PreflightStatus.HYPOTHESIS_ONLY_UNPROVEN.value
     assert "HYPOTHESIS_ONLY_UNPROVEN" in fold_audit["design_hypotheses"]["justification"]
+
+
+def test_v8_18_p1_3_metadata_encoder_numerical_contract():
+    """
+    V8.18 P1-3:
+    1. Executes numerical contract testing of extract_event_metadata across tau in {0, 5, 15, 30, 60}.
+    2. Verifies dimension E23 (Event Age) diff matches tau / 1440.0 days.
+    3. Verifies other 23 dimensions remain 100% strictly identical (max diff == 0.0).
+    4. Discloses pipeline tau integration gap (default data loading sets tau=0).
+    5. Confirms bounded status:
+       - STATIC_ENCODER_DEPENDENCY_CONFIRMED
+       - METADATA_NUMERICAL_DIFFERENCE_VERIFIED
+       - FULL_STATE_EQUALITY_NOT_TESTED
+    """
+    contract_res = DesignValidityPreflightAuditor.audit_metadata_encoder_numerical_contract(
+        tau_list=[0, 5, 15, 30, 60]
+    )
+
+    assert contract_res["numerical_verification_status"] == PreflightStatus.METADATA_NUMERICAL_DIFFERENCE_VERIFIED.value
+    assert contract_res["static_dependency_status"] == PreflightStatus.STATIC_ENCODER_DEPENDENCY_CONFIRMED.value
+    assert contract_res["full_state_tensor_equality_status"] == PreflightStatus.FULL_STATE_EQUALITY_NOT_TESTED.value
+
+    assert contract_res["all_e23_matched"] is True
+    assert contract_res["all_other_dims_identical"] is True
+
+    evals = contract_res["tau_evaluations"]
+    assert len(evals) == 4
+
+    for tau, key in [(5, "tau_5_vs_tau_0"), (15, "tau_15_vs_tau_0"), (30, "tau_30_vs_tau_0"), (60, "tau_60_vs_tau_0")]:
+        eval_item = evals[key]
+        assert eval_item["is_e23_match"] is True
+        assert eval_item["is_other_23_dims_identical"] is True
+        assert eval_item["max_diff_in_other_23_dims"] == 0.0
+        assert eval_item["tau_minutes"] == tau
+
+    # Pipeline integration gap disclosure
+    disclosure = contract_res["pipeline_integration_disclosure"]
+    assert disclosure["gap_identified"] is True
+    assert "tau_minutes" in disclosure["description"]
+
+    # Full state tensor boundary note
+    assert "FULL_STATE_EQUALITY_NOT_TESTED" in contract_res["tensor_equality_boundary_note"]
+
+
+def test_v8_18_p1_4_quarantine_ingestion_boundary_and_syn_preservation():
+    """
+    V8.18 P1-4:
+    1. Confirms syndicated media articles with '-SYN' suffix (e.g. EV-2330-03-SYN)
+       are genuine empirical records and NOT falsely quarantined.
+    2. Confirms PilotSourceManifest.generate_manifest(enforce_quarantine=True) passes on clean data.
+    3. Confirms PilotDatasetBuilder().build_dataset() enforces Quarantine Gate.
+    4. Injects a renamed synthetic test fixture (event_id="RENAMED-SYNTH-999", is_quarantined_test_fixture=True)
+       and verifies immediate ValueError at both Manifest generation and Dataset building.
+    5. Verifies parameterized tau_minutes in build_dataset() propagates into sample.available_at.
+    """
+    # 1. Verify syndicated articles are present and valid
+    syn_articles = [ev for ev in RAW_PILOT_EVENTS if "-SYN" in ev["event_id"]]
+    assert len(syn_articles) == 3
+    for syn_art in syn_articles:
+        assert syn_art["source_type"] == "MEDIA_ARCHIVE"
+        assert "is_quarantined_test_fixture" not in syn_art or not syn_art["is_quarantined_test_fixture"]
+
+    # 2. PilotSourceManifest with enforce_quarantine=True succeeds on clean RAW_PILOT_EVENTS
+    manifest = PilotSourceManifest.generate_manifest(RAW_PILOT_EVENTS, enforce_quarantine=True)
+    assert len(manifest) == 50
+    assert "EV-2330-03-SYN" in manifest
+    assert "EV-2603-06-SYN" in manifest
+    assert "EV-2881-06-SYN" in manifest
+
+    # 3. PilotDatasetBuilder clean build
+    builder = PilotDatasetBuilder()
+    clean_subset = RAW_PILOT_EVENTS[:3]
+    samples = builder.build_dataset(raw_events=clean_subset, tau_minutes=0)
+    assert len(samples) == 3
+    for s, ev in zip(samples, clean_subset):
+        assert s.available_at == s.published_at
+
+    # 4. Parameterized tau propagation
+    samples_tau15 = builder.build_dataset(raw_events=clean_subset, tau_minutes=15)
+    assert len(samples_tau15) == 3
+    for s, ev in zip(samples_tau15, clean_subset):
+        assert s.available_at == s.published_at + pd.Timedelta(minutes=15)
+
+    # 5. Quarantine Breach Rejection on Renamed Synthetic Fixture
+    synthetic_fixtures = DesignValidityPreflightAuditor.create_synthetic_boundary_fixtures()
+    renamed_fixture = dict(synthetic_fixtures[0])
+    renamed_fixture["event_id"] = "RENAMED-EMPIRICAL-LOOKALIKE-999"
+    renamed_fixture["article_id"] = "ART-RENAMED-999"
+
+    contaminated_events = list(clean_subset) + [renamed_fixture]
+
+    # Must raise in PilotSourceManifest
+    with pytest.raises(ValueError, match="QUARANTINE BREACH DETECTED"):
+        PilotSourceManifest.generate_manifest(contaminated_events, enforce_quarantine=True)
+
+    # Must raise in PilotDatasetBuilder
+    with pytest.raises(ValueError, match="QUARANTINE BREACH DETECTED"):
+        builder.build_dataset(raw_events=contaminated_events)
+

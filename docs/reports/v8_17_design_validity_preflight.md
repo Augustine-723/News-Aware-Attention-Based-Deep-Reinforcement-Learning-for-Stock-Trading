@@ -106,7 +106,7 @@ The 50 candidate disclosure fixtures (`RAW_PILOT_EVENTS`) were audited against t
 > [!NOTE]
 > **Decoupling "No New Announcements" from "Zero News Features"**:
 > On the 159 trading days (Full Period) or 41 trading days (Q1) where `recorded_no_new_event_trading_days` is recorded, no *fresh* announcements become effective at the 20:00 cutoff.
-> However, the Dual-Stream Attention architecture buffers disclosures over the preceding 30 calendar days into the **Recent 32 memory slots**. Therefore, the news feature tensor is **not** all-zeros on these days; the network continues to attend to buffered historical disclosures.
+> News memory slots are governed by the 30-day retention lookback buffer rule (Recent 32 memory slots over $[T-30\text{d}, T]$). Therefore, whether memory slots are non-zero depends on whether prior disclosures occurred in the preceding 30-day lookback window; slots are **not guaranteed to be non-zero** if the preceding 30-day lookback window also contained zero disclosures. In our empirical sample, prior disclosures exist within the preceding 30 days for most active trading sessions, allowing the network to attend to buffered historical disclosures.
 
 ---
 
@@ -135,20 +135,34 @@ Earliest Filing (08:30)                                  Latest Filing (18:45)  
 | **$\tau = 30\text{ min}$** | 09:00:00 | 19:15:00 | 0 | 0 | 0 | 0 dates | **`LATENCY_ELIGIBILITY_IDENTICAL`** |
 | **$\tau = 60\text{ min}$** | 09:30:00 | 19:45:00 | 0 | 0 | 0 | 0 dates | **`LATENCY_ELIGIBILITY_IDENTICAL`** |
 
-### 2.3 Epistemic Boundaries: Eligibility vs. Full Tensor Equality (P1-4 & P1-B)
-1. **Daily Event Eligibility**:
+### 2.3 Epistemic Boundaries: Eligibility vs. Continuous Metadata & Full Tensor Equality (P1-3, P1-4 & P1-5)
+Two distinct latency mechanisms must be formally decoupled:
+
+1. **Daily Event Eligibility Effect**:
    - Status: **`DAILY_EVENT_ELIGIBILITY_IDENTICAL`**
    - Audit Verdict: **`LATENCY_EFFECT_NOT_IDENTIFIABLE`**
-   - Every tested $\tau \in \{0, 5, 15, 30, 60\}\text{m}$ admits the exact same subset of disclosures on every trading day.
-2. **Metadata Encoder Feature Audit & State Tensor Equality Boundary (P1-B)**:
+   - Under the 20:00:00 cutoff discretization model, every tested $\tau \in \{0, 5, 15, 30, 60\}\text{m}$ admits the exact same subset of disclosures on every trading day (`changed_event_count = 0`, `changed_stock_day_count = 0`, `changed_decision_state_count = 0`).
+   - Consequently, the effect of latency on *which events are included in the daily decision set* is strictly unidentifiable.
+
+2. **Continuous Metadata Effect (Numerical Contract Verified)**:
    - Dynamic Metadata Audit Status: **`TIME_DEPENDENT_FEATURE_DETECTED`**
+   - Numerical Contract Status: **`METADATA_NUMERICAL_DIFFERENCE_VERIFIED`**
+   - Static Dependency Status: **`STATIC_ENCODER_DEPENDENCY_CONFIRMED`**
    - State Tensor Equality Status: **`FULL_STATE_EQUALITY_NOT_TESTED`**
-   - **Encoder Inspection Finding**: In `stock_rl.data.multimodal_pipeline.extract_event_metadata`, dimension **E23 (`event_age`)** is dynamically computed via:
-     $$\text{vec}[22] = \frac{\max(t_{\text{decision}} - t_{\text{available}}, 0)}{86400.0}$$
-     where $t_{\text{available}} = t_{\text{published}} + \tau$. When $\tau$ increases from 0 to 60 minutes, $t_{\text{available}}$ shifts forward, directly shrinking dimension E23 by $\frac{\tau}{1440}$ fractional days.
-   - **Epistemic Constraint**: Because dimension E23 varies continuously with $\tau$, the resulting 24D metadata vector and 160D full state tensor are **NOT bitwise identical** across $\tau$. Full state tensor equivalence has not been verified via fixed-input forward evaluations, and is labeled strictly as **`FULL_STATE_EQUALITY_NOT_TESTED`**.
-3. **Scientific Implication**:
-   - Any performance variation observed across DRL runs with varied $\tau$ **cannot be attributed to changes in the daily event eligibility set**. They may stem from random initialization seeds or continuous feature variations in dimension E23.
+   - **Numerical Contract Verification (V8.18 P1-3)**: In `DesignValidityPreflightAuditor.audit_metadata_encoder_numerical_contract`, a fixed `RawNewsArticle` was perturbed across $\tau \in \{0, 5, 15, 30, 60\}$ minutes with decision time at 20:00:00:
+     $$\Delta E23(\tau) = E23(\tau=0) - E23(\tau) = \frac{\tau \times 60}{86400} = \frac{\tau}{1440.0} \text{ days}$$
+     - $\tau = 5\text{m}$: $\Delta E23 = 0.003472$ days (expected $5/1440 = 0.003472$, match = True)
+     - $\tau = 15\text{m}$: $\Delta E23 = 0.010417$ days (expected $15/1440 = 0.010417$, match = True)
+     - $\tau = 30\text{m}$: $\Delta E23 = 0.020833$ days (expected $30/1440 = 0.020833$, match = True)
+     - $\tau = 60\text{m}$: $\Delta E23 = 0.041667$ days (expected $60/1440 = 0.041667$, match = True)
+     - **Other 23 Dimensions**: Verified $100\%$ strictly identical across all $\tau$ ($\max |\Delta| = 0.0$).
+   - **Pipeline Integration Disclosure**: While `extract_event_metadata` dynamically varies dimension E23 when `provider_available_at` is perturbed, default empirical data loaders historically defaulted to `t_available = t_published` ($\tau = 0$). Parameterized `tau_minutes` has been integrated into `PilotDatasetBuilder` to bridge this gap.
+   - **Full Tensor Equality Boundary**: Although the 24D metadata numerical contract is verified, this does **not** prove full 160D state tensor equivalence or Recent/Active slot ordering under multi-event conditioning. Full state tensor equivalence remains strictly **`FULL_STATE_EQUALITY_NOT_TESTED`**.
+
+3. **Methodological Implication & Interpretation (P1-5)**:
+   - `LATENCY_EFFECT_NOT_IDENTIFIABLE` applies strictly to the **daily event eligibility set** under daily bar discretization.
+   - It does **not** mean that all latency effects are impossible, because continuous feature dimension E23 shrinks continuously by $\frac{\tau}{1440}$ days.
+   - Any observed performance variations across DRL runs with varied $\tau$ cannot be attributed to changes in daily event inclusion; if observed, they may stem from continuous feature decay in dimension E23 or random initialization seeds.
 
 ---
 
@@ -182,13 +196,18 @@ flowchart LR
   - Verdict: **`LATENCY_EFFECT_IDENTIFIABLE`** (`DAILY_EVENT_ELIGIBILITY_CHANGED`)
 - Crossing the 20:00 cutoff successfully causes all three metrics to increment.
 
-### 3.2 Dual-Check Quarantine Enforcement & Pre-Ingestion Gate (P1-A & P1-5)
+### 3.2 Dual-Check Quarantine Enforcement & Ingestion Boundary Gates (P1-A, P1-4 & P1-5)
 - All synthetic fixtures are tagged with `is_quarantined_test_fixture=True` and `status=SYNTHETIC_FIXTURE_QUARANTINED`.
-- The quarantine enforcement mechanism operates via two strict layers:
+- The quarantine enforcement mechanism operates via strict, multi-layered defenses:
   1. **Event ID Non-Overlap**: Verifies that synthetic IDs have zero intersection with empirical candidate IDs.
   2. **Quarantine Marker Inspection**: Inspects all empirical dataset records. Any record carrying `is_quarantined_test_fixture=True`, `is_quarantined=True`, `status="SYNTHETIC_FIXTURE_QUARANTINED"`, `category="SYNTHETIC_TEST"`, `cluster_id` starting with `"CLU-SYNTH"`, or `event_id` starting with `"SYNTH-"` is **immediately rejected**.
-  3. **Renamed Synthetic Event Defense**: Even if an attacker or automated script renames a synthetic fixture to a benign-looking ID (e.g. `RENAMED-EMPIRICAL-LOOKALIKE-999`), the presence of quarantine markers triggers an immediate `ValueError: QUARANTINE BREACH DETECTED`.
-  4. **Pre-Ingestion Execution Gate**: `DesignValidityPreflightAuditor.validate_empirical_dataset_pre_ingestion()` is executed prior to loading any data into empirical training or evaluation pipelines.
+  3. **Renamed Synthetic Event Defense**: Even if an automated script or fixture renames a synthetic fixture to a benign-looking ID (e.g. `RENAMED-EMPIRICAL-LOOKALIKE-999`), the presence of quarantine markers triggers an immediate `ValueError: QUARANTINE BREACH DETECTED`.
+  4. **Wiring into Real Ingestion Boundaries (V8.18 P1-4)**:
+     - `PilotSourceManifest.generate_manifest(events, enforce_quarantine=True)`: Enforces pre-ingestion quarantine validation before metadata records or manifests are generated.
+     - `PilotDatasetBuilder.build_dataset(events)`: Enforces pre-ingestion quarantine validation before supervised sample extraction.
+  5. **Syndicated Media Article Preservation (V8.18 P1-4)**:
+     - Legitimate syndicated media articles in `RAW_PILOT_EVENTS` carry the suffix `"-SYN"` (e.g. `EV-2330-03-SYN`, `EV-2603-06-SYN`, `EV-2881-06-SYN`).
+     - The quarantine validator specifically checks quarantine attributes and synthetic prefixes without using naive substring matching on `"-SYN"`, ensuring genuine syndicated news articles are 100% preserved.
 
 ---
 
