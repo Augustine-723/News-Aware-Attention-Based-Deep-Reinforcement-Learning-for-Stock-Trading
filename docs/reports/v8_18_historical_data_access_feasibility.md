@@ -87,10 +87,9 @@ Prior working drafts contained unverified claims regarding commercial providers 
 
 | Candidate Source | Key Capability Claimed | Source URL & Document Title | Evidence Date / Access Date | Supported Fact | Verification Status | Outstanding Questions Requiring Inquiry |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **TWSE OpenAPI (`t187ap04_L`)** | Daily snapshot of recent corporate disclosures | [https://openapi.twse.com.tw/](https://openapi.twse.com.tw/) — TWSE OpenAPI Specification `t187ap04_L` | 2026-11-17 | Returns active day disclosure list with second-level filing time (`出刊時間: HH:MM:SS`) | **`OFFICIALLY_DOCUMENTED`** & **`PROJECT_ACCESS_VERIFIED`** | Does TWSE provide an official historical OpenAPI query parameter for past dates (e.g. 2024 Q1), or is the endpoint strictly a sliding-window snapshot? |
-| **TWSE Historical Open Data** | Historical bulk export for academic / research use | [https://data.gov.tw/](https://data.gov.tw/) — 政府資料開放平臺 / 臺灣證券交易所資料集 | 2026-11-18 | Open data portal provides market statistics and listed company profiles under Open Government Data License | **`PROVIDER_CONFIRMATION_REQUIRED`** | Does an official batch export or application channel exist specifically for full-text historical material disclosures (`重大訊息歷史資料`) for 2024 Q1? |
+| **TWSE OpenAPI (`t187ap04_L`) & Open Data (Dataset 18415)** | Listed company material disclosure feed (`上市公司重大訊息`) | [https://data.gov.tw/dataset/18415](https://data.gov.tw/dataset/18415) & [https://openapi.twse.com.tw/](https://openapi.twse.com.tw/) — 政府資料開放平臺 Dataset 18415 / TWSE OpenAPI `t187ap04_L` | 2026-11-18 | Specification defines standard disclosure schema with official field names `發言日期` (`YYYYMMDD`) and `發言時間` (`HHMMSS`), company code, subject, and body text | **`OFFICIALLY_DOCUMENTED`** & **`PROJECT_ACCESS_VERIFIED`** (Live Snapshot) | Does TWSE provide an official historical batch export or API query channel for past quarters (specifically 2024 Q1), or is the open endpoint strictly a current sliding window? |
 | **MOPS Web Archive (`mops.twse.com.tw`)** | Web query interface for historical material disclosures | [https://mops.twse.com.tw/mops/web/t05st01](https://mops.twse.com.tw/mops/web/t05st01) — 公開資訊觀測站重大訊息歷史查詢 | 2026-11-18 | Allows web-based querying of past corporate disclosures by company code and year | **`OFFICIALLY_DOCUMENTED`** | What are the automated request constraints? Are automated scripts barred by rate limits or anti-bot protections? Is there a sanctioned academic API? |
-| **TEJ (Taiwan Economic Journal)** | Historical corporate disclosure database (`重大訊息資料庫`) | [https://www.tej.com.tw/](https://www.tej.com.tw/) — TEJ 臺灣經濟新報資料庫產品手冊 | 2026-11-18 | TEJ maintains historical corporate announcement tables with standardized event classifications | **`PROVIDER_CONFIRMATION_REQUIRED`** | Does the partner's academic license include full body text (`說明`) or only headlines? What timestamp fields are provided? Are raw text extracts permissible for local offline research? |
+| **TEJ (Taiwan Economic Journal)** | Daily corporate announcements full-text database | [https://www.tejwin.com/en/all-product-list/](https://www.tejwin.com/en/all-product-list/) — TEJ Official All Product List (Corporate Announcements) | 2026-11-18 | Officially documents: (1) Taiwan daily corporate announcements full-text; (2) Historical Period from 2013-01-01; (3) Announcement Date / Announcement Time; (4) Serial Number / Subject / Content; (5) MOPS as primary data source | **`OFFICIALLY_DOCUMENTED`** (Product-Level Capabilities) | (1) Actual coverage for 2330/2603/2881 in 2024 Q1: `NOT_VERIFIED`; (2) Institutional lab access: `PROVIDER_CONFIRMATION_REQUIRED`; (3) Historical arrival receipt logs: `PROVIDER_CONFIRMATION_REQUIRED`; (4) Offline retention & ML rights: `PROVIDER_CONFIRMATION_REQUIRED`. |
 | **SFI (Securities & Futures Institute)** | Corporate governance & financial research datasets | [https://www.sfi.org.tw/](https://www.sfi.org.tw/) — 證券暨期貨市場發展基金會學術研究資料服務 | 2026-11-18 | SFI provides academic research data upon application for approved academic projects | **`PROVIDER_CONFIRMATION_REQUIRED`** | What is the temporal precision of SFI disclosure records? Do they record intraday timestamps (`HH:MM:SS`) or only disclosure dates (`YYYY-MM-DD`)? |
 | **Commercial Wires (Bloomberg / LSEG)** | Downstream news wire feeds with microsecond packet ingress | Bloomberg B-PIPE / LSEG DataScope technical brochures | 2026-11-18 | Institutional financial terminals capture news wire arrival with millisecond/microsecond precision | **`PROVIDER_CONFIRMATION_REQUIRED`** | Is historical wire dropcopy data accessible for academic research without prohibitive institutional enterprise licenses? |
 | **Open Web Portals (Yahoo TW / PTT Stock)** | Secondary news reporting and community forums | Public web forums and news aggregator sites | 2026-11-18 | Financial portals aggregate syndicated news and commentary | **`UNAVAILABLE_OR_BLOCKED`** | Barred from automated retrieval by anti-bot protections, lack of official changelogs, unannounced retroactive edits, and project ethical guidelines. |
@@ -99,19 +98,27 @@ Prior working drafts contained unverified claims regarding commercial providers 
 
 ### 3.2 Detailed Audit of Corrected Vendor Claims
 
-#### 1. TEJ (Taiwan Economic Journal)
-- **Prior Speculative Claim**: "100% complete coverage for 2330, 2603, 2881 in 2024 Q1", "approx. 150 events", "strictly hash-only retention", "definitely lacks provider arrival log".
-- **Evidence-Based Correction**:
-  - *Coverage & Completeness*: **`PROVIDER_CONFIRMATION_REQUIRED`**. While TEJ commercially indexes listed company disclosures, the exact count and completeness for 2330, 2603, and 2881 during 2024 Q1 have not been audited in this project.
-  - *Timestamp Precision*: **`PROVIDER_CONFIRMATION_REQUIRED`**. Standard TEJ academic database tables typically record announcement filing dates and times, but whether second-level precision (`HH:MM:SS`) or millisecond vendor distribution logs exist depends on the specific subscribed module.
-  - *Retention Terms*: **`PROVIDER_CONFIRMATION_REQUIRED`**. Redistribution of raw TEJ text tables in public open-source repositories is standardly prohibited under commercial agreements. However, whether offline local caching for feature extraction and sharing of derived 160D embeddings is allowed under an institutional academic license requires verification against the actual institutional contract.
+#### 1. TEJ (Taiwan Economic Journal — 臺灣經濟新報)
+- **Official Product Documentation**: Per the official TEJ product list ([https://www.tejwin.com/en/all-product-list/](https://www.tejwin.com/en/all-product-list/)), TEJ commercially indexes and maintains a full-text corporate announcements database:
+  - *Full-Text Content*: Daily corporate announcements full-text (Subject / Content / Serial Number).
+  - *Historical Horizon*: Continuous historical archive starting from `2013-01-01`.
+  - *Timestamp Fields*: Records `Announcement Date` and `Announcement Time`.
+  - *Primary Source*: Market Observation Post System (MOPS).
+  - *Product-Level Status*: **`OFFICIALLY_DOCUMENTED`**.
+- **Evidence-Based Limitations & Open Confirmations**:
+  - *2024 Q1 Actual Coverage*: **`NOT_VERIFIED`**. Although the product covers 2013 onward, the exact empirical disclosure count and completeness for target tickers `2330`, `2603`, and `2881` during 2024 Q1 have not been audited in this project.
+  - *Institutional Access Status*: **`PROVIDER_CONFIRMATION_REQUIRED`**. Access depends entirely on the active subscription modules held by the affiliated academic laboratory.
+  - *Provider Arrival Receipt / Broadcast Logs*: **`PROVIDER_CONFIRMATION_REQUIRED`**. Whether TEJ preserves downstream packet transmission timestamps or external arrival receipts for historical archives requires formal vendor inquiry.
+  - *Raw Data Retention & ML Training Rights*: **`PROVIDER_CONFIRMATION_REQUIRED`**. Campus agreements standardly permit non-commercial statistical research, but contractual permission to retain raw text dumps locally, generate semantic embeddings, and publish derived 160D vectors must be confirmed against the institutional contract.
 
-#### 2. TWSE / MOPS Official Services
-- **Prior Speculative Claim**: "All historical files are governed by Taiwan Open Data Terms", "TWSE definitely provides an application channel for 2024 Q1 complete JSON export".
-- **Evidence-Based Correction**:
-  - *Live OpenAPI Endpoint*: **`OFFICIALLY_DOCUMENTED`** & **`PROJECT_ACCESS_VERIFIED`**. The endpoint `https://openapi.twse.com.tw/v1/opendata/t187ap04_L` provides live/recent corporate announcements under the Taiwan Open Government Data License. Second-level filing timestamps (`HH:MM:SS`) and structured Chinese text fields are verified.
-  - *Historical Batch Export*: **`NOT_VERIFIED`**. The active OpenAPI endpoint documentation does not describe a historical date parameter for 2024 Q1. Whether an official historical JSON batch application exists must be investigated via direct inquiry (Route A).
-  - *MOPS Web Archive Terms*: **`OFFICIALLY_DOCUMENTED`**. MOPS provides historical disclosure querying via web forms, but site terms of use, query quotas, and anti-scraping policies govern web access. Automated scraping without explicit permission is prohibited.
+#### 2. TWSE / MOPS Official Services (臺灣證券交易所 / 公開資訊觀測站)
+- **Official Dataset Documentation**: Per Government Open Data Dataset 18415 ([https://data.gov.tw/dataset/18415](https://data.gov.tw/dataset/18415)) and TWSE OpenAPI specification (`t187ap04_L`):
+  - *Authoritative Field Names*: Officially standardized as `發言日期` (`YYYYMMDD`), `發言時間` (`HHMMSS`), `公司代號`, `公司簡稱`, `主旨`, and `詳細內容`.
+  - *Timestamp Precision*: Second-level (`HH:MM:SS`) based on the exchange official regulatory clock.
+  - *Live Snapshot Status*: **`OFFICIALLY_DOCUMENTED`** & **`PROJECT_ACCESS_VERIFIED`** (via single-day snapshot of 94 disclosures, SHA-256 `949d1b51...`).
+- **Evidence-Based Limitations & Open Confirmations**:
+  - *Historical Batch Channel*: **`NOT_VERIFIED`**. The public open endpoint provides only active/recent filings. Whether TWSE maintains an official academic/research application channel for historical batch downloads (2024 Q1) in structured JSON format is unverified and requires formal inquiry (Route A).
+  - *MOPS Web Archive Terms*: **`OFFICIALLY_DOCUMENTED`**. Web queries are accessible via MOPS forms, but automated scraping is subject to request rate limits, anti-bot mechanisms, and terms of use. Automated scraping without express permission violates project guidelines.
 
 #### 3. SFI (Securities & Futures Institute)
 - **Prior Speculative Claim**: "SFI only provides date-level precision (`YYYY-MM-DD`), making it fatally flawed for intraday cutoff gating."
@@ -150,6 +157,8 @@ flowchart TD
 
 ### 4.1 Route A: TWSE / MOPS Historical Data Access Inquiry
 
+**Ready-to-Use Formal Inquiry Draft**: [twse_historical_disclosure_inquiry.md](file:///home/augustine/Desktop/News-Aware%20Attention-Based%20Deep%20Reinforcement%20Learning%20for%20Stock%20Trading/docs/inquiries/twse_historical_disclosure_inquiry.md)
+
 To establish whether official regulatory disclosures can be obtained directly from the exchange without commercial intermediaries:
 
 1. **Inquiry Objective**:
@@ -170,6 +179,8 @@ To establish whether official regulatory disclosures can be obtained directly fr
    - Do **not** claim an OpenAPI historical JSON application channel exists unless officially confirmed by TWSE documentation.
 
 ### 4.2 Route B: Institutional TEJ Access Confirmation
+
+**Ready-to-Use Formal Inquiry Draft**: [tej_historical_disclosure_inquiry.md](file:///home/augustine/Desktop/News-Aware%20Attention-Based%20Deep%20Reinforcement%20Learning%20for%20Stock%20Trading/docs/inquiries/tej_historical_disclosure_inquiry.md)
 
 If direct exchange open data batch exports are unavailable or delayed, access via an institutional TEJ subscription held by an affiliated university laboratory will be explored:
 

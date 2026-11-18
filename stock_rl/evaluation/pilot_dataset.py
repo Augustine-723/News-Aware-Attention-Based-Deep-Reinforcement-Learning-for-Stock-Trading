@@ -1084,7 +1084,10 @@ class EventSourceRecord:
     source_type: NewsSourceType
     source_id: str
     source_published_at: pd.Timestamp
+    estimated_provider_available_at: Optional[pd.Timestamp] = None
+    verified_provider_available_at: Optional[pd.Timestamp] = None
     provider_available_at: Optional[pd.Timestamp] = None
+    is_formal_pit_validated: bool = False
     provider_evidence: Optional[ProviderAvailabilityEvidence] = None
     retrieved_at: Optional[pd.Timestamp] = None  # None if raw scrape log unrecorded; no hardcoded synthetic date
     timezone: str = "Asia/Taipei"
@@ -1103,6 +1106,10 @@ class EventSourceRecord:
 
     @property
     def available_at(self) -> Optional[pd.Timestamp]:
+        if self.verified_provider_available_at is not None:
+            return self.verified_provider_available_at
+        if self.estimated_provider_available_at is not None:
+            return self.estimated_provider_available_at
         return self.provider_available_at if self.provider_available_at is not None else self.source_published_at
 
     @property
@@ -1595,8 +1602,12 @@ class PilotSourceManifest:
         raw_events: Optional[List[Dict[str, Any]]] = None,
         evidence_registry: Optional[Dict[str, MOPSSourceEvidence]] = None,
         enforce_quarantine: bool = True,
+        tau_minutes: int = 0,
     ) -> Dict[str, EventSourceRecord]:
         events = raw_events if raw_events is not None else RAW_PILOT_EVENTS
+        if len(events) == 0:
+            return {}
+
         if enforce_quarantine:
             from stock_rl.evaluation.design_preflight import DesignValidityPreflightAuditor
             DesignValidityPreflightAuditor.validate_empirical_dataset_pre_ingestion(events)
@@ -1606,6 +1617,7 @@ class PilotSourceManifest:
             eid = ev["event_id"]
             p_hash = compute_normalized_content_hash(ev["headline"], ev.get("body_text", ""))
             pub_dt = pd.Timestamp(f"{ev['date_str']} {ev['pub_time_str']}", tz="Asia/Taipei")
+            est_avail_dt = pub_dt + pd.Timedelta(minutes=tau_minutes)
 
             evidence_bundle = (evidence_registry or {}).get(eid)
 
@@ -1654,6 +1666,17 @@ class PilotSourceManifest:
                     audit_notes="Commercial financial media article. Specific publisher license terms are unverified (LICENSE_UNVERIFIED); research fair use eligibility requires formal legal review (NEEDS_LEGAL_REVIEW).",
                 )
 
+            ver_avail_dt = None
+            is_formal_pit = False
+            if v_evidence and isinstance(v_evidence, dict) and v_evidence.get("verified_provider_available_at"):
+                ver_avail_dt = pd.Timestamp(v_evidence["verified_provider_available_at"])
+                is_formal_pit = bool(v_evidence.get("is_formal_pit_validated", False))
+            elif evidence_bundle and hasattr(evidence_bundle, "verified_provider_available_at") and evidence_bundle.verified_provider_available_at:
+                ver_avail_dt = pd.Timestamp(evidence_bundle.verified_provider_available_at)
+                is_formal_pit = bool(getattr(evidence_bundle, "is_formal_pit_validated", False))
+
+            prov_avail_dt = ver_avail_dt if ver_avail_dt is not None else est_avail_dt
+
             rec = EventSourceRecord(
                 event_id=ev["event_id"],
                 article_id=ev["article_id"],
@@ -1662,7 +1685,10 @@ class PilotSourceManifest:
                 source_type=ev["source_type"],
                 source_id=s_id,
                 source_published_at=pub_dt,
-                provider_available_at=pub_dt,
+                estimated_provider_available_at=est_avail_dt,
+                verified_provider_available_at=ver_avail_dt,
+                provider_available_at=prov_avail_dt,
+                is_formal_pit_validated=is_formal_pit,
                 retrieved_at=ev.get("retrieved_at", None),  # None if raw scrape log unrecorded; no hardcoded synthetic date
                 timezone="Asia/Taipei",
                 url=ev.get("url", None),
@@ -1741,9 +1767,12 @@ class PilotEventSample:
     verification_status: SourceVerificationStatus = SourceVerificationStatus.CURATED_UNVERIFIED
     usage_rights: UsageRightsCategory = UsageRightsCategory.COMMERCIAL_FAIR_USE_RESEARCH_ONLY
     
-    # Distinct Provenance Timestamps & Annotation Audit (V8.11)
+    # Distinct Provenance Timestamps & Annotation Audit (V8.11 & V8.18 P1-1)
     source_published_at: Optional[pd.Timestamp] = None
+    estimated_provider_available_at: Optional[pd.Timestamp] = None
+    verified_provider_available_at: Optional[pd.Timestamp] = None
     provider_available_at: Optional[pd.Timestamp] = None
+    is_formal_pit_validated: bool = False
     retrieved_at: Optional[pd.Timestamp] = None
     annotation_provenance: Optional[AnnotationProvenance] = None
 
@@ -1799,8 +1828,8 @@ class PilotEventSample:
             stock_id=self.stock_id,
             headline=self.headline,
             body_text=self.body_text,
-            source_published_at=self.published_at,
-            provider_available_at=self.available_at,
+            source_published_at=self.source_published_at or self.published_at,
+            provider_available_at=self.provider_available_at or self.available_at,
             revision_id=self.revision_id,
             lifecycle_status=self.lifecycle_status,
             evidence_audit_level=self.evidence_level,
@@ -2653,19 +2682,99 @@ class PilotDatasetBuilder:
         if not reconciled["is_reconciled"]:
             raise ValueError(f"TWSE Trading Calendar failed reconciliation: {reconciled}")
 
+        self.trading_calendar: List[str] = sorted([d.strftime("%Y-%m-%d") for d in self.taiex_df.index])
+
+    @classmethod
+    def validate_time_contract_consistency(
+        cls,
+        sample: PilotEventSample,
+        manifest_rec: Optional[EventSourceRecord] = None,
+    ) -> Dict[str, Any]:
+        """
+        P1-1: Enforces rigorous time contract consistency across Sample, Manifest, and Metadata:
+        1. source_published_at always retains original publication time.
+        2. estimated_provider_available_at is clearly labeled as assumption.
+        3. verified_provider_available_at only accepts verified external evidence.
+        4. available_at <= decision_timestamp (strict Point-in-Time causality).
+        5. 32D Metadata E23 (event_age) matches mathematical formula.
+        6. Estimated availability is never elevated to Formal PIT.
+        """
+        if sample.source_published_at != sample.published_at:
+            raise ValueError(
+                f"Time Contract Violation: sample.source_published_at ({sample.source_published_at}) "
+                f"!= sample.published_at ({sample.published_at})"
+            )
+
+        if manifest_rec is not None:
+            if sample.source_published_at != manifest_rec.source_published_at:
+                raise ValueError(
+                    f"Time Contract Violation: sample.source_published_at ({sample.source_published_at}) "
+                    f"!= manifest_rec.source_published_at ({manifest_rec.source_published_at})"
+                )
+            if sample.estimated_provider_available_at != manifest_rec.estimated_provider_available_at:
+                raise ValueError(
+                    f"Time Contract Violation: sample.estimated_provider_available_at ({sample.estimated_provider_available_at}) "
+                    f"!= manifest_rec.estimated_provider_available_at ({manifest_rec.estimated_provider_available_at})"
+                )
+            if sample.verified_provider_available_at != manifest_rec.verified_provider_available_at:
+                raise ValueError(
+                    f"Time Contract Violation: sample.verified_provider_available_at ({sample.verified_provider_available_at}) "
+                    f"!= manifest_rec.verified_provider_available_at ({manifest_rec.verified_provider_available_at})"
+                )
+
+        if sample.available_at != sample.provider_available_at:
+            raise ValueError(
+                f"Time Contract Violation: sample.available_at ({sample.available_at}) "
+                f"!= sample.provider_available_at ({sample.provider_available_at})"
+            )
+
+        if sample.available_at > sample.decision_timestamp:
+            raise ValueError(
+                f"Causal Violation: sample.available_at ({sample.available_at}) "
+                f"> sample.decision_timestamp ({sample.decision_timestamp})"
+            )
+
+        if sample.verified_provider_available_at is None:
+            if sample.is_formal_pit_validated:
+                raise ValueError(
+                    f"Formal PIT Violation in {sample.sample_id}: is_formal_pit_validated is True "
+                    "without verified_provider_available_at!"
+                )
+            if sample.provenance_category == "VERIFIED_HISTORICAL_NEWS":
+                raise ValueError(
+                    f"Formal PIT Violation in {sample.sample_id}: provenance_category is "
+                    "VERIFIED_HISTORICAL_NEWS without verified external provider evidence!"
+                )
+
+        if sample.metadata_32d is not None and len(sample.metadata_32d) >= 23:
+            e23_actual = float(sample.metadata_32d[22])
+            delta_sec = max(0.0, (sample.decision_timestamp - sample.available_at).total_seconds())
+            expected_e23 = float(np.clip(delta_sec / 86400.0, 0.0, 30.0))
+            if not np.isclose(e23_actual, expected_e23, atol=1e-5):
+                raise ValueError(
+                    f"Metadata E23 Inconsistency in {sample.sample_id}: metadata_32d[22] ({e23_actual}) "
+                    f"!= expected_e23 ({expected_e23}) based on (decision - available)!"
+                )
+
+        return {"contract_valid": True, "sample_id": sample.sample_id}
+
     def build_dataset(
         self,
         raw_events: Optional[List[Dict[str, Any]]] = None,
         verify_holdout: bool = True,
         target_name: Optional[str] = None,
         tau_minutes: int = 0,
+        fail_closed: bool = True,
     ) -> List[PilotEventSample]:
         """
-        Builds the supervised pilot dataset across all raw curated events.
+        Builds the supervised pilot dataset across curated events.
         Produces 3 independent supervision targets with ZERO silent fallback.
         Enforces Quarantine Gate before empirical sample construction (V8.18 P1-4).
+        Enforces Unified Time Contract & Effective Trading Decision Day Rollover (V8.18 P1-1 & P1-2).
         """
-        events = raw_events or RAW_PILOT_EVENTS
+        events = raw_events if raw_events is not None else RAW_PILOT_EVENTS
+        if len(events) == 0:
+            return []
 
         # Quarantine Enforcement Gate (V8.18 P1-4)
         from stock_rl.evaluation.design_preflight import DesignValidityPreflightAuditor
@@ -2673,7 +2782,9 @@ class PilotDatasetBuilder:
 
         target_field = target_name or self.default_target
         samples: List[PilotEventSample] = []
-        manifest = PilotSourceManifest.generate_manifest(events, enforce_quarantine=False)
+        manifest = PilotSourceManifest.generate_manifest(
+            events, enforce_quarantine=False, tau_minutes=tau_minutes
+        )
 
         # 1. First verify holdout contamination
         if verify_holdout:
@@ -2690,13 +2801,33 @@ class PilotDatasetBuilder:
             d_str = ev["date_str"]
             pub_time_str = ev["pub_time_str"]
 
-            t_decision = pd.Timestamp(f"{d_str} 20:00:00", tz="Asia/Taipei")
             t_published = pd.Timestamp(f"{d_str} {pub_time_str}", tz="Asia/Taipei")
-            t_available = t_published + pd.Timedelta(minutes=tau_minutes)  # Parameterized Estimated-PIT (V8.18 P1-3)
+            t_estimated_available = t_published + pd.Timedelta(minutes=tau_minutes)
+
+            source_rec = manifest.get(ev["event_id"])
+            t_verified_available = source_rec.verified_provider_available_at if source_rec else None
+            t_available = t_verified_available if t_verified_available is not None else t_estimated_available
+
+            # Effective Trading Decision Day Rollover (V8.18 P1-2)
+            eff_day = DesignValidityPreflightAuditor.get_effective_decision_day(
+                event=ev,
+                trading_calendar=self.trading_calendar,
+                cutoff_time_str="20:00:00",
+                tau_minutes=tau_minutes,
+            )
+            if eff_day is None:
+                if fail_closed:
+                    raise ValueError(
+                        f"FAIL_CLOSED_NO_NEXT_TRADING_SESSION: Event {ev['event_id']} (published at {t_published}, "
+                        f"available at {t_available}) cannot be assigned an effective trading decision day within available trading calendar."
+                    )
+                else:
+                    continue
+
+            t_decision = pd.Timestamp(f"{eff_day} 20:00:00", tz="Asia/Taipei")
 
             stock_df = self.market_dfs[stock_id]
             market_df = self.taiex_df
-            source_rec = manifest.get(ev["event_id"])
             v_status = source_rec.verification_status if source_rec else SourceVerificationStatus.CURATED_UNVERIFIED
 
             # Pre-T 32D Metadata Feature Extraction
@@ -2779,7 +2910,8 @@ class PilotDatasetBuilder:
             }
             active_target = target_map.get(target_field, target_hybrid)
 
-            is_verified = (source_rec is not None and source_rec.verification_status == SourceVerificationStatus.VERIFIED_SOURCE)
+            is_formal_pit = bool(source_rec.is_formal_pit_validated if source_rec else False)
+            is_verified = bool(source_rec is not None and source_rec.verification_status == SourceVerificationStatus.VERIFIED_SOURCE and is_formal_pit)
 
             sample = PilotEventSample(
                 sample_id=f"SMP-{ev['event_id']}",
@@ -2792,7 +2924,10 @@ class PilotDatasetBuilder:
                 published_at=t_published,
                 available_at=t_available,
                 source_published_at=t_published,
+                estimated_provider_available_at=t_estimated_available,
+                verified_provider_available_at=t_verified_available,
                 provider_available_at=t_available,
+                is_formal_pit_validated=is_formal_pit,
                 retrieved_at=source_rec.retrieved_at if source_rec else None,
                 annotation_provenance=AnnotationProvenance(
                     annotator_id="PILOT_HEURISTIC_ANNOTATOR_V1",
@@ -2836,6 +2971,7 @@ class PilotDatasetBuilder:
                 text_128d=text_128d,
             )
             sample.verify_causality()
+            self.validate_time_contract_consistency(sample, manifest_rec=source_rec)
             samples.append(sample)
 
         # Sort chronologically by decision_timestamp

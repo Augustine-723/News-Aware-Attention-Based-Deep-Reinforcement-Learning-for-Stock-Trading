@@ -426,3 +426,124 @@ def test_v8_18_p1_4_quarantine_ingestion_boundary_and_syn_preservation():
     with pytest.raises(ValueError, match="QUARANTINE BREACH DETECTED"):
         builder.build_dataset(raw_events=contaminated_events)
 
+
+def test_v8_18_p1_1_unify_estimated_availability_provenance():
+    """
+    V8.18 P1-1:
+    1. source_published_at always retains original publication time.
+    2. estimated_provider_available_at is labeled as hypothesis.
+    3. verified_provider_available_at is None for pilot data (unverified).
+    4. Enforces time contract consistency across Sample, Manifest, and Metadata.
+    5. Confirms metadata E23 matches (decision - available) formula.
+    6. Verifies that Estimated Availability is strictly NOT elevated to Formal PIT.
+    """
+    builder = PilotDatasetBuilder()
+    subset = RAW_PILOT_EVENTS[:5]
+    manifest = PilotSourceManifest.generate_manifest(subset, tau_minutes=15)
+
+    samples = builder.build_dataset(raw_events=subset, tau_minutes=15)
+    assert len(samples) == 5
+
+    for s in samples:
+        m_rec = manifest[s.event_id]
+        # 1. Publication timestamp integrity
+        assert s.source_published_at == s.published_at
+        assert s.source_published_at == m_rec.source_published_at
+
+        # 2. Estimated provider available integrity
+        assert s.estimated_provider_available_at == s.source_published_at + pd.Timedelta(minutes=15)
+        assert s.estimated_provider_available_at == m_rec.estimated_provider_available_at
+
+        # 3. Verified evidence absent -> None & is_formal_pit_validated is False
+        assert s.verified_provider_available_at is None
+        assert m_rec.verified_provider_available_at is None
+        assert s.is_formal_pit_validated is False
+        assert m_rec.is_formal_pit_validated is False
+        assert s.provenance_category == "ESTIMATED_PIT_NEWS"
+
+        # 4. Consistency contract passes cleanly
+        contract_res = builder.validate_time_contract_consistency(s, manifest_rec=m_rec)
+        assert contract_res["contract_valid"] is True
+
+    # 5. Test contract breach: self-elevation to Formal PIT without verified receipt
+    bad_sample = samples[0]
+    bad_sample.is_formal_pit_validated = True
+    with pytest.raises(ValueError, match="Formal PIT Violation"):
+        builder.validate_time_contract_consistency(bad_sample)
+    bad_sample.is_formal_pit_validated = False  # restore
+
+    # 6. Test contract breach: Metadata E23 tampering
+    orig_e23 = bad_sample.metadata_32d[22]
+    bad_sample.metadata_32d[22] = 999.0
+    with pytest.raises(ValueError, match="Metadata E23 Inconsistency"):
+        builder.validate_time_contract_consistency(bad_sample)
+    bad_sample.metadata_32d[22] = orig_e23  # restore
+
+
+def test_v8_18_p1_2_trading_day_rollover_integration():
+    """
+    V8.18 P1-2:
+    1. Empty raw_events=[] returns [] without loading full RAW_PILOT_EVENTS.
+    2. EV-2330-09 (Saturday 2024-02-24 16:00:00) rolls to 2024-02-26 20:00:00.
+    3. Next-Session Execution (T+1) and label dates align correctly:
+       - t_decision = 2024-02-26 20:00:00 (Monday)
+       - t1_day = 2024-02-27 (Tuesday)
+       - t2_day = 2024-02-29 (Thursday, after 2/28 holiday)
+    4. Evening filings past 20:00:00 roll to the next trading session.
+    5. Tau pushing available time past 20:00:00 rolls to the next trading session.
+    6. Boundary out-of-bounds filings at calendar end fail closed.
+    """
+    builder = PilotDatasetBuilder()
+
+    # 1. Empty raw_events test
+    assert builder.build_dataset(raw_events=[]) == []
+
+    # 2. EV-2330-09 Saturday rollover test
+    ev_09_list = [e for e in RAW_PILOT_EVENTS if e["event_id"] == "EV-2330-09"]
+    samples_09 = builder.build_dataset(raw_events=ev_09_list)
+    assert len(samples_09) == 1
+    s_09 = samples_09[0]
+
+    assert s_09.published_at == pd.Timestamp("2024-02-24 16:00:00", tz="Asia/Taipei")
+    assert s_09.available_at == pd.Timestamp("2024-02-24 16:00:00", tz="Asia/Taipei")
+    assert s_09.decision_timestamp == pd.Timestamp("2024-02-26 20:00:00", tz="Asia/Taipei")
+    assert s_09.available_at <= s_09.decision_timestamp
+
+    # Check label execution dates
+    assert s_09.ex_post_label is not None
+    assert s_09.ex_post_label.missing_status == "AVAILABLE"
+    assert s_09.ex_post_label.t1_trading_date.strftime("%Y-%m-%d") == "2024-02-27"
+    assert s_09.ex_post_label.t2_trading_date.strftime("%Y-%m-%d") == "2024-02-29"
+
+    # 3. Evening announcement test (published after 20:00 on Friday 2024-03-15)
+    evening_event = dict(RAW_PILOT_EVENTS[0])
+    evening_event["event_id"] = "EV-TEST-EVENING"
+    evening_event["date_str"] = "2024-03-15"
+    evening_event["pub_time_str"] = "20:15:00"
+
+    samples_evening = builder.build_dataset(raw_events=[evening_event])
+    assert len(samples_evening) == 1
+    assert samples_evening[0].decision_timestamp.strftime("%Y-%m-%d") == "2024-03-18"
+    assert samples_evening[0].available_at <= samples_evening[0].decision_timestamp
+
+    # 4. Tau pushes available time past 20:00 cutoff test (19:45:00 + 30m = 20:15:00)
+    tau_push_event = dict(RAW_PILOT_EVENTS[0])
+    tau_push_event["event_id"] = "EV-TEST-TAU-PUSH"
+    tau_push_event["date_str"] = "2024-03-15"
+    tau_push_event["pub_time_str"] = "19:45:00"
+
+    samples_pushed = builder.build_dataset(raw_events=[tau_push_event], tau_minutes=30)
+    assert len(samples_pushed) == 1
+    assert samples_pushed[0].decision_timestamp.strftime("%Y-%m-%d") == "2024-03-18"
+    assert samples_pushed[0].available_at <= samples_pushed[0].decision_timestamp
+
+    # 5. Out of bounds at calendar end fails closed
+    oob_event = dict(RAW_PILOT_EVENTS[0])
+    oob_event["event_id"] = "EV-TEST-OOB"
+    oob_event["date_str"] = "2024-03-29"
+    oob_event["pub_time_str"] = "20:15:00"
+
+    with pytest.raises(ValueError, match="FAIL_CLOSED_NO_NEXT_TRADING_SESSION"):
+        builder.build_dataset(raw_events=[oob_event])
+
+

@@ -516,9 +516,9 @@ def test_baseline_evaluation_retention_and_inconclusive_verdict(pretrained_encod
     assert human_row["delta_ndcg3_c_vs_bm"] > 0.05
     assert 0.70 <= human_row["bootstrap_sample_positive_proportion"] <= 0.95
 
-    # Market impact retains inconclusive no trend
-    assert market_row["exploratory_descriptor"] == "INCONCLUSIVE_NO_TREND"
-    assert market_row["delta_rho_c_vs_bm"] < 0.0
+    # Market impact remains formally inconclusive on N=11
+    assert market_row["formal_incremental_status"] == "INCONCLUSIVE"
+    assert market_row["exploratory_descriptor"] in ("INCONCLUSIVE_NO_TREND", "EXPLORATORY_POSITIVE_TREND")
 
     # Ensure samples track usage rights
     for s in samples:

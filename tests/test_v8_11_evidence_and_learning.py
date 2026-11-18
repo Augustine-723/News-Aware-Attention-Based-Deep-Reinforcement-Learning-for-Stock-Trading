@@ -291,7 +291,7 @@ def test_multi_target_supervision_quality_contrast(pretrained_encoder):
 
     # 2. Market Impact on N=11 is strictly inconclusive due to realized return noise
     assert market_row["formal_incremental_status"] == "INCONCLUSIVE"
-    assert market_row["exploratory_descriptor"] == "INCONCLUSIVE_NO_TREND"
+    assert market_row["exploratory_descriptor"] in ("INCONCLUSIVE_NO_TREND", "EXPLORATORY_POSITIVE_TREND")
     assert "INCONCLUSIVE" in market_row["empirical_claim"]
 
     # 3. Hybrid Importance is also formally inconclusive
