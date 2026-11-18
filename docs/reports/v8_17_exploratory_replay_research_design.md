@@ -137,10 +137,9 @@ flowchart TD
 
 ---
 
-### 3.3 Latency Sensitivity Protocol ($\tau$-Sweep)
+### 3.3 Latency Sensitivity Protocol & Preflight Identifiability Audit (P0-2, P1-3)
 
-To detect whether a model is overfit to instantaneous information arrival or exploits hidden lookahead bias, the research protocol evaluates a discrete latency sweep:
-
+The theoretical latency sweep proposes perturbing assumed provider transmission delays:
 $$\tau \in \{0, 5, 15, 30, 60\} \text{ minutes}$$
 
 ```
@@ -154,12 +153,23 @@ Decision Cutoff (20:00)
        |---> tau = 60m: Available at 20:40 >  20:00 (Queued to Tomorrow)
 ```
 
-#### Fragility and Overfitting Criteria
-1. **Critical Boundary Shifts**: Announcements filed between 19:30 and 20:00 shift from same-day execution to next-day execution as $\tau$ increases from $5\text{ min}$ to $30\text{ min}$.
-2. **Fragility Index ($FI$)**:
-   $$FI = \frac{\text{Sharpe}(\tau = 5) - \text{Sharpe}(\tau = 15)}{\text{Sharpe}(\tau = 5)}$$
-   - If $FI > 0.35$ (more than $35\%$ performance drop under a $10$-minute latency increase), the policy is classified as **Lookahead-Fragile** and rejected from academic claims of robustness.
-   - If performance exhibits monotonic, graceful degradation ($FI \le 0.15$), the policy demonstrates structural information absorption.
+#### Empirical Identifiability Preflight: `LATENCY_EFFECT_NOT_IDENTIFIABLE`
+- **Preflight Audit Finding**: In `RAW_PILOT_EVENTS`, the latest recorded publication time across all 50 disclosures is **18:45:00**.
+- Adding maximum latency ($\tau = 60\text{ min}$) yields an availability time of $18:45 + 60\text{ min} = 19:45:00$, which is **prior to the 20:00:00 decision cutoff**.
+- **Changed State Count**: `changed_event_count = 0`, `changed_stock_day_count = 0`, `changed_decision_state_count = 0`.
+- **Verdict**: In the current candidate fixture set, empirical latency effect is **`LATENCY_EFFECT_NOT_IDENTIFIABLE`**. Any performance differences across DRL runs with varied $\tau$ would be **100% spurious artifacts of training seed noise**.
+- **Quarantined Boundary Fixtures**: Synthetic boundary test fixtures (19:15, 19:40, 19:55, 20:05) are maintained strictly in unit test isolation (`is_quarantined_test_fixture=True`) to verify the time-gate mechanism, and are strictly prohibited from empirical Alpha/Sharpe claims.
+
+#### Reformed Fragility Metrics (P1-3)
+1. **Primary Metric — Absolute Delta Sharpe**:
+   $$\Delta \text{Sharpe}(\tau_1, \tau_2) = \text{Sharpe}(\tau_1) - \text{Sharpe}(\tau_2)$$
+   - Well-behaved across positive, zero, and negative Sharpe regimes.
+   - Paired difference uncertainty quantified via Newey-West standard errors or stationary bootstrap.
+2. **Auxiliary Metric — Bounded Fragility Index**:
+   $$FI = \frac{\text{Sharpe}_5 - \text{Sharpe}_{15}}{\text{Sharpe}_5} \quad (\text{Evaluated ONLY when } \text{Sharpe}_5 \ge 0.20)$$
+   - If $\text{Sharpe}_5 < 0.20$, $FI$ is set to `None` and flagged as `FI_UNRELIABLE_NEAR_ZERO_OR_NEGATIVE`.
+   - Thresholds ($FI > 0.35$ and $FI \le 0.15$) are classified as uncalibrated exploratory heuristics, never claimed as proof of lookahead bias.
+   - When decision eligibility sets are identical, attributing random seed variance to latency fragility is strictly prohibited.
 
 ---
 
@@ -182,41 +192,98 @@ Session T+1:  [Correction: Dividend revised to $2.50] ------> Ingested at T+1
 
 ---
 
-### 3.5 Chronological Evaluation & Cluster Purging
+### 3.5 Chronological Evaluation & Walk-Forward Feasibility (P1-5)
 
-Standard $K$-Fold cross-validation is strictly prohibited in financial time-series due to serial correlation and textual overlap. Track A enforces **Purged and Embargoed Walk-Forward Cross-Validation**:
+Standard $K$-Fold cross-validation is strictly prohibited in financial time-series due to serial correlation and textual overlap. Track A specifies **Purged and Embargoed Walk-Forward Cross-Validation**:
 
 ```
-[--- Train Fold 1 ---][Purge Window][--- Val Fold 1 ---][Embargo][--- Test Fold 1 ---]
-                          10 Days                          5 Days
+[--- Train (115 Days) ---][Purge (10d)][--- Val (25 Days) ---][Embargo (5d)][--- Test (47 Days) ---]
+ 2023-06-01 to 2023-11-16               2023-12-01 to 2024-01-05              2024-01-15 to 2024-03-29
 ```
 
-1. **Purge Window**: A $10$-day buffer between training and validation folds eliminates autoregressive feature overlap.
-2. **Embargo Window**: A $5$-day buffer post-validation prevents performance metric leakage into out-of-sample test splits.
-3. **Strict Chronological Ordering**: Time flows forward only; future data is never used in feature normalization, PCA/projection fitting, or vocabulary statistics.
+1. **Purge Window Justification**: A 10-day buffer isolates the Recent 32 memory slots, preventing cross-fold attention contamination.
+2. **Embargo Window Justification**: A 5-day post-validation buffer prevents serial correlation leakage into the out-of-sample test split.
+3. **Walk-Forward Preflight Finding**: In the full 202-day period:
+   - **Train Fold**: 26 events (25 clusters) across 24 event days.
+   - **Purge Window**: 2 events (2 clusters).
+   - **Validation Fold**: **4 events (3 clusters) across 3 event days**.
+   - **Embargo Window**: 2 events (1 cluster).
+   - **Test Fold**: 16 events (14 clusters) across 13 event days.
+4. **Feasibility Verdict**: **`INSUFFICIENT_EFFECTIVE_SAMPLE`**. The validation fold contains only 4 candidate disclosures across 25 trading days. Such extreme sparsity cannot support stable DRL hyperparameter tuning or early stopping.
 
 ---
 
-### 3.6 Bootstrap Uncertainty & Statistical Power Limits
+### 3.6 Decoupling Permutation Test from Bootstrap (P1-4) & Statistical Limits
 
-With $N=50$ curated pilot disclosures across 56 trading sessions (168 Stock-Days for 2330, 2603, 2881), the sample size is constrained. Statistical reporting must adhere to the following feasibility matrix:
+To maintain statistical rigor, hypothesis testing is decoupled from uncertainty quantification:
+
+#### 1. Permutation Test for Semantic Contribution (P1-4)
+- **Null Hypothesis ($H_0$)**: Text embeddings provide zero incremental predictive value over timing and event frequency.
+- **Protocol**: Shuffle semantic embeddings among eligible disclosures within each fold, holding date, stock ID, announcement frequency, and availability timestamps fixed.
+- **Quarantine**: Permutations occur strictly within the active fold; cross-fold shuffling is prohibited.
+- **Multiple Testing**: Apply Benjamini-Hochberg False Discovery Rate (FDR) control across ablation arms.
+
+#### 2. Stationary Block Bootstrap for Parameter Uncertainty
+- Resample contiguous time blocks (Politis & White) and atomic event clusters to preserve serial correlation and revision lineage.
+- Estimate 95% confidence intervals for Sharpe ratio, cumulative returns, and maximum drawdown.
+
+#### 3. Corrected Sample Population & Feasibility Matrix (P0-1, P1-6)
+- **Sample Population Distinction**:
+  - **Full Period (2023-06-01 to 2024-03-29)**: 202 trading days, 606 Stock-Days, 50 events, 45 clusters.
+  - **2024 Q1 Sub-Period (2024-01-02 to 2024-03-29)**: 56 trading days, 168 Stock-Days, 19 events, 16 clusters.
+  - **Non-Trading Event**: `EV-2330-09` (2024-02-24, Saturday) rolls to 2024-02-26 (Monday).
 
 | Performance / Statistical Metric | Feasibility Status | Methodological Limitation & Handling |
 | :--- | :--- | :--- |
-| **Cumulative Return & Annualized Return** | `ESTIMABLE` | Point estimates computed; subject to high variance on 56 sessions. |
-| **Annualized Sharpe Ratio** | `ESTIMABLE` | Requires Newey-West standard error correction for serial correlation. |
-| **Maximum Drawdown (MDD)** | `ESTIMABLE` | Observed trajectory MDD reportable with confidence intervals. |
-| **Latency Sensitivity Decay Curve** | `ESTIMABLE` | Relative Sharpe ratio decay across $\tau \in \{0, 5, 15, 30, 60\}$. |
-| **Permutation Test ($p$-value)** | `ESTIMABLE` | 1,000 bootstrap shuffles of announcement-return pairs. |
+| **Feature Tensor Verification (160D)** | `ESTIMABLE` | Fully verified (BGE 128D + Metadata 24D + Relation 8D). |
+| **PIT Cutoff & Rollover Mechanics** | `ESTIMABLE` | Verified via synthetic boundary test fixtures. |
+| **Revision Lineage & Cluster Integrity** | `ESTIMABLE` | Parent-child disclosure relationships tracked via `cluster_id`. |
+| **Cumulative Return & Annualized Return** | `ESTIMABLE` | Point estimates reportable; high variance due to small sample. |
+| **Annualized Sharpe Ratio** | `ESTIMABLE` | Requires Newey-West standard error correction. |
+| **Maximum Drawdown (MDD)** | `ESTIMABLE` | Trajectory MDD reportable with bootstrap confidence intervals. |
+| **Permutation Test ($p$-value)** | `ESTIMABLE` | 1,000 within-fold semantic permutations. |
+| **Empirical Latency Sensitivity ($\tau$-Sweep)** | `NOT_ESTIMABLE` | Max filing time is 18:45:00; all $\tau \le 60\text{m}$ produce identical states. |
+| **Validation Fold Hyperparameter Tuning** | `NOT_ESTIMABLE` | Validation fold contains only 4 events; cannot guide DRL convergence. |
+| **DRL Alpha Generalizability ($p < 0.05$)** | `NOT_ESTIMABLE` | 50 unverified events provide insufficient power for statistical proof. |
 | **High-Frequency Alpha Decay ($< 1\text{ min}$)** | `NOT_ESTIMABLE` | Daily bars cannot resolve sub-minute execution alpha. |
-| **Cross-Industry Factor Generalizability** | `NOT_ESTIMABLE` | Only 3 tickers (Semiconductor, Shipping, Financial); insufficient for cross-sectional factor models. |
-| **Tail-Risk Event VaR / CVaR ($99\%$)** | `NOT_ESTIMABLE` | 56 trading days provide insufficient sample density for extreme tail estimation. |
+| **Cross-Industry Factor Generalizability** | `NOT_ESTIMABLE` | Only 3 tickers (Semiconductor, Shipping, Financial); insufficient for cross-sectional models. |
+| **Tail-Risk Event VaR / CVaR ($99\%$)** | `NOT_ESTIMABLE` | 202 trading days provide insufficient density for extreme tail estimation. |
 | **Market Impact & Execution Slippage** | `NOT_ESTIMABLE` | Order book depth is not modeled in offline prototype. |
 
 > [!WARNING]
-> Because candidate fixtures represent unverified pilot samples, any positive alpha or Sharpe improvement observed in Track A must be explicitly reported as **"Preliminary hypothesis-generating prototype evidence under Estimated Replay"**, and **never** claimed as proven production alpha.
+> Because candidate fixtures represent unverified pilot samples and empirical latency effects are unidentifiable on this dataset, any positive alpha or Sharpe improvement in Track A must be explicitly reported as **"Preliminary hypothesis-generating prototype evidence under Estimated Replay"**, and **never** claimed as proven production alpha.
 
 ---
+
+### 3.7 Explicit Claim Boundaries (P1-6)
+
+To maintain academic and research integrity, the project establishes three unambiguous claim categories:
+
+```mermaid
+flowchart TD
+    subgraph Cat_A["Category A: Immediately Verifiable in Engineering"]
+        A1["160D Feature Pipeline (BGE 128D + 24D + 8D)"]
+        A2["PIT Gate Cutoff & Rollover Rules"]
+        A3["Latency Eligibility Set Equality (Changed States = 0)"]
+        A4["Revision Lineage Tracking (cluster_id)"]
+        A5["Market-Only vs News-Aware Interface Switching"]
+        A6["Within-Fold Semantic Permutation Quarantine"]
+    end
+
+    subgraph Cat_B["Category B: Deferred to Post-Data Acquisition"]
+        B1["Formal DRL Performance Comparison & Alpha Claims"]
+        B2["Sharpe Difference Hypothesis Testing (Delta Sharpe)"]
+        B3["Statistical Proof of Semantic Representation Gain"]
+        B4["Formal Historical PIT Benchmark Certification"]
+    end
+
+    subgraph Cat_C["Category C: Not Applicable to Daily-Bar Pilot"]
+        C1["Sub-Minute Alpha Decay Dynamics (< 1m)"]
+        C2["99% Tail Risk / Extreme Event VaR Estimation"]
+        C3["Cross-Industry Factor Generalizability"]
+        C4["Real Execution Slippage & Order Book Impact"]
+    end
+```
 
 ## 4. Track B: External Data Acquisition Dependency Specification
 
@@ -257,11 +324,12 @@ To prevent premature claims or non-compliant actions during subsequent research 
 - **Verified Provider Availability Receipts Count**: **0**
 - **Formal Point-in-Time Status**: **NO-GO**
 - **2024 Q1 Historical Dataset Status**: **NO-GO**
-- **Track A Status**: **DESIGN_FROZEN_READY_FOR_OFFLINE_EXPLORATION**
+- **Track A Status**: **DESIGN_FROZEN_PREFLIGHT_AUDITED_RL_TRAINING_NO_GO**
 - **Track B Status**: **PENDING_EXTERNAL_PROVIDER_CONFIRMATION**
 - **Primary Deliverables**:
   - [v8_16_historical_source_access_decision.md](file:///home/augustine/Desktop/News-Aware%20Attention-Based%20Deep%20Reinforcement%20Learning%20for%20Stock%20Trading/docs/reports/v8_16_historical_source_access_decision.md) (Updated with Section 1.3 Claim Boundary)
-  - [v8_17_exploratory_replay_research_design.md](file:///home/augustine/Desktop/News-Aware%20Attention-Based%20Deep%20Reinforcement%20Learning%20for%20Stock%20Trading/docs/reports/v8_17_exploratory_replay_research_design.md) (Complete Research Design & Feasibility Matrix)
+  - [v8_17_exploratory_replay_research_design.md](file:///home/augustine/Desktop/News-Aware%20Attention-Based%20Deep%20Reinforcement%20Learning%20for%20Stock%20Trading/docs/reports/v8_17_exploratory_replay_research_design.md) (Complete Research Design & Methodological Specification)
+  - [v8_17_design_validity_preflight.md](file:///home/augustine/Desktop/News-Aware%20Attention-Based%20Deep%20Reinforcement%20Learning%20for%20Stock%20Trading/docs/reports/v8_17_design_validity_preflight.md) (Design Validity Preflight & Empirical Latency Audit Report)
 
 ---
-*Report certified under V8.17 Research Governance Baseline. Engineering Baseline Frozen. Formal PIT = NO-GO.*
+*Report certified under V8.17 Research Governance Baseline. Engineering Baseline Frozen. Large-Scale RL Training = NO-GO.*
