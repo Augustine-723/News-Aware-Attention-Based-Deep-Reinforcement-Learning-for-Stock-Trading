@@ -52,10 +52,14 @@ def read_snapshot(path, source_url, observed, *, fixture=False, licensed=False, 
         stock = str(fields["公司代號"]).strip()
         if stock not in {"2330", "2603", "2881"}:
             continue
-        if not re.fullmatch(r"(?:[0-9]{6}|[0-9]{2}:[0-9]{2}:[0-9]{2})", str(fields["發言時間"])):
+        filing_time = str(fields["發言時間"]).strip()
+        if kind == "CSV" and not licensed and re.fullmatch(r"[0-9]{5}", filing_time):
+            # Dataset 18415 CSV exports omit the leading zero for single-digit hours.
+            filing_time = filing_time.zfill(6)
+        if not re.fullmatch(r"(?:[0-9]{6}|[0-9]{2}:[0-9]{2}:[0-9]{2})", filing_time):
             raise ValueError(f"record {index}: exact filing time required")
         filing, ok = _parse_raw_record_publication_datetime(
-            {key: fields[key] for key in ("發言日期", "發言時間")}
+            {"發言日期": fields["發言日期"], "發言時間": filing_time}
         )
         if not ok:
             raise ValueError(f"record {index}: invalid filing datetime")
@@ -77,7 +81,7 @@ def read_snapshot(path, source_url, observed, *, fixture=False, licensed=False, 
             license_metadata=LicenseMetadata(license_name="Pending export-specific license review"),
             source_channel=(OfficialSourceChannel.COMMERCIAL_VENDOR_FEEDS if licensed
                             else OfficialSourceChannel.TAIWAN_GOV_OPEN_DATA),
-            source_locator=f"{kind}_RECORD[{index}]", parser_version="v8.19-twse-export-1",
+            source_locator=f"{kind}_RECORD[{index}]", parser_version="v8.19-twse-export-2",
             raw_response_snapshot_file=str(path),
         ))
     return entries

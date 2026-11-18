@@ -50,3 +50,12 @@ def test_imported_entry_reaches_formal_gate():
     )
     assert not result["slot_ingested"]
     assert not result["is_formal_pit_validated"]
+
+
+def test_dataset_18415_csv_accepts_unpadded_hour(tmp_path):
+    path = tmp_path / "sample.csv"
+    path.write_bytes(FIXTURE.read_bytes().replace(b"201501", b"70004"))
+    entry, = read_snapshot(path, URL, OBSERVED, fixture=True)
+    assert entry.filing_datetime.isoformat() == "2024-01-02T07:00:04+08:00"
+    with pytest.raises(ValueError, match="exact filing time"):
+        read_snapshot(path, URL, OBSERVED, fixture=True, licensed=True)
