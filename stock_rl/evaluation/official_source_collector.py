@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import hashlib
 import json
+import re
 from typing import Dict, Any, List, Optional, Tuple, Set, Union
 import urllib.request
 import numpy as np
@@ -41,6 +42,8 @@ from stock_rl.evaluation.pilot_dataset import (
     TrustedExternalSourceAdapter,
     RetrievalSessionRegistry,
     RetrievalSessionRecord,
+    ProviderAvailabilityEvidence,
+    ProviderVerificationStatus,
 )
 from stock_rl.evaluation.provenance import (
     load_trusted_pretrained_embedding_engine,
@@ -242,6 +245,9 @@ class EvidenceManifestEntry:
     raw_retention_status: str = "FULL_RAW_BYTES_RETAINED"
     verified_provider_available_at: Optional[pd.Timestamp] = None
     raw_response_snapshot_file: Optional[str] = "twse_openapi_raw_response_snapshot.json"
+    raw_array_index: Optional[int] = None
+    matched_stock_index: Optional[int] = None
+    provider_evidence: Optional[ProviderAvailabilityEvidence] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -267,6 +273,9 @@ class EvidenceManifestEntry:
             "source_locator": self.source_locator,
             "raw_retention_status": self.raw_retention_status,
             "raw_response_snapshot_file": self.raw_response_snapshot_file,
+            "raw_array_index": self.raw_array_index,
+            "matched_stock_index": self.matched_stock_index,
+            "provider_evidence": self.provider_evidence.to_dict() if self.provider_evidence else None,
         }
 
 
@@ -434,6 +443,60 @@ class EvidenceManifest:
                 return False, "Announcement marked as is_local_record_id=True but local_record_id format is invalid."
             if entry.announcement_id != entry.local_record_id:
                 return False, f"announcement_id '{entry.announcement_id}' must match local_record_id '{entry.local_record_id}'."
+
+        # 9. Source Locator Integrity Check (V8.15 Item 2)
+        # Verifies that raw_array_index and matched_stock_index point to the exact target record in the raw array
+        if entry.source_channel == OfficialSourceChannel.TWSE_OPENAPI:
+            target_raw_idx = entry.raw_array_index
+            target_matched_idx = entry.matched_stock_index
+            if entry.source_locator:
+                m_raw = re.search(r"raw_array_index=(\d+)", entry.source_locator)
+                if m_raw:
+                    parsed_r = int(m_raw.group(1))
+                    if target_raw_idx is not None and target_raw_idx != parsed_r:
+                        return False, f"Source locator mismatch: entry.raw_array_index ({target_raw_idx}) != locator raw_array_index ({parsed_r})."
+                    target_raw_idx = parsed_r
+                m_matched = re.search(r"matched_stock_index=(\d+)", entry.source_locator)
+                if m_matched:
+                    parsed_m = int(m_matched.group(1))
+                    if target_matched_idx is not None and target_matched_idx != parsed_m:
+                        return False, f"Source locator mismatch: entry.matched_stock_index ({target_matched_idx}) != locator matched_stock_index ({parsed_m})."
+                    target_matched_idx = parsed_m
+
+            if target_raw_idx is not None:
+                if target_raw_idx >= len(parsed_json):
+                    return False, f"Source locator raw_array_index {target_raw_idx} out of range (total records: {len(parsed_json)})."
+                loc_record = parsed_json[target_raw_idx]
+                loc_stock = str(loc_record.get("公司代號", "") or loc_record.get("stock_id", "") or loc_record.get("Code", "")).strip()
+                loc_sub = str(loc_record.get("主旨 ", "") or loc_record.get("主旨", "") or loc_record.get("headline", "") or loc_record.get("Subject", "")).strip()
+                loc_content = str(loc_record.get("說明", "") or loc_record.get("詳細內容", "") or loc_record.get("body_text", "") or loc_record.get("content", "") or loc_sub).strip()
+                loc_dt, loc_dt_parsed = _parse_raw_record_publication_datetime(loc_record)
+
+                if loc_stock != entry.stock_id:
+                    return False, f"Source locator stock_id mismatch at raw_array_index={target_raw_idx}: expected '{entry.stock_id}', found '{loc_stock}'."
+                if loc_sub != entry.headline.strip():
+                    return False, f"Source locator headline mismatch at raw_array_index={target_raw_idx}: expected '{entry.headline.strip()[:30]}', found '{loc_sub[:30]}'."
+                if loc_content != entry.raw_content.strip():
+                    return False, f"Source locator raw_content mismatch at raw_array_index={target_raw_idx}."
+                if entry.filing_datetime is not None and loc_dt != entry.filing_datetime:
+                    return False, f"Source locator publication datetime mismatch at raw_array_index={target_raw_idx}: expected {entry.filing_datetime}, found {loc_dt}."
+                if target_matched_idx is not None:
+                    actual_matched_idx = sum(
+                        1 for i in range(target_raw_idx)
+                        if str(parsed_json[i].get("公司代號", "") or parsed_json[i].get("stock_id", "") or parsed_json[i].get("Code", "")).strip() == entry.stock_id
+                    )
+                    if actual_matched_idx != target_matched_idx:
+                        return False, f"Source locator matched_stock_index mismatch: expected {target_matched_idx}, computed {actual_matched_idx} at raw_array_index={target_raw_idx}."
+
+        # 10. Provider Availability Evidence Check (V8.15 Item 1)
+        if entry.provider_evidence is not None:
+            p_ev = entry.provider_evidence
+            if p_ev.announcement_id != entry.announcement_id:
+                return False, f"Provider evidence announcement_id mismatch: '{p_ev.announcement_id}' != '{entry.announcement_id}'."
+            if p_ev.content_payload_hash and p_ev.content_payload_hash != entry.parsed_payload_hash:
+                return False, f"Provider evidence content hash mismatch: '{p_ev.content_payload_hash}' != '{entry.parsed_payload_hash}'."
+            if p_ev.is_verified_feed and p_ev.verification_status != ProviderVerificationStatus.PROVIDER_FEED_VERIFIED:
+                return False, f"Provider evidence status '{p_ev.verification_status}' is invalid for verified feed."
 
         return True, "Entry integrity, raw response re-parsing, and cryptographic digests verified."
 
@@ -1469,11 +1532,13 @@ class GenuineHttpsRetrievalService:
             return err_record, None
 
         matched_items = []
+        matched_raw_indices = []
         if isinstance(parsed_data, list):
-            for it in parsed_data:
+            for idx, it in enumerate(parsed_data):
                 cid = str(it.get("公司代號", "")).strip()
                 if cid == target_stock_str:
                     matched_items.append(it)
+                    matched_raw_indices.append(idx)
 
         # Register formal production session with authentic service authorization (P0-1)
         session_rec = RetrievalSessionRegistry.register_production_session(
@@ -1512,6 +1577,7 @@ class GenuineHttpsRetrievalService:
         manifest_entry = None
         if matched_items:
             first = matched_items[0]
+            first_raw_idx = matched_raw_indices[0]
             sub = str(first.get("主旨 ", "") or first.get("主旨", "") or "重大訊息公告").strip()
             content = str(first.get("說明", "") or first.get("詳細內容", "") or sub).strip()
             date_tag = str(first.get("發言日期", "") or first.get("出表日期", "") or "NODATE").strip()
@@ -1551,8 +1617,11 @@ class GenuineHttpsRetrievalService:
                 is_local_record_id=True,
                 publication_time_parsed=publication_time_parsed,
                 parser_version="v8.14-openapi-json-v1",
-                source_locator=f"JSON_ARRAY_RECORD[stock_id={target_stock_str},index=0]",
+                source_locator=f"JSON_ARRAY_RECORD[stock_id={target_stock_str},raw_array_index={first_raw_idx},matched_stock_index=0]",
                 raw_retention_status="FULL_RAW_BYTES_RETAINED",
+                raw_array_index=first_raw_idx,
+                matched_stock_index=0,
+                provider_evidence=None,
             )
 
         return query_record, manifest_entry
@@ -1718,32 +1787,58 @@ def execute_minimal_pipeline_integration(
             is_available_as_of = False
             rejection_reason = f"PIT As-Of Check rejected: Date {d_str} is not an official trading day."
 
-        # 2. Verifiable historical provider log is mandatory (no substitution of +5 min hypothesis)
-        if is_available_as_of:
-            if verified_provider_available_at is None:
-                is_available_as_of = False
-                rejection_reason = (
-                    "EVIDENCE_VERIFIED_ASOF rejected: Announcement lacks verified historical provider availability log "
-                    "(verified_provider_available_at is None). Replay estimates cannot substitute."
-                )
-                effective_available_at = None
-                effective_availability_source = "UNAVAILABLE_NO_VERIFIED_LOG"
-                pit_evidence_level = "EVIDENCE_MISSING_UNVERIFIED"
-            else:
-                effective_available_at = verified_provider_available_at
-                effective_availability_source = "VERIFIED_PROVIDER_FEED"
-                pit_evidence_level = "FORMAL_AS_OF_VERIFIED"
-        else:
-            effective_available_at = verified_provider_available_at
-            effective_availability_source = "VERIFIED_PROVIDER_FEED" if verified_provider_available_at else "UNAVAILABLE_NO_VERIFIED_LOG"
-            pit_evidence_level = "FORMAL_AS_OF_VERIFIED" if verified_provider_available_at else "EVIDENCE_MISSING_UNVERIFIED"
-
-        # 3. Post-20:00 cutoff and future announcement checks
+        # 2. Post-20:00 cutoff and future announcement checks on filing_datetime
         if is_available_as_of and filing_dt is not None:
             if filing_dt > decision_ts:
                 is_available_as_of = False
                 rejection_reason = f"PIT As-Of Check rejected: Announcement filing time ({filing_dt}) is after decision cutoff ({decision_ts})."
 
+        # 3. Verifiable historical provider log is mandatory (no substitution of +5 min hypothesis)
+        # V8.15 Item 1: Caller cannot self-attest bare verified_provider_available_at without verified ProviderAvailabilityEvidence
+        provider_ev = getattr(entry, "provider_evidence", None)
+        if is_available_as_of:
+            if provider_ev is None:
+                is_available_as_of = False
+                rejection_reason = (
+                    "EVIDENCE_VERIFIED_ASOF rejected: Announcement lacks verified historical provider availability log "
+                    "/ ProviderAvailabilityEvidence object. Self-attested bare timestamp without provider receipt is strictly prohibited (V8.15 Item 1)."
+                )
+                effective_available_at = None
+                effective_availability_source = "UNAVAILABLE_NO_VERIFIED_PROVIDER_EVIDENCE"
+                pit_evidence_level = "EVIDENCE_MISSING_UNVERIFIED"
+            elif provider_ev.is_simulated:
+                is_available_as_of = False
+                rejection_reason = "EVIDENCE_VERIFIED_ASOF rejected: Simulated feed fixture cannot be used for formal PIT validation."
+                effective_available_at = None
+                effective_availability_source = "SIMULATED_FEED_FIXTURE"
+                pit_evidence_level = "SIMULATED_PROVIDER_FIXTURE"
+            else:
+                is_p_valid, p_err = provider_ev.verify_against_entry(
+                    announcement_id=entry.announcement_id,
+                    content_payload_hash=entry.parsed_payload_hash,
+                )
+                if not is_p_valid:
+                    is_available_as_of = False
+                    rejection_reason = f"EVIDENCE_VERIFIED_ASOF rejected: ProviderAvailabilityEvidence verification failed: {p_err}"
+                    effective_available_at = None
+                    effective_availability_source = "REJECTED_PROVIDER_EVIDENCE"
+                    pit_evidence_level = "PROVIDER_EVIDENCE_REJECTED"
+                elif not provider_ev.is_verified_feed or provider_ev.verification_status != ProviderVerificationStatus.PROVIDER_FEED_VERIFIED:
+                    is_available_as_of = False
+                    rejection_reason = f"EVIDENCE_VERIFIED_ASOF rejected: Provider status is not PROVIDER_FEED_VERIFIED (got {provider_ev.verification_status})."
+                    effective_available_at = None
+                    effective_availability_source = "UNVERIFIED_PROVIDER_FEED"
+                    pit_evidence_level = "PROVIDER_UNVERIFIED"
+                else:
+                    effective_available_at = provider_ev.observed_available_at
+                    effective_availability_source = f"VERIFIED_PROVIDER_FEED[{provider_ev.provider_id}]"
+                    pit_evidence_level = "FORMAL_AS_OF_VERIFIED"
+        else:
+            effective_available_at = None
+            effective_availability_source = "UNAVAILABLE_NO_VERIFIED_PROVIDER_EVIDENCE"
+            pit_evidence_level = "EVIDENCE_MISSING_UNVERIFIED"
+
+        # 4. Provider observed availability cutoff check
         if is_available_as_of and effective_available_at is not None:
             if effective_available_at > decision_ts:
                 is_available_as_of = False
@@ -1759,7 +1854,12 @@ def execute_minimal_pipeline_integration(
         # ----------------------------------------------------------------------
         is_formal_pit_validated = False  # Strictly False under estimated replay!
 
-        if verified_provider_available_at is not None:
+        provider_ev = getattr(entry, "provider_evidence", None)
+        if provider_ev is not None and provider_ev.observed_available_at is not None:
+            effective_available_at = provider_ev.observed_available_at
+            effective_availability_source = f"VERIFIED_PROVIDER_FEED[{provider_ev.provider_id}]" if (provider_ev.is_verified_feed and not provider_ev.is_simulated) else "FEED_EVIDENCE"
+            pit_evidence_level = "VERIFIED_PROVIDER_FEED" if (provider_ev.is_verified_feed and not provider_ev.is_simulated) else "UNVERIFIED_PROVIDER_FEED"
+        elif verified_provider_available_at is not None:
             effective_available_at = verified_provider_available_at
             effective_availability_source = "VERIFIED_PROVIDER_FEED"
             pit_evidence_level = "VERIFIED_PROVIDER_FEED"

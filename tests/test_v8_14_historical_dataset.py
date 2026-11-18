@@ -40,6 +40,8 @@ from stock_rl.evaluation.pilot_dataset import (
     RetrievalSessionRecord,
     TrustedSourceCertifier,
     MOPSSourceEvidence,
+    ProviderVerificationStatus,
+    ProviderAvailabilityEvidence,
 )
 from stock_rl.evaluation.official_source_collector import (
     OfficialSourceChannel,
@@ -735,7 +737,9 @@ def test_evidence_manifest_entry_verification():
         is_local_record_id=True,
         publication_time_parsed=True,
         parser_version="v8.14-openapi-json-v1",
-        source_locator="JSON_ARRAY_RECORD[stock_id=2881,index=0]",
+        source_locator="JSON_ARRAY_RECORD[stock_id=2881,raw_array_index=0,matched_stock_index=0]",
+        raw_array_index=0,
+        matched_stock_index=0,
         raw_retention_status="FULL_RAW_BYTES_RETAINED",
     )
 
@@ -1554,5 +1558,501 @@ def test_p1_4_publication_time_reparsing_and_exact_field_matching():
     is_valid_empty, msg_empty = manifest.verify_entry_integrity(empty_stock_entry)
     assert is_valid_empty is False
     assert "Required field 'stock_id' is missing or empty" in msg_empty
+
+
+# ==============================================================================
+# 11. V8.15 Historical Evidence Acquisition Readiness Tests
+# ==============================================================================
+
+def test_v8_15_formal_pit_requires_provider_availability_evidence():
+    """
+    V8.15 Item 1:
+    Formal PIT Receipt Binding Preflight.
+    1. Caller passing self-attested verified_provider_available_at WITHOUT provider_evidence
+       is strictly rejected in EVIDENCE_VERIFIED_ASOF (is_formal_pit_validated=False, slot_ingested=False).
+    2. Simulated provider evidence (is_simulated=True) is strictly rejected.
+    3. Provider evidence with announcement_id mismatch or payload_hash mismatch fails integrity/verification.
+    4. Provider evidence with observed_available_at after cutoff (20:15 > 20:00) is rejected.
+    5. Authentic verified provider feed (is_verified_feed=True, is_simulated=False, before cutoff)
+       is accepted (is_formal_pit_validated=True, slot_ingested=True).
+    6. Formal verified count in PilotSourceManifest and candidate inventory remains strictly 0.
+    """
+    trading_calendar = ["2024-03-15", "2024-03-18"]
+    headline = "富邦金董事會決議股利分派"
+    content = "富邦金控公告董事會決議發放現金股利。"
+    raw_bytes = content.encode("utf-8")
+    raw_hash = hashlib.sha256(raw_bytes).hexdigest()
+    parsed_hash = compute_normalized_content_hash(headline, content)
+    ann_id = "OPENAPI-2881-20240315-DIVIDEND"
+
+    session = RetrievalSessionRegistry.register_simulated_session(
+        source_channel="TWSE_OPENAPI",
+        endpoint_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        request_start_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=raw_bytes,
+    )
+
+    # 1. Counterexample: Self-attested bare timestamp without ProviderAvailabilityEvidence object
+    entry_bare_timestamp = EvidenceManifestEntry(
+        announcement_id=ann_id,
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-15 16:01:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        verified_provider_available_at=pd.Timestamp("2024-03-15 16:05:00", tz="Asia/Taipei"),  # Bare timestamp!
+        provider_evidence=None,  # No evidence object!
+    )
+    res_bare = execute_minimal_pipeline_integration(
+        entry_bare_timestamp,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.EVIDENCE_VERIFIED_ASOF,
+        trading_calendar=trading_calendar,
+    )
+    assert res_bare["is_formal_pit_validated"] is False
+    assert res_bare["slot_ingested"] is False
+    assert res_bare["is_available_as_of"] is False
+    assert "ProviderAvailabilityEvidence" in res_bare["rejection_reason"] or "lacks verified" in res_bare["rejection_reason"]
+
+    # 2. Counterexample: Simulated feed fixture
+    sim_evidence = ProviderAvailabilityEvidence(
+        provider_id="SIMULATED_VENDOR_FIXTURE",
+        announcement_id=ann_id,
+        article_id=f"ART-{ann_id}",
+        observed_available_at=pd.Timestamp("2024-03-15 16:05:00", tz="Asia/Taipei"),
+        evidence_source="LOCAL_UNIT_TEST",
+        receipt_hash="simulated_receipt_hash_12345",
+        verification_status=ProviderVerificationStatus.SIMULATED_FEED_FIXTURE,
+        is_verified_feed=False,
+        is_simulated=True,  # Simulated!
+        feed_channel="SIMULATED_FEED",
+        content_payload_hash=parsed_hash,
+        audit_notes="Synthetic fixture for test only.",
+    )
+    entry_sim = EvidenceManifestEntry(
+        announcement_id=ann_id,
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-15 16:01:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        provider_evidence=sim_evidence,
+    )
+    res_sim = execute_minimal_pipeline_integration(
+        entry_sim,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.EVIDENCE_VERIFIED_ASOF,
+        trading_calendar=trading_calendar,
+    )
+    assert res_sim["is_formal_pit_validated"] is False
+    assert res_sim["slot_ingested"] is False
+    assert "Simulated feed fixture" in res_sim["rejection_reason"]
+
+    # 3. Counterexample: Announcement ID and Hash mismatch
+    mismatch_evidence = ProviderAvailabilityEvidence(
+        provider_id="TEJ_FEED_AUDIT",
+        announcement_id="WRONG_ANN_ID_9999",  # Mismatch!
+        article_id="ART-WRONG",
+        observed_available_at=pd.Timestamp("2024-03-15 16:05:00", tz="Asia/Taipei"),
+        evidence_source="VENDOR_STREAM_LOG",
+        receipt_hash="hash_mismatch_check",
+        verification_status=ProviderVerificationStatus.PROVIDER_FEED_VERIFIED,
+        is_verified_feed=True,
+        is_simulated=False,
+        feed_channel="TEJ_STREAMING_API",
+        content_payload_hash="wrong_payload_hash_value",  # Mismatch!
+        audit_notes="Test mismatch",
+    )
+    entry_mismatch = EvidenceManifestEntry(
+        announcement_id=ann_id,
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-15 16:01:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        provider_evidence=mismatch_evidence,
+    )
+    res_mismatch = execute_minimal_pipeline_integration(
+        entry_mismatch,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.EVIDENCE_VERIFIED_ASOF,
+        trading_calendar=trading_calendar,
+    )
+    assert res_mismatch["is_formal_pit_validated"] is False
+    assert res_mismatch["slot_ingested"] is False
+    assert "verification failed" in res_mismatch["rejection_reason"]
+
+    # 4. Counterexample: Availability after cutoff (20:15 > 20:00)
+    late_evidence = ProviderAvailabilityEvidence(
+        provider_id="TEJ_FEED_AUDIT",
+        announcement_id=ann_id,
+        article_id=f"ART-{ann_id}",
+        observed_available_at=pd.Timestamp("2024-03-15 20:15:00", tz="Asia/Taipei"),  # After 20:00 cutoff!
+        evidence_source="VENDOR_STREAM_LOG",
+        receipt_hash="late_receipt_hash_9999",
+        verification_status=ProviderVerificationStatus.PROVIDER_FEED_VERIFIED,
+        is_verified_feed=True,
+        is_simulated=False,
+        feed_channel="TEJ_STREAMING_API",
+        content_payload_hash=parsed_hash,
+        audit_notes="Late vendor ingestion log.",
+    )
+    entry_late = EvidenceManifestEntry(
+        announcement_id=ann_id,
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-15 16:01:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        provider_evidence=late_evidence,
+    )
+    res_late = execute_minimal_pipeline_integration(
+        entry_late,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.EVIDENCE_VERIFIED_ASOF,
+        trading_calendar=trading_calendar,
+    )
+    assert res_late["is_formal_pit_validated"] is False
+    assert res_late["slot_ingested"] is False
+    assert "after decision cutoff" in res_late["rejection_reason"]
+
+    # 5. Authentic Case: Verified provider feed before cutoff
+    valid_evidence = ProviderAvailabilityEvidence(
+        provider_id="TEJ_FEED_AUDIT",
+        announcement_id=ann_id,
+        article_id=f"ART-{ann_id}",
+        observed_available_at=pd.Timestamp("2024-03-15 16:05:00", tz="Asia/Taipei"),  # Before cutoff!
+        evidence_source="VENDOR_STREAM_LOG",
+        receipt_hash="valid_receipt_hash_5678",
+        verification_status=ProviderVerificationStatus.PROVIDER_FEED_VERIFIED,
+        is_verified_feed=True,
+        is_simulated=False,
+        feed_channel="TEJ_STREAMING_API",
+        content_payload_hash=parsed_hash,
+        audit_notes="Verified downstream provider ingestion receipt.",
+    )
+    entry_valid = EvidenceManifestEntry(
+        announcement_id=ann_id,
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-15 16:01:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        provider_evidence=valid_evidence,
+    )
+    res_valid = execute_minimal_pipeline_integration(
+        entry_valid,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.EVIDENCE_VERIFIED_ASOF,
+        trading_calendar=trading_calendar,
+    )
+    assert res_valid["is_formal_pit_validated"] is True
+    assert res_valid["slot_ingested"] is True
+    assert res_valid["is_available_as_of"] is True
+    assert res_valid["effective_availability_source"] == "VERIFIED_PROVIDER_FEED[TEJ_FEED_AUDIT]"
+    assert res_valid["pit_evidence_level"] == "FORMAL_AS_OF_VERIFIED"
+
+    # 6. Formal Verified Count remains strictly 0
+    metrics = OfficialHistoricalNewsCollector.evaluate_q1_2024_collection_metrics()
+    assert metrics["verified_source_count"] == 0
+    assert metrics["historical_availability_coverage"]["announcements_with_provider_receipts"] == 0
+
+
+def test_v8_15_source_locator_bidirectional_consistency():
+    """
+    V8.15 Item 2:
+    Source Locator Integrity and Bidirectional Consistency:
+    1. Validates real TWSE OpenAPI snapshot at index 32:
+       - raw_array_index=32, matched_stock_index=0
+       - Locator string: JSON_ARRAY_RECORD[stock_id=2881,raw_array_index=32,matched_stock_index=0]
+       - Passes manifest.verify_entry_integrity.
+    2. Counterexample: Locator with wrong raw_array_index (e.g. 33 -> 3032) fails integrity.
+    3. Counterexample: Locator with wrong stock_id fails integrity.
+    4. Counterexample: Locator with mismatched matched_stock_index fails integrity.
+    """
+    raw_path = "data/official_disclosures/twse_openapi_raw_response_snapshot.json"
+    raw_bytes = open(raw_path, "rb").read()
+    raw_hash = hashlib.sha256(raw_bytes).hexdigest()
+
+    parsed_json = json.loads(raw_bytes.decode("utf-8"))
+    rec_32 = parsed_json[32]
+    stock_id = str(rec_32.get("公司代號", "")).strip()
+    headline = str(rec_32.get("主旨 ", "") or rec_32.get("主旨", "")).strip()
+    content = str(rec_32.get("說明", "") or rec_32.get("詳細內容", "") or headline).strip()
+    filing_dt, _ = _parse_raw_record_publication_datetime(rec_32)
+    parsed_hash = compute_normalized_content_hash(headline, content)
+
+    session = RetrievalSessionRegistry.register_genuine_session(
+        source_channel="TWSE_OPENAPI",
+        endpoint_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        request_start_time=pd.Timestamp("2026-11-18 09:25:00", tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp("2026-11-18 09:25:20", tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=raw_bytes,
+        service_provenance="GENUINE_HTTPS_RETRIEVAL_SERVICE",
+    )
+
+    valid_entry = EvidenceManifestEntry(
+        announcement_id="LOCAL-OPENAPI-2881-1151117-83c25dbc",
+        stock_id=stock_id,
+        filing_datetime=filing_dt,
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2026-11-18 09:25:20", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        source_channel=OfficialSourceChannel.TWSE_OPENAPI,
+        local_record_id="LOCAL-OPENAPI-2881-1151117-83c25dbc",
+        is_local_record_id=True,
+        publication_time_parsed=True,
+        parser_version="v8.14-openapi-json-v1",
+        source_locator="JSON_ARRAY_RECORD[stock_id=2881,raw_array_index=32,matched_stock_index=0]",
+        raw_retention_status="FULL_RAW_BYTES_RETAINED",
+        raw_array_index=32,
+        matched_stock_index=0,
+    )
+    manifest = EvidenceManifest(manifest_id="M-V8.15-TEST")
+    is_valid, msg = manifest.verify_entry_integrity(valid_entry)
+    assert is_valid is True, msg
+
+    # Counterexample 1: Wrong raw_array_index (index 33 belongs to stock 3032)
+    bad_idx_entry = EvidenceManifestEntry(
+        announcement_id="LOCAL-OPENAPI-2881-1151117-83c25dbc",
+        stock_id="2881",
+        filing_datetime=filing_dt,
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2026-11-18 09:25:20", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        source_channel=OfficialSourceChannel.TWSE_OPENAPI,
+        local_record_id="LOCAL-OPENAPI-2881-1151117-83c25dbc",
+        is_local_record_id=True,
+        publication_time_parsed=True,
+        parser_version="v8.14-openapi-json-v1",
+        source_locator="JSON_ARRAY_RECORD[stock_id=2881,raw_array_index=33,matched_stock_index=0]",
+        raw_retention_status="FULL_RAW_BYTES_RETAINED",
+        raw_array_index=33,
+        matched_stock_index=0,
+    )
+    is_valid_idx, msg_idx = manifest.verify_entry_integrity(bad_idx_entry)
+    assert is_valid_idx is False
+    assert "stock_id mismatch" in msg_idx
+
+    # Counterexample 2: Mismatched matched_stock_index (record 32 is the 0th match for stock 2881)
+    bad_match_entry = EvidenceManifestEntry(
+        announcement_id="LOCAL-OPENAPI-2881-1151117-83c25dbc",
+        stock_id="2881",
+        filing_datetime=filing_dt,
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2026-11-18 09:25:20", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        source_channel=OfficialSourceChannel.TWSE_OPENAPI,
+        local_record_id="LOCAL-OPENAPI-2881-1151117-83c25dbc",
+        is_local_record_id=True,
+        publication_time_parsed=True,
+        parser_version="v8.14-openapi-json-v1",
+        source_locator="JSON_ARRAY_RECORD[stock_id=2881,raw_array_index=32,matched_stock_index=1]",
+        raw_retention_status="FULL_RAW_BYTES_RETAINED",
+        raw_array_index=32,
+        matched_stock_index=1,  # Should be 0!
+    )
+    is_valid_match, msg_match = manifest.verify_entry_integrity(bad_match_entry)
+    assert is_valid_match is False
+    assert "matched_stock_index mismatch" in msg_match
+
+
+def test_v8_15_multiple_announcements_and_identical_headlines():
+    """
+    V8.15 Item 2:
+    Disambiguation of multiple announcements of the same stock and identical headlines:
+    - In TWSE OpenAPI snapshot, 2881 has 4 records:
+      * raw index 32: matched_stock_index 0 (15:47:58)
+      * raw index 42: matched_stock_index 1 (16:26:58)
+      * raw index 44: matched_stock_index 2 (16:28:29)
+      * raw index 45: matched_stock_index 3 (16:29:35)
+    - Records 44 and 45 have the EXACT SAME headline ("富邦金控代子公司富邦投信公告取得...使用權資產").
+    - Verifies that raw_array_index, filing seconds, and raw_content completely disambiguate them.
+    - Demonstrates that cross-referencing record 44's entry with index 45 locator fails integrity check.
+    """
+    raw_path = "data/official_disclosures/twse_openapi_raw_response_snapshot.json"
+    raw_bytes = open(raw_path, "rb").read()
+    raw_hash = hashlib.sha256(raw_bytes).hexdigest()
+    parsed_json = json.loads(raw_bytes.decode("utf-8"))
+
+    rec_44 = parsed_json[44]
+    rec_45 = parsed_json[45]
+
+    # Verify identical headlines
+    hl_44 = str(rec_44.get("主旨 ", "") or rec_44.get("主旨", "")).strip()
+    hl_45 = str(rec_45.get("主旨 ", "") or rec_45.get("主旨", "")).strip()
+    assert hl_44 == hl_45
+
+    # Verify different publication times
+    dt_44, _ = _parse_raw_record_publication_datetime(rec_44)
+    dt_45, _ = _parse_raw_record_publication_datetime(rec_45)
+    assert dt_44 != dt_45
+    assert dt_44 == pd.Timestamp("2026-11-17 16:28:29", tz="Asia/Taipei")
+    assert dt_45 == pd.Timestamp("2026-11-17 16:29:35", tz="Asia/Taipei")
+
+    # Verify different contents
+    cnt_44 = str(rec_44.get("說明", "") or rec_44.get("詳細內容", "") or hl_44).strip()
+    cnt_45 = str(rec_45.get("說明", "") or rec_45.get("詳細內容", "") or hl_45).strip()
+    assert cnt_44 != cnt_45
+
+    hash_44 = compute_normalized_content_hash(hl_44, cnt_44)
+    hash_45 = compute_normalized_content_hash(hl_45, cnt_45)
+    assert hash_44 != hash_45
+
+    session = RetrievalSessionRegistry.register_genuine_session(
+        source_channel="TWSE_OPENAPI",
+        endpoint_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        request_start_time=pd.Timestamp("2026-11-18 09:25:00", tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp("2026-11-18 09:25:20", tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=raw_bytes,
+        service_provenance="GENUINE_HTTPS_RETRIEVAL_SERVICE",
+    )
+
+    manifest = EvidenceManifest(manifest_id="M-V8.15-MULTI")
+
+    # Entry 44 with correct locator
+    entry_44 = EvidenceManifestEntry(
+        announcement_id="LOCAL-OPENAPI-2881-1151117-REC44",
+        stock_id="2881",
+        filing_datetime=dt_44,
+        headline=hl_44,
+        raw_content=cnt_44,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2026-11-18 09:25:20", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=hash_44,
+        retrieval_session_id=session.session_id,
+        source_channel=OfficialSourceChannel.TWSE_OPENAPI,
+        local_record_id="LOCAL-OPENAPI-2881-1151117-REC44",
+        is_local_record_id=True,
+        publication_time_parsed=True,
+        parser_version="v8.14-openapi-json-v1",
+        source_locator="JSON_ARRAY_RECORD[stock_id=2881,raw_array_index=44,matched_stock_index=2]",
+        raw_retention_status="FULL_RAW_BYTES_RETAINED",
+        raw_array_index=44,
+        matched_stock_index=2,
+    )
+    valid_44, msg_44 = manifest.verify_entry_integrity(entry_44)
+    assert valid_44 is True, msg_44
+
+    # Entry 45 with correct locator
+    entry_45 = EvidenceManifestEntry(
+        announcement_id="LOCAL-OPENAPI-2881-1151117-REC45",
+        stock_id="2881",
+        filing_datetime=dt_45,
+        headline=hl_45,
+        raw_content=cnt_45,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2026-11-18 09:25:20", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=hash_45,
+        retrieval_session_id=session.session_id,
+        source_channel=OfficialSourceChannel.TWSE_OPENAPI,
+        local_record_id="LOCAL-OPENAPI-2881-1151117-REC45",
+        is_local_record_id=True,
+        publication_time_parsed=True,
+        parser_version="v8.14-openapi-json-v1",
+        source_locator="JSON_ARRAY_RECORD[stock_id=2881,raw_array_index=45,matched_stock_index=3]",
+        raw_retention_status="FULL_RAW_BYTES_RETAINED",
+        raw_array_index=45,
+        matched_stock_index=3,
+    )
+    valid_45, msg_45 = manifest.verify_entry_integrity(entry_45)
+    assert valid_45 is True, msg_45
+
+    # Cross-referencing mismatch: Entry 44 with locator for index 45 fails publication time / raw content check
+    entry_cross = EvidenceManifestEntry(
+        announcement_id="LOCAL-OPENAPI-2881-1151117-CROSS",
+        stock_id="2881",
+        filing_datetime=dt_44,  # Record 44 time (16:28:29)
+        headline=hl_44,         # Headline matches both!
+        raw_content=cnt_44,     # Record 44 content
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2026-11-18 09:25:20", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=hash_44,
+        retrieval_session_id=session.session_id,
+        source_channel=OfficialSourceChannel.TWSE_OPENAPI,
+        local_record_id="LOCAL-OPENAPI-2881-1151117-CROSS",
+        is_local_record_id=True,
+        publication_time_parsed=True,
+        parser_version="v8.14-openapi-json-v1",
+        source_locator="JSON_ARRAY_RECORD[stock_id=2881,raw_array_index=45,matched_stock_index=3]",  # Points to 45!
+        raw_retention_status="FULL_RAW_BYTES_RETAINED",
+        raw_array_index=45,
+        matched_stock_index=3,
+    )
+    valid_cross, msg_cross = manifest.verify_entry_integrity(entry_cross)
+    assert valid_cross is False
+    assert ("raw_content mismatch" in msg_cross or "publication datetime mismatch" in msg_cross)
+
 
 

@@ -550,6 +550,79 @@ class RetrievalSessionRegistry:
         cls._sessions.clear()
 
 
+class ProviderVerificationStatus(str, Enum):
+    """
+    V8.15: Verification status of downstream provider availability logs.
+    Strictly distinguishes genuine verified vendor receipts from unverified candidates and unit test fixtures.
+    """
+    UNVERIFIED_CANDIDATE = "UNVERIFIED_CANDIDATE"
+    PROVIDER_FEED_VERIFIED = "PROVIDER_FEED_VERIFIED"
+    SIMULATED_FEED_FIXTURE = "SIMULATED_FEED_FIXTURE"
+    REJECTED_PAYLOAD_MISMATCH = "REJECTED_PAYLOAD_MISMATCH"
+    REJECTED_ANNOUNCEMENT_MISMATCH = "REJECTED_ANNOUNCEMENT_MISMATCH"
+
+
+@dataclass
+class ProviderAvailabilityEvidence:
+    """
+    V8.15: Auditable downstream provider availability receipt.
+    Prohibits caller self-attestation of PIT timestamps by requiring verifiable
+    evidence logs from recognized financial news/market data providers (TEJ, Bloomberg, Refinitiv, etc.).
+    """
+    provider_id: str                              # e.g., "TEJ_MOPS_FEED_ARCHIVE", "BLOOMBERG_DISCLOSURE_DROPCOPY"
+    announcement_id: str                          # Must match target announcement ID
+    article_id: str                               # Downstream article/item ID
+    observed_available_at: pd.Timestamp           # Downstream arrival/ingestion timestamp Asia/Taipei
+    evidence_source: str                          # e.g., "HISTORICAL_DROP_COPY_LOG", "VENDOR_TICK_FEED_PCAP", "CERTIFIED_AUDIT_TRAIL"
+    receipt_hash: str                             # SHA-256 hash of provider receipt payload
+    verification_status: ProviderVerificationStatus = ProviderVerificationStatus.UNVERIFIED_CANDIDATE
+    is_verified_feed: bool = False                # True ONLY if backed by authentic external provider evidence
+    is_simulated: bool = False                    # True for test fixtures (CANNOT grant formal PIT)
+    feed_channel: str = "REST_API_DROPCOPY"
+    content_payload_hash: Optional[str] = None    # SHA-256 of announcement content to cross-verify binding
+    audit_notes: str = ""
+
+    def verify_against_entry(
+        self,
+        announcement_id: str,
+        content_hash: Optional[str] = None,
+        content_payload_hash: Optional[str] = None,
+        decision_cutoff: Optional[pd.Timestamp] = None,
+    ) -> Tuple[bool, str]:
+        """
+        Cross-verifies provider receipt against target announcement entry and decision cutoff.
+        """
+        c_hash = content_payload_hash or content_hash
+        status_val = self.verification_status.value if hasattr(self.verification_status, "value") else str(self.verification_status)
+        if self.verification_status != ProviderVerificationStatus.PROVIDER_FEED_VERIFIED:
+            return False, f"Provider receipt verification status '{status_val}' is not PROVIDER_FEED_VERIFIED."
+        if not self.is_verified_feed or self.is_simulated:
+            return False, "Provider receipt is marked simulated or lacks authentic feed verification."
+        if self.announcement_id != announcement_id:
+            return False, f"Provider receipt announcement ID '{self.announcement_id}' does not match entry announcement ID '{announcement_id}'."
+        if self.content_payload_hash and c_hash and self.content_payload_hash != c_hash:
+            return False, f"Provider receipt content payload hash '{self.content_payload_hash}' does not match entry content hash '{c_hash}'."
+        if decision_cutoff is not None and self.observed_available_at > decision_cutoff:
+            return False, f"Provider availability time '{self.observed_available_at}' is after decision cutoff '{decision_cutoff}'."
+        return True, "Provider availability receipt verified."
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "provider_id": self.provider_id,
+            "announcement_id": self.announcement_id,
+            "article_id": self.article_id,
+            "observed_available_at": self.observed_available_at.isoformat() if self.observed_available_at else None,
+            "evidence_source": self.evidence_source,
+            "receipt_hash": self.receipt_hash,
+            "verification_status": self.verification_status.value if hasattr(self.verification_status, "value") else str(self.verification_status),
+            "is_verified_feed": self.is_verified_feed,
+            "is_simulated": self.is_simulated,
+            "feed_channel": self.feed_channel,
+            "content_payload_hash": self.content_payload_hash,
+            "audit_notes": self.audit_notes,
+        }
+
+
 @dataclass
 class MOPSSourceEvidence:
     """
@@ -575,6 +648,7 @@ class MOPSSourceEvidence:
     is_formal_pit_eligible: bool = False          # Default False: requires complete As-Of timestamp contract!
     pit_status: DisclosurePITStatus = DisclosurePITStatus.UNVERIFIED_CANDIDATE
     provider_available_at: Optional[pd.Timestamp] = None
+    provider_evidence: Optional[ProviderAvailabilityEvidence] = None
     verification_method: str = "OFFICIAL_EXCHANGE_REGISTRY_AUDIT"
     audit_notes: str = ""
     enforce_production_boundary: bool = False
@@ -905,6 +979,7 @@ class EventSourceRecord:
     source_id: str
     source_published_at: pd.Timestamp
     provider_available_at: Optional[pd.Timestamp] = None
+    provider_evidence: Optional[ProviderAvailabilityEvidence] = None
     retrieved_at: Optional[pd.Timestamp] = None  # None if raw scrape log unrecorded; no hardcoded synthetic date
     timezone: str = "Asia/Taipei"
     url: Optional[str] = None
@@ -1269,19 +1344,31 @@ class TrustedSourceCertifier:
                     "Verification rejected: Session lacks genuine production certification from GenuineHttpsRetrievalService (self-attested provenance, test fixtures, or legacy fixture bypass prohibited in production boundary).",
                 )
 
-        # Formal PIT eligibility vs Provider Availability segregation (Section 4)
+        # Formal PIT eligibility vs Provider Availability segregation (Section 4, V8.15)
+        p_ev = getattr(evidence, "provider_evidence", None)
         if getattr(evidence, "is_formal_pit_eligible", False):
-            if not evidence.is_availability_verified or evidence.provider_available_at is None:
+            if (not evidence.is_availability_verified
+                    or evidence.provider_available_at is None
+                    or p_ev is None
+                    or not getattr(p_ev, "is_verified_feed", False)
+                    or getattr(p_ev, "is_simulated", False)):
                 return (
                     SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
                     None,
-                    "Verification rejected: Evidence claims is_formal_pit_eligible=True but lacks verified historical provider availability timestamp (ESTIMATED_PIT_ONLY cannot elevate to FORMAL_PIT_ELIGIBLE).",
+                    "Verification rejected: Evidence claims is_formal_pit_eligible=True but lacks authentic verified ProviderAvailabilityEvidence (bare timestamp or ESTIMATED_PIT_ONLY cannot elevate to FORMAL_PIT_ELIGIBLE).",
                 )
 
         # Verified! Build verified evidence audit record
+        has_formal_feed = (
+            evidence.is_availability_verified
+            and evidence.provider_available_at is not None
+            and p_ev is not None
+            and getattr(p_ev, "is_verified_feed", False)
+            and not getattr(p_ev, "is_simulated", False)
+        )
         pit_status_val = (
             DisclosurePITStatus.FORMAL_PIT_ELIGIBLE.value
-            if (evidence.is_availability_verified and evidence.provider_available_at is not None)
+            if has_formal_feed
             else DisclosurePITStatus.ESTIMATED_PIT_ONLY.value
         )
         audit_record = {
