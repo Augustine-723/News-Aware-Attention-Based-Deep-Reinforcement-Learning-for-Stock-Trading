@@ -1,13 +1,15 @@
 """Replay the two January 18 publisher evidence cases with M1 timing inputs."""
+import argparse
 import json
 from pathlib import Path
 
 import pandas as pd
+import torch
 
 from stock_rl.data.pit_engine import MissingStatus, ProvenanceRecord
 from stock_rl.data.real_data_poc import STOCK_METADATA, load_real_market_feeds
 from stock_rl.data.snapshot_builder import HistoricalSnapshotBuilder
-from stock_rl.evaluation.news_input_pilot import mask_event_inputs
+from stock_rl.evaluation.news_input_pilot import checkpoint_observer, mask_event_inputs
 
 EVIDENCE = Path(__file__).resolve().parents[2] / "docs/evidence/finmind_stock_day_sample.json"
 
@@ -32,7 +34,7 @@ def candidate(row):
     return {"event_id": event_id, "provenance": provenance}, "estimated_candidate"
 
 
-def replay(row):
+def replay(row, observe=None):
     stock = row["stock"]
     event, status = candidate(row)
     market, inst, macro, foreign, context, _ = load_real_market_feeds(stock, mode="estimated")
@@ -56,18 +58,31 @@ def replay(row):
                              next_open=(sessions[j+1] + pd.Timedelta(hours=9)).isoformat(),
                              text_nonzeros=int(batch.recent_event_emb.count_nonzero()
                                                + batch.active_event_emb.count_nonzero())))
+        if observe is not None:
+            readings[-1]["inference"] = observe(mask_event_inputs(snapshot, "M0"), batch)
     return dict(stock=stock, status=status, publisher_timestamps=row["probe"]["og_published_time"],
                 estimated_available_at=event["provenance"].available_at.isoformat() if event else None,
                 verified_provider_available_at=None, observations=readings)
 
 
-def build_report():
+def build_report(observe=None):
     rows = json.loads(EVIDENCE.read_text())
     selected = [row for row in rows if row["date"] == "2024-01-18" and row["stock"] in ("2603", "2881")]
     if sorted(row["stock"] for row in selected) != ["2603", "2881"]:
         raise ValueError("expected both January 18 stock cases")
-    return [replay(row) for row in selected]
+    return [replay(row, observe) for row in selected]
 
 
 if __name__ == "__main__":
-    print(json.dumps(build_report(), indent=2))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--checkpoint", type=Path, nargs="+")
+    args = parser.parse_args()
+    if args.checkpoint:
+        torch.set_num_threads(1)
+        results = []
+        for path in args.checkpoint:
+            observe, metadata = checkpoint_observer(path, ("M0", "M1"))
+            results.append(dict(checkpoint=metadata, cases=build_report(observe)))
+    else:
+        results = build_report()
+    print(json.dumps(results, indent=2, allow_nan=False))

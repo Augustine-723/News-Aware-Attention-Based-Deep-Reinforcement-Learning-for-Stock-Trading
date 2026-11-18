@@ -1,0 +1,416 @@
+[
+  {
+    "checkpoint": {
+      "seed": 100,
+      "selected_epoch": 1,
+      "sha256": "203055b02a6f7ed25905350d0743c9676a2189fae4b2336d133c21a4f0280ced",
+      "fitting_data_hash": "f2cfbc050c44bee80d3c8bfa710dbf2212d739671d492241e0819192da834123"
+    },
+    "cases": [
+      {
+        "stock": "2603",
+        "status": "estimated_candidate",
+        "publisher_timestamps": [
+          "2024-01-18T09:10:16.000Z"
+        ],
+        "estimated_available_at": "2024-01-18T17:15:16+08:00",
+        "verified_provider_available_at": null,
+        "observations": [
+          {
+            "decision_at": "2024-01-17T20:00:00+08:00",
+            "visible_event_ids": [],
+            "next_open": "2024-01-18T09:00:00+08:00",
+            "text_nonzeros": 0,
+            "inference": {
+              "M0": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  0.17468225955963135,
+                  0.026765652000904083
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              },
+              "M1": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  0.17468225955963135,
+                  0.026765652000904083
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              }
+            }
+          },
+          {
+            "decision_at": "2024-01-18T20:00:00+08:00",
+            "visible_event_ids": [
+              "https://m.cnyes.com/news/id/5433463"
+            ],
+            "next_open": "2024-01-19T09:00:00+08:00",
+            "text_nonzeros": 0,
+            "inference": {
+              "M0": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  0.17225000262260437,
+                  0.013440929353237152
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              },
+              "M1": {
+                "event_count": 1,
+                "q_values_cash_long": [
+                  0.18621273338794708,
+                  0.004275724291801453
+                ],
+                "max_abs_q_delta_from_m0": 0.013962730765342712,
+                "greedy_action": "cash"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "stock": "2881",
+        "status": "index_and_publisher_dates_conflict",
+        "publisher_timestamps": [
+          "2024-01-21T18:00:00+08:00"
+        ],
+        "estimated_available_at": null,
+        "verified_provider_available_at": null,
+        "observations": [
+          {
+            "decision_at": "2024-01-17T20:00:00+08:00",
+            "visible_event_ids": [],
+            "next_open": "2024-01-18T09:00:00+08:00",
+            "text_nonzeros": 0,
+            "inference": {
+              "M0": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  0.0560845322906971,
+                  -0.060903239995241165
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              },
+              "M1": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  0.0560845322906971,
+                  -0.060903239995241165
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              }
+            }
+          },
+          {
+            "decision_at": "2024-01-18T20:00:00+08:00",
+            "visible_event_ids": [],
+            "next_open": "2024-01-19T09:00:00+08:00",
+            "text_nonzeros": 0,
+            "inference": {
+              "M0": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  0.05466369912028313,
+                  -0.06807877123355865
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              },
+              "M1": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  0.05466369912028313,
+                  -0.06807877123355865
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "checkpoint": {
+      "seed": 2024,
+      "selected_epoch": 1,
+      "sha256": "3ec2d48cdbdc2adccb06f504c8ad341fef9460ab329544f417e2e3acb955cef1",
+      "fitting_data_hash": "f2cfbc050c44bee80d3c8bfa710dbf2212d739671d492241e0819192da834123"
+    },
+    "cases": [
+      {
+        "stock": "2603",
+        "status": "estimated_candidate",
+        "publisher_timestamps": [
+          "2024-01-18T09:10:16.000Z"
+        ],
+        "estimated_available_at": "2024-01-18T17:15:16+08:00",
+        "verified_provider_available_at": null,
+        "observations": [
+          {
+            "decision_at": "2024-01-17T20:00:00+08:00",
+            "visible_event_ids": [],
+            "next_open": "2024-01-18T09:00:00+08:00",
+            "text_nonzeros": 0,
+            "inference": {
+              "M0": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  -0.20351853966712952,
+                  -0.22785252332687378
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              },
+              "M1": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  -0.20351853966712952,
+                  -0.22785252332687378
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              }
+            }
+          },
+          {
+            "decision_at": "2024-01-18T20:00:00+08:00",
+            "visible_event_ids": [
+              "https://m.cnyes.com/news/id/5433463"
+            ],
+            "next_open": "2024-01-19T09:00:00+08:00",
+            "text_nonzeros": 0,
+            "inference": {
+              "M0": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  -0.2054656445980072,
+                  -0.2358212172985077
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              },
+              "M1": {
+                "event_count": 1,
+                "q_values_cash_long": [
+                  -0.20789043605327606,
+                  -0.24196313321590424
+                ],
+                "max_abs_q_delta_from_m0": 0.006141915917396545,
+                "greedy_action": "cash"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "stock": "2881",
+        "status": "index_and_publisher_dates_conflict",
+        "publisher_timestamps": [
+          "2024-01-21T18:00:00+08:00"
+        ],
+        "estimated_available_at": null,
+        "verified_provider_available_at": null,
+        "observations": [
+          {
+            "decision_at": "2024-01-17T20:00:00+08:00",
+            "visible_event_ids": [],
+            "next_open": "2024-01-18T09:00:00+08:00",
+            "text_nonzeros": 0,
+            "inference": {
+              "M0": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  -0.08362966775894165,
+                  -0.1924191415309906
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              },
+              "M1": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  -0.08362966775894165,
+                  -0.1924191415309906
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              }
+            }
+          },
+          {
+            "decision_at": "2024-01-18T20:00:00+08:00",
+            "visible_event_ids": [],
+            "next_open": "2024-01-19T09:00:00+08:00",
+            "text_nonzeros": 0,
+            "inference": {
+              "M0": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  -0.09580305218696594,
+                  -0.21401244401931763
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              },
+              "M1": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  -0.09580305218696594,
+                  -0.21401244401931763
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "checkpoint": {
+      "seed": 42,
+      "selected_epoch": 2,
+      "sha256": "01b2668ade4f561c125f512b11a95f79c12d8847c43d30dfbe0254222354a708",
+      "fitting_data_hash": "f2cfbc050c44bee80d3c8bfa710dbf2212d739671d492241e0819192da834123"
+    },
+    "cases": [
+      {
+        "stock": "2603",
+        "status": "estimated_candidate",
+        "publisher_timestamps": [
+          "2024-01-18T09:10:16.000Z"
+        ],
+        "estimated_available_at": "2024-01-18T17:15:16+08:00",
+        "verified_provider_available_at": null,
+        "observations": [
+          {
+            "decision_at": "2024-01-17T20:00:00+08:00",
+            "visible_event_ids": [],
+            "next_open": "2024-01-18T09:00:00+08:00",
+            "text_nonzeros": 0,
+            "inference": {
+              "M0": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  0.16028732061386108,
+                  0.12552201747894287
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              },
+              "M1": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  0.16028732061386108,
+                  0.12552201747894287
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              }
+            }
+          },
+          {
+            "decision_at": "2024-01-18T20:00:00+08:00",
+            "visible_event_ids": [
+              "https://m.cnyes.com/news/id/5433463"
+            ],
+            "next_open": "2024-01-19T09:00:00+08:00",
+            "text_nonzeros": 0,
+            "inference": {
+              "M0": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  0.1656087338924408,
+                  0.12606412172317505
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              },
+              "M1": {
+                "event_count": 1,
+                "q_values_cash_long": [
+                  0.15942901372909546,
+                  0.12573343515396118
+                ],
+                "max_abs_q_delta_from_m0": 0.006179720163345337,
+                "greedy_action": "cash"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "stock": "2881",
+        "status": "index_and_publisher_dates_conflict",
+        "publisher_timestamps": [
+          "2024-01-21T18:00:00+08:00"
+        ],
+        "estimated_available_at": null,
+        "verified_provider_available_at": null,
+        "observations": [
+          {
+            "decision_at": "2024-01-17T20:00:00+08:00",
+            "visible_event_ids": [],
+            "next_open": "2024-01-18T09:00:00+08:00",
+            "text_nonzeros": 0,
+            "inference": {
+              "M0": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  -0.004067569971084595,
+                  -0.03448452055454254
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              },
+              "M1": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  -0.004067569971084595,
+                  -0.03448452055454254
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              }
+            }
+          },
+          {
+            "decision_at": "2024-01-18T20:00:00+08:00",
+            "visible_event_ids": [],
+            "next_open": "2024-01-19T09:00:00+08:00",
+            "text_nonzeros": 0,
+            "inference": {
+              "M0": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  0.005365427583456039,
+                  -0.02678864076733589
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              },
+              "M1": {
+                "event_count": 0,
+                "q_values_cash_long": [
+                  0.005365427583456039,
+                  -0.02678864076733589
+                ],
+                "max_abs_q_delta_from_m0": 0.0,
+                "greedy_action": "cash"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

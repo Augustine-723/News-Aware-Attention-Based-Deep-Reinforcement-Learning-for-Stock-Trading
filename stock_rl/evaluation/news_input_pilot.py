@@ -45,7 +45,7 @@ def mask_event_inputs(batch, method):
     return masked
 
 
-def run_checkpoint(checkpoint_path):
+def checkpoint_observer(checkpoint_path, methods):
     raw = Path(checkpoint_path).read_bytes()
     state = torch.load(io.BytesIO(raw), map_location="cpu", weights_only=True)
     if state["schema_version"] != CURRENT_ACTIVE_SCHEMA_VERSION:
@@ -70,7 +70,7 @@ def run_checkpoint(checkpoint_path):
     def observe(empty, fixture):
         reference = q_values(empty)
         readings = {}
-        for method in ("M0", "M1", "M2", "M3"):
+        for method in methods:
             batch = mask_event_inputs(fixture, method)
             q = q_values(batch)
             if (method == "M0" or not fixture.event_mask.any()) and not torch.equal(reference, q):
@@ -83,13 +83,18 @@ def run_checkpoint(checkpoint_path):
             }
         return readings
 
-    report = build_report(observe=observe)
-    report["purpose"] = "FROZEN_M0_CHECKPOINT_SYNTHETIC_INPUT_SMOKE"
-    report["checkpoint"] = {
+    return observe, {
         "seed": state["seed"], "selected_epoch": state["selected_epoch"],
         "sha256": hashlib.sha256(raw).hexdigest(),
         "fitting_data_hash": normalizer.fitted_fitting_data_hash,
     }
+
+
+def run_checkpoint(checkpoint_path):
+    observe, metadata = checkpoint_observer(checkpoint_path, ("M0", "M1", "M2", "M3"))
+    report = build_report(observe=observe)
+    report["purpose"] = "FROZEN_M0_CHECKPOINT_SYNTHETIC_INPUT_SMOKE"
+    report["checkpoint"] = metadata
     return report
 
 
