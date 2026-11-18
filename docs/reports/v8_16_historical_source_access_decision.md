@@ -54,6 +54,14 @@ In previous prototypes, positive tests could pass formal PIT checks simply by se
 | **After-Cutoff Delivery** | `observed_available_at = 20:15 > 20:00` | REJECTED | Rejected (0) | `Provider availability time is after decision cutoff` |
 | **Authentic Verified Receipt** | Real vendor stream log with valid signature | NO SAMPLES | 0 Ingested | No authentic vendor feed available for 2024 Q1 |
 
+### 1.3 Strict Preservation of the Formal PIT Claim Boundary
+To avoid overclaiming cryptographic or source authenticity:
+1. **SHA-256 Consistency Claim Boundary**: Digest matching strictly confirms byte-level consistency against the supplied hash string; it does NOT prove the payload originated from an authorized external provider.
+2. **Provenance & Signature Boundary**: In the absence of an authenticated TLS session, cryptographic digital signature, or verified provider API audit trail, the system makes **zero claim of Authenticity Verified**.
+3. **Receipt Content Binding Boundary**: Without a trusted adapter that parses `raw_receipt_bytes` to independently verify `provider_id`, `announcement_id`, `content_payload_hash`, and `arrival_time`, **Receipt Content Binding is strictly NOT claimed**.
+4. **Local Test Fixture Quarantine**: All positive test cases where receipts are locally constructed are strictly classified as `SIMULATED_CONTRACT_TEST` (for schema contract verification only).
+5. **Absence of Real Adapter**: Without an operational adapter connected to genuine vendor streams, **Formal PIT remains strictly NO-GO**.
+
 **Formal PIT Audit Verdict**: **NO-GO** (0 verified receipts).
 
 ---
