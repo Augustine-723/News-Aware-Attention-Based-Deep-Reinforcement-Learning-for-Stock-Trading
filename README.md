@@ -76,9 +76,21 @@ stock_rl/
 ## 4. Running Tests & Verification
 
 ```bash
-# Run the complete test suite (56 tests passing across all suites)
+# Run the complete test suite
 pytest tests/ -v
 
 # Run the V8.3 Schema Migration test suite
 pytest tests/test_v8_3_schema_migration.py -v
 ```
+
+## Reproduce the 2024 Q1 market-only study
+
+From the repository root, install the dependencies in `requirements.txt`, then run:
+
+```bash
+python -m stock_rl.evaluation.market_baseline > market_baseline.json
+```
+
+The JSON includes input digests, evaluation sessions, target actions, execution costs and
+equity curves. See the [research handoff](docs/reports/v8_20_project_closeout.md) for
+the observed results, test setup and historical evidence requirements.

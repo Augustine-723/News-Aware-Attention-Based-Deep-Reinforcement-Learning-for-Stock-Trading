@@ -74,8 +74,8 @@ def main():
         print(f"    Episode {h['episode']:02d} | Return: {h['total_reward']:.4f} | "
               f"Equity: ${h['final_equity']:,.2f} | Joint Loss: {h['avg_joint_loss']:.4f}")
 
-    # 5. Out-of-Sample Evaluation & Benchmark Comparison
-    print("\n[+] Running Out-of-Sample Evaluation & Benchmark Comparison...")
+    # 5. Synthetic Evaluation & Benchmark Comparison
+    print("\n[+] Running Synthetic Evaluation & Benchmark Comparison...")
     test_env = PointInTimeStockEnv()
     metrics_rl, _, _ = evaluate_policy_on_env(model, test_env, device=device)
 
