@@ -1,9 +1,9 @@
 # Event Evidence: TSMC (2330) JASM Kumamoto Second-Fab Expansion — 2024-02-06
 
 **Research Status**: AUTHORIZED_CHANNEL_PARTIAL  
-**Formal PIT Eligible**: NO — SEC acceptance time (20:55:14 Taipei) is after the daily decision cutoff  
+**Formal PIT Eligible**: NO — no historical provider delivery receipt ties an available version to the decision
 **MOPS Original**: NOT LOCATED IN LOCAL SOURCES  
-**Historical Verified Count**: 0 (this event does not change that counter)  
+**Verified issuer filings**: 1 SEC filing; 0 verified MOPS filings
 **Pilot Event**: No existing pilot entry for 2024-02-06 expansion; EV-2330-09 covers the separate Feb-24 opening ceremony  
 
 ---
@@ -36,7 +36,7 @@ This evidence is committed in `data/official_disclosures/sec_2330_20240206_evide
 | **Accession Number** | `0001046179-24-000012` |
 | **CIK** | 1046179 |
 | **Source ID (Locator)** | `Document Format Files / sequence 1` (primary HTML document) |
-| **Revision** | No amendment; this is the original 6-K, not a 6-K/A |
+| **Revision** | Form 6-K at this accession; later amendment history unverified |
 
 ### Timestamps
 
@@ -46,7 +46,7 @@ This evidence is committed in `data/official_disclosures/sec_2330_20240206_evide
 | **SEC Accepted At (Taipei, UTC+8)** | 2024-02-06T**20:55:14+08:00** | Taipei-equivalent; **after** the daily decision cutoff (20:00 Taipei) |
 | **Timezone** | SEC timestamps are US Eastern Time (EST, UTC−5 in February) | No DST ambiguity |
 | **MOPS Filing Time** | **Unknown** — not located in any local source | Cannot establish MOPS pre-market availability |
-| **CNA Press Report** | 2024-02-06T18:48+08:00 (displayed minute-precision) | 72 min before SEC acceptance; original version unverified |
+| **CNA Press Report** | 2024-02-06T18:48+08:00 (displayed minute-precision) | 72 min before 20:00 Taipei; original version unverified |
 | **Issuer Page (pr.tsmc.com/chinese/news/3105)** | HTML `dateModified` = 20:46:32 Taipei; `datePublished` = 1970 epoch (placeholder) | Does not establish first publication |
 | **Effective Decision Day (calendar)** | 2024-02-06 is in the CNY holiday gap (Feb 6–14 no TSE trading); next session = **2024-02-15** | Per `DesignValidityPreflightAuditor.get_effective_decision_day` on both taiex.csv and 2330_ohlcv.csv |
 
@@ -58,17 +58,17 @@ This evidence is committed in `data/official_disclosures/sec_2330_20240206_evide
 | **Primary document** | https://www.sec.gov/Archives/edgar/data/1046179/000104617924000012/tsm-boardx20240206x6kx2.htm | 30,248 | `b4ed2843c3401d2cbd8cf1afc203e34f358854746fae8809ff90da52d53c8b33` | 2026-11-18T08:10:55.798052Z |
 
 > [!NOTE]
-> SHA-256 values record the byte content observed on 2026-11-18. EDGAR may update an index page over time; re-downloading may produce a different index digest. The 6-K document itself is immutable after acceptance. Use `sha256sum --check` per the reproduction script in the handoff doc to verify independently.
+> SHA-256 values record the byte content observed on 2026-11-18. EDGAR may update an index page over time; re-downloading may produce a different index digest. The document digest identifies the observed bytes. Use `sha256sum --check` per the reproduction script in the handoff doc to verify independently.
 
 ### Content Summary
 
-The 6-K announces: (1) JASM (TSMC's Japan fab subsidiary) Phase 1 (12/16nm) construction completion and planned production start by end of 2024; (2) board approval for a second Kumamoto fab (3/5nm class); investment up to JPY 1 trillion for both phases, with SONY and Toyota as co-investors.
+TSMC, Sony Semiconductor Solutions, DENSO and Toyota announced a second Kumamoto fab. Construction was planned to begin by the end of 2024, with operations targeted by the end of 2027. The companies expected combined investment across the two fabs to exceed US$20 billion. The stated process range for the combined site includes 6/7 nm through 40 nm.
 
-This is **corroborative** of EV-2330-09 (opening ceremony), not identical. These are distinct corporate events:
+Track the February expansion announcement separately from the first fab opening ceremony.
 
 | Event | Date | Description | Evidence |
 |---|---|---|---|
-| **Second fab board decision** | 2024-02-06 | Board approves second Kumamoto fab | SEC 6-K (this document) |
+| **Second fab investment announcement** | 2024-02-06 | Joint announcement of second fab investment | SEC 6-K (this document) |
 | **JASM grand opening** | 2024-02-24 | First fab opening ceremony | EV-2330-09 (CNA press archive) |
 
 ### Retention Rights
@@ -103,7 +103,7 @@ done
 |---|---|---|
 | **MOPS Filing Time** | Unknown — no MOPS record for 2024-02-06 2330 found locally | TWSE Dataset 18415 Q1 export, or MOPS historical search |
 | **Provider Receipt** | No data vendor feed receipt for this event | TEJ historical corporate announcement product (campus license) |
-| **Formal PIT** | SEC acceptance 20:55 Taipei > 20:00 decision cutoff; even if MOPS time were known, needs provider receipt | Remains NO-GO |
+| **Formal PIT** | Missing version-linked historical delivery receipt. Calendar-only decision Feb 15 at 20:00; next open Feb 16. | Remains NO-GO |
 | **Earlier MOPS Posting** | CNA 18:48 suggests announcement may have been filed before SEC acceptance; unverified | MOPS historical full-text with timestamp |
 | **Original Text Version** | CNA article has a 14:58 next-day update; original version not confirmed | MOPS or TEJ original timestamped record |
 | **Provider Distribution Time** | Distinct from filing time; unknown for all vendors | TEJ feed ingress log; not available publicly |
@@ -112,7 +112,7 @@ done
 
 ## 5. Evidence Counts (Unchanged)
 
-- **Historical Source Verified**: 0 (SEC 6-K is `OFFICIALLY_DOCUMENTED` for reuse rights, but it cannot establish MOPS or provider availability time)
+- **Historical Source Verified**: 1 SEC issuer filing; 0 verified MOPS filings
 - **Provider Availability Verified**: 0
 - **Formal PIT**: NO-GO
 - **Pilot Event Count**: 50 (unchanged — 2024-02-06 expansion event is distinct from EV-2330-09)
