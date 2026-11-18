@@ -271,6 +271,8 @@ class RetrievalSessionRecord:
     is_production_certified: bool = False
     is_simulated: bool = False
     execution_mode: str = "AUTHENTIC"
+    trust_boundary_level: str = "ENGINEERING_TRUST_BOUNDARY_ONLY"
+    audit_model: str = "PROCESS_INTERNAL_CONTROL_AUDIT"
 
 
 class RetrievalSessionRegistry:
@@ -278,10 +280,36 @@ class RetrievalSessionRegistry:
     P0-1: Trusted registry for authentic HTTPS retrieval sessions.
     Prohibits caller self-attestation by requiring valid session registration from actual network calls.
     Separates formal production registration path from test fixture factories.
+    Marked ENGINEERING_TRUST_BOUNDARY_ONLY with PROCESS_INTERNAL_CONTROL_AUDIT.
+    Does not rely on static secret tokens in source code to claim cryptographic zero-trust.
     """
+    TRUST_BOUNDARY_LEVEL: str = "ENGINEERING_TRUST_BOUNDARY_ONLY"
+    AUDIT_MODEL: str = "PROCESS_INTERNAL_CONTROL_AUDIT"
     _sessions: Dict[str, RetrievalSessionRecord] = {}
     _known_fixture_hashes: Optional[Set[str]] = None
-    _AUTHENTIC_SERVICE_AUTH_KEY: str = "TWSE_AUTH_KEY_" + hashlib.sha256(b"GENUINE_TWSE_RETRIEVAL_INTERNAL_SERVICE_V8_14").hexdigest()[:24]
+
+    @classmethod
+    def _is_caller_authorized_service(cls) -> bool:
+        """
+        In-process internal control check.
+        Ensures register_production_session() is invoked by GenuineHttpsRetrievalService
+        during controlled HTTPS retrieval execution.
+        Arbitrary callers passing self-attested strings or invoking directly are rejected.
+        """
+        import inspect
+        stack = inspect.stack()
+        for frame_info in stack[2:7]:
+            caller_cls = frame_info.frame.f_locals.get("cls")
+            caller_self = frame_info.frame.f_locals.get("self")
+            target_cls = caller_cls or (caller_self.__class__ if caller_self else None)
+            if target_cls is not None:
+                mod_name = getattr(target_cls, "__module__", "")
+                cls_name = getattr(target_cls, "__name__", "")
+                if cls_name == "GenuineHttpsRetrievalService" and (
+                    "official_source_collector" in mod_name or mod_name == "__main__"
+                ):
+                    return True
+        return False
 
     @classmethod
     def _get_known_fixture_hashes(cls) -> Set[str]:
@@ -326,13 +354,13 @@ class RetrievalSessionRegistry:
     @classmethod
     def register_production_session(
         cls,
-        service_auth_key: str,
         source_channel: str,
         endpoint_url: str,
         request_start_time: pd.Timestamp,
         response_end_time: pd.Timestamp,
         http_status: int,
         raw_response_bytes: bytes,
+        service_auth_key: Optional[str] = None,
         parsed_summary: Optional[Dict[str, Any]] = None,
         source_identity: str = "OFFICIAL_EXCHANGE_HTTPS_CLIENT",
         announcement_ids: Optional[List[str]] = None,
@@ -343,12 +371,13 @@ class RetrievalSessionRegistry:
         """
         P0-1: Formal production session registration path.
         Accessible strictly to GenuineHttpsRetrievalService after genuine HTTPS network call.
-        Enforces authentic service auth key; rejects caller self-attestation or fixtures.
+        Enforces in-process caller authorization; rejects caller self-attestation or fixtures.
         """
-        if service_auth_key != cls._AUTHENTIC_SERVICE_AUTH_KEY:
+        if not cls._is_caller_authorized_service():
             raise PermissionError(
                 "Unauthorized caller: production retrieval session can only be registered "
-                "by GenuineHttpsRetrievalService after genuine HTTPS network call (P0-1)."
+                "by GenuineHttpsRetrievalService after genuine HTTPS network call (P0-1). "
+                f"Caller self-attested string tokens or mock payloads are strictly rejected under {cls.TRUST_BOUNDARY_LEVEL}."
             )
         if not isinstance(raw_response_bytes, bytes) or len(raw_response_bytes) == 0:
             raise ValueError("raw_response_bytes must be non-empty bytes.")
@@ -472,9 +501,11 @@ class RetrievalSessionRegistry:
             )
 
         # Production authorization check (P0-1)
-        is_authorized_prod = (service_auth_key == cls._AUTHENTIC_SERVICE_AUTH_KEY)
-        is_simulated = (allow_legacy_fixture or not is_authorized_prod)
-        is_production_certified = (is_authorized_prod and not allow_legacy_fixture)
+        # Ordinary callers calling register_genuine_session cannot achieve production certification;
+        # production sessions are strictly restricted to GenuineHttpsRetrievalService via register_production_session.
+        is_authorized_prod = False
+        is_simulated = True
+        is_production_certified = False
 
         raw_hash = hashlib.sha256(raw_response_bytes).hexdigest()
         session_id = f"REG-SESS-{pd.Timestamp.now(tz='Asia/Taipei').strftime('%Y%m%d%H%M%S')}-{raw_hash[:8]}"

@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import hashlib
 import json
-from typing import Dict, Any, List, Optional, Tuple, Set
+from typing import Dict, Any, List, Optional, Tuple, Set, Union
 import urllib.request
 import numpy as np
 import pandas as pd
@@ -85,6 +85,15 @@ class QueryResolutionStatus(str, Enum):
     QUERY_FAILED = "QUERY_FAILED"                                                # Query failed due to network timeout or rate limiting
     QUERY_FAILED_HTTP = "QUERY_FAILED_HTTP"                                      # Query failed due to non-200 HTTP response code (P0-2)
     QUERY_FAILED_PARSE = "QUERY_FAILED_PARSE"                                    # Query succeeded at HTTP level but payload parsing failed (P0-2)
+
+
+class PITExecutionMode(str, Enum):
+    """
+    Execution mode for Point-in-Time (PIT) As-Of availability integration.
+    P0-2: Strictly separates estimated replay (+5 min hypothesis) from verified As-Of (vendor feed log required).
+    """
+    ESTIMATED_REPLAY = "ESTIMATED_REPLAY"
+    EVIDENCE_VERIFIED_ASOF = "EVIDENCE_VERIFIED_ASOF"
 
 
 @dataclass
@@ -232,6 +241,7 @@ class EvidenceManifestEntry:
     source_locator: str = ""
     raw_retention_status: str = "FULL_RAW_BYTES_RETAINED"
     verified_provider_available_at: Optional[pd.Timestamp] = None
+    raw_response_snapshot_file: Optional[str] = "twse_openapi_raw_response_snapshot.json"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -256,7 +266,54 @@ class EvidenceManifestEntry:
             "parser_version": self.parser_version,
             "source_locator": self.source_locator,
             "raw_retention_status": self.raw_retention_status,
+            "raw_response_snapshot_file": self.raw_response_snapshot_file,
         }
+
+
+def _parse_raw_record_publication_datetime(item: Dict[str, Any]) -> Tuple[Optional[pd.Timestamp], bool]:
+    """
+    P1-4: Parses exact publication datetime from raw official disclosure JSON record.
+    Prioritizes '發言日期' + '發言時間' (official announcement publication).
+    Falls back to '出表日期' + '出表時間' if publication time is unrecorded.
+    Supports 7-digit ROC dates (e.g. '1151117' -> 2026-11-17) and 6-digit times (e.g. '154758' -> 15:47:58).
+    Returns (pd.Timestamp, True) if parsed successfully, or (None, False) if missing/unparseable.
+    """
+    d_str = str(item.get("發言日期", "") or item.get("出表日期", "") or "").strip()
+    t_str = str(item.get("發言時間", "") or item.get("出表時間", "") or "").strip()
+    if not d_str:
+        return None, False
+    try:
+        if len(d_str) == 7 and d_str.isdigit():
+            roc_yr = int(d_str[:3])
+            ce_yr = 1911 + roc_yr
+            mm = d_str[3:5]
+            dd = d_str[5:7]
+        elif len(d_str) == 8 and d_str.isdigit():
+            ce_yr = int(d_str[:4])
+            mm = d_str[4:6]
+            dd = d_str[6:8]
+        elif "-" in d_str:
+            parts = d_str.split("-")
+            ce_yr, mm, dd = int(parts[0]), parts[1], parts[2]
+        else:
+            return None, False
+
+        if len(t_str) == 6 and t_str.isdigit():
+            hh, mi, ss = t_str[:2], t_str[2:4], t_str[4:6]
+        elif ":" in t_str:
+            t_parts = t_str.split(":")
+            hh = f"{int(t_parts[0]):02d}"
+            mi = f"{int(t_parts[1]):02d}" if len(t_parts) > 1 else "00"
+            ss = f"{int(t_parts[2]):02d}" if len(t_parts) > 2 else "00"
+        elif len(t_str) == 4 and t_str.isdigit():
+            hh, mi, ss = t_str[:2], t_str[2:4], "00"
+        else:
+            hh, mi, ss = "00", "00", "00"
+
+        dt = pd.Timestamp(f"{ce_yr}-{mm}-{dd} {hh}:{mi}:{ss}", tz="Asia/Taipei")
+        return dt, True
+    except Exception:
+        return None, False
 
 
 @dataclass
@@ -274,30 +331,49 @@ class EvidenceManifest:
         self.entries.append(entry)
 
     def verify_entry_integrity(self, entry: EvidenceManifestEntry) -> Tuple[bool, str]:
-        # 1. Raw response retention check (P0-2 item 8)
-        if not entry.raw_response_bytes:
-            if getattr(entry, "raw_retention_status", "") == "INDEPENDENT_REPRODUCTION_PENDING":
-                return False, "raw_response_bytes cannot be retained (INDEPENDENT_REPRODUCTION_PENDING); independent raw data hash recomputation is pending."
-            return False, "raw_response_bytes is empty."
+        # 1. Required fields check (P1-4 item 7)
+        required_fields = [
+            ("stock_id", entry.stock_id),
+            ("headline", entry.headline),
+            ("raw_content", entry.raw_content),
+            ("source_url", entry.source_url),
+            ("raw_response_bytes", entry.raw_response_bytes),
+            ("raw_response_hash", entry.raw_response_hash),
+            ("parsed_payload_hash", entry.parsed_payload_hash),
+        ]
+        for fname, fval in required_fields:
+            if fval is None or (isinstance(fval, (str, bytes)) and len(fval) == 0):
+                return False, f"Required field '{fname}' is missing or empty."
 
-        # 2. Raw bytes SHA-256 digest check
+        # 2. Raw response retention check (P0-2 item 8, P1-3)
+        if not entry.raw_response_bytes:
+            return False, "raw_response_bytes is empty."
+        if getattr(entry, "raw_retention_status", "") == "INDEPENDENT_REPRODUCTION_PENDING":
+            return False, "raw_response_bytes cannot be retained (INDEPENDENT_REPRODUCTION_PENDING); independent raw data hash recomputation is pending."
+
+        # 3. Raw bytes SHA-256 digest check
         actual_resp_hash = hashlib.sha256(entry.raw_response_bytes).hexdigest()
         if actual_resp_hash != entry.raw_response_hash:
             return False, f"raw_response_hash mismatch: expected {entry.raw_response_hash}, got {actual_resp_hash}."
 
-        # 3. Parsed payload hash check
+        # 4. Parsed payload hash check
         expected_payload_hash = compute_normalized_content_hash(entry.headline, entry.raw_content)
         if expected_payload_hash != entry.parsed_payload_hash:
             return False, f"parsed_payload_hash mismatch: expected {entry.parsed_payload_hash}, got {expected_payload_hash}."
 
-        # 4. Session registry cross-check
+        # 5. Session registry cross-check
         session = RetrievalSessionRegistry.get_session(entry.retrieval_session_id)
         if session is None:
             return False, f"retrieval_session_id '{entry.retrieval_session_id}' not found in registry."
         if session.raw_response_hash != entry.raw_response_hash:
             return False, "session raw_response_hash mismatch."
 
-        # 5. P0-2: Re-parse raw response bytes to verify target announcement binding
+        # 6. Publication time parsing integrity (P1-4 items 3, 4)
+        # When publication time is unparsed, filing_datetime cannot silently substitute retrieved_at
+        if not entry.publication_time_parsed and entry.filing_datetime is not None:
+            return False, "Integrity check failed: filing_datetime cannot silently substitute retrieved_at when publication_time_parsed=False."
+
+        # 7. P1-4: Re-parse raw response bytes to verify target announcement binding with exact field matching
         if entry.source_channel == OfficialSourceChannel.TWSE_OPENAPI:
             try:
                 parsed_json = json.loads(entry.raw_response_bytes.decode("utf-8"))
@@ -311,34 +387,39 @@ class EvidenceManifest:
                     parsed_json = [parsed_json]
 
             matched = False
+            field_mismatch_reason = ""
             for item in parsed_json:
                 if not isinstance(item, dict):
                     continue
                 item_stock = str(item.get("公司代號", "") or item.get("stock_id", "") or item.get("Code", "")).strip()
-                item_sub = str(item.get("主旨", "") or item.get("headline", "") or item.get("Subject", "")).strip()
-                item_content = str(item.get("詳細內容", "") or item.get("說明", "") or item.get("body_text", "") or item.get("content", "") or item_sub).strip()
+                if item_stock != entry.stock_id:
+                    continue
 
-                if item_stock == entry.stock_id:
-                    headline_matched = (
-                        entry.headline == item_sub
-                        or entry.headline in item_sub
-                        or item_sub in entry.headline
-                    )
-                    content_matched = (
-                        entry.raw_content == item_content
-                        or entry.raw_content in item_content
-                        or item_content in entry.raw_content
-                    )
-                    if headline_matched and content_matched:
-                        matched = True
-                        break
+                # Exact stable field matching (P1-4: avoid loose substring match)
+                item_sub = str(item.get("主旨 ", "") or item.get("主旨", "") or item.get("headline", "") or item.get("Subject", "")).strip()
+                item_content = str(item.get("說明", "") or item.get("詳細內容", "") or item.get("body_text", "") or item.get("content", "") or item_sub).strip()
+
+                if entry.headline.strip() != item_sub:
+                    continue
+                if entry.raw_content.strip() != item_content:
+                    continue
+
+                # Exact publication datetime re-parsing check (P1-4 items 1, 3)
+                item_dt, is_parsed = _parse_raw_record_publication_datetime(item)
+                if entry.filing_datetime is not None:
+                    if not is_parsed or item_dt != entry.filing_datetime:
+                        field_mismatch_reason = f"Publication datetime mismatch: expected {entry.filing_datetime}, parsed from raw record: {item_dt}."
+                        continue
+
+                matched = True
+                break
 
             if not matched:
-                return False, (
-                    f"Content binding verification failed: Target announcement for stock '{entry.stock_id}' "
-                    f"with headline '{entry.headline[:30]}' was not found in parsed raw response bytes "
-                    "(raw response is authentic, but parsed announcement content does not match payload)."
+                err_detail = field_mismatch_reason or (
+                    f"Target announcement for stock '{entry.stock_id}' with headline '{entry.headline[:30]}' "
+                    "was not found in parsed raw response bytes (exact field match failed; fuzzy match rejected)."
                 )
+                return False, f"Content binding verification failed: {err_detail}"
 
         elif entry.source_channel == OfficialSourceChannel.TWSE_MOPS_HTML_ARCHIVE:
             decoded_text = entry.raw_response_bytes.decode("utf-8", errors="ignore")
@@ -347,15 +428,12 @@ class EvidenceManifest:
             if entry.headline not in decoded_text and entry.raw_content not in decoded_text:
                 return False, "Content binding verification failed: Neither headline nor content was found in raw MOPS response."
 
-        # 6. Local record ID audit (P0-2 item 3)
+        # 8. Local record ID audit (P1-4 item 5)
         if entry.is_local_record_id:
             if not entry.local_record_id or not entry.local_record_id.startswith("LOCAL-"):
                 return False, "Announcement marked as is_local_record_id=True but local_record_id format is invalid."
-
-        # 7. Publication time parsing integrity (P0-2 item 5)
-        if not entry.publication_time_parsed and entry.filing_datetime is not None:
-            if entry.filing_datetime == entry.retrieved_at:
-                return False, "Integrity check failed: filing_datetime cannot silently substitute retrieved_at when publication_time_parsed=False."
+            if entry.announcement_id != entry.local_record_id:
+                return False, f"announcement_id '{entry.announcement_id}' must match local_record_id '{entry.local_record_id}'."
 
         return True, "Entry integrity, raw response re-parsing, and cryptographic digests verified."
 
@@ -1321,7 +1399,6 @@ class GenuineHttpsRetrievalService:
     """
     TWSE_OPENAPI_URL: str = "https://openapi.twse.com.tw/v1/opendata/t187ap04_L"
     MOPS_ARCHIVE_URL: str = "https://mops.twse.com.tw/mops/web/t05st01"
-    _SERVICE_AUTH_KEY: str = RetrievalSessionRegistry._AUTHENTIC_SERVICE_AUTH_KEY
 
     @classmethod
     def query_twse_openapi_disclosures(
@@ -1400,7 +1477,6 @@ class GenuineHttpsRetrievalService:
 
         # Register formal production session with authentic service authorization (P0-1)
         session_rec = RetrievalSessionRegistry.register_production_session(
-            service_auth_key=cls._SERVICE_AUTH_KEY,
             source_channel="TWSE_OPENAPI",
             endpoint_url=cls.TWSE_OPENAPI_URL,
             request_start_time=t_start,
@@ -1436,27 +1512,13 @@ class GenuineHttpsRetrievalService:
         manifest_entry = None
         if matched_items:
             first = matched_items[0]
-            sub = str(first.get("主旨", "") or "重大訊息公告").strip()
-            content = str(first.get("詳細內容", "") or first.get("說明", "") or sub).strip()
-            filing_date_str = str(first.get("出表日期", "")).strip()
-            filing_time_str = str(first.get("出表時間", "")).strip()
-            publication_time_parsed = False
-            filing_dt = None
-            try:
-                if len(filing_date_str) == 7:
-                    roc_yr = int(filing_date_str[:3])
-                    ce_yr = 1911 + roc_yr
-                    mm = filing_date_str[3:5]
-                    dd = filing_date_str[5:7]
-                    dt_str = f"{ce_yr}-{mm}-{dd} {filing_time_str}"
-                    filing_dt = pd.Timestamp(dt_str, tz="Asia/Taipei")
-                    publication_time_parsed = True
-            except Exception:
-                publication_time_parsed = False
-                filing_dt = None
+            sub = str(first.get("主旨 ", "") or first.get("主旨", "") or "重大訊息公告").strip()
+            content = str(first.get("說明", "") or first.get("詳細內容", "") or sub).strip()
+            date_tag = str(first.get("發言日期", "") or first.get("出表日期", "") or "NODATE").strip()
+            filing_dt, publication_time_parsed = _parse_raw_record_publication_datetime(first)
 
             norm_hash = compute_normalized_content_hash(sub, content)
-            local_rec_id = f"LOCAL-OPENAPI-{target_stock_str}-{filing_date_str or 'NODATE'}-{norm_hash[:8]}"
+            local_rec_id = f"LOCAL-OPENAPI-{target_stock_str}-{date_tag}-{norm_hash[:8]}"
 
             license_meta = LicenseMetadata(
                 license_name="Taiwan Open Government Data License (TWSE OpenAPI)",
@@ -1492,8 +1554,6 @@ class GenuineHttpsRetrievalService:
                 source_locator=f"JSON_ARRAY_RECORD[stock_id={target_stock_str},index=0]",
                 raw_retention_status="FULL_RAW_BYTES_RETAINED",
             )
-
-        return query_record, manifest_entry
 
         return query_record, manifest_entry
 
@@ -1600,7 +1660,8 @@ def execute_minimal_pipeline_integration(
     target_stock_id: str = "2881",
     decision_cutoff_str: str = "20:00:00",
     decision_date_str: Optional[str] = None,
-    allow_estimated_hypothesis: bool = True,
+    pit_mode: Union[PITExecutionMode, str] = PITExecutionMode.ESTIMATED_REPLAY,
+    allow_estimated_hypothesis: Optional[bool] = None,
     trading_calendar: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """
@@ -1609,23 +1670,26 @@ def execute_minimal_pipeline_integration(
     Official Raw Response -> Source Evidence Manifest -> Event Parsing -> Stock/Event Relation ->
     BGE 512D -> Fixed Projection 128D -> Metadata 24D + Relation 8D ->
     [PIT As-Of Gate] -> Recent (32) / Active (8) Slots -> PIT Decision State.
+
+    P0-2: Explicitly separates ESTIMATED_REPLAY from EVIDENCE_VERIFIED_ASOF.
     """
-    # 1. Distinguish timestamps and hypothesis (P0-3 items 1 & 2)
+    if isinstance(pit_mode, str):
+        try:
+            mode = PITExecutionMode(pit_mode)
+        except ValueError:
+            mode = PITExecutionMode.ESTIMATED_REPLAY
+    else:
+        mode = pit_mode
+
+    # Backward compatibility: allow_estimated_hypothesis=False forces EVIDENCE_VERIFIED_ASOF
+    if allow_estimated_hypothesis is False:
+        mode = PITExecutionMode.EVIDENCE_VERIFIED_ASOF
+
+    # 1. Distinguish timestamps and hypotheses (P0-2)
     observed_retrieved_at = entry.retrieved_at
     filing_dt = entry.filing_datetime
     estimated_provider_available_at = (filing_dt + pd.Timedelta(minutes=5)) if filing_dt else None
-    is_estimated_hypothesis = True  # +5 min is strictly an estimated hypothesis, not historical fact
     verified_provider_available_at = getattr(entry, "verified_provider_available_at", None)
-
-    if verified_provider_available_at is not None:
-        effective_available_at = verified_provider_available_at
-        availability_source = "VERIFIED_PROVIDER_FEED"
-    elif allow_estimated_hypothesis and estimated_provider_available_at is not None:
-        effective_available_at = estimated_provider_available_at
-        availability_source = "ESTIMATED_HYPOTHESIS_PLUS_5MIN"
-    else:
-        effective_available_at = observed_retrieved_at
-        availability_source = "OBSERVED_RETRIEVAL_ONLY"
 
     # Determine decision timestamp
     if decision_date_str:
@@ -1637,26 +1701,101 @@ def execute_minimal_pipeline_integration(
 
     decision_ts = pd.Timestamp(f"{d_str} {decision_cutoff_str}", tz="Asia/Taipei")
 
-    # 2. PIT As-Of Availability Check (P0-3 items 3 & 4)
     is_available_as_of = True
+    slot_ingested = False
+    is_formal_pit_validated = False
     rejection_reason = ""
 
-    if trading_calendar is not None and d_str not in trading_calendar:
-        is_available_as_of = False
-        rejection_reason = f"PIT As-Of Check rejected: Date {d_str} is not an official trading day."
-
-    if is_available_as_of and filing_dt is not None:
-        if filing_dt > decision_ts:
+    if mode == PITExecutionMode.EVIDENCE_VERIFIED_ASOF:
+        # ----------------------------------------------------------------------
+        # Mode A: EVIDENCE_VERIFIED_ASOF (Formal PIT verification)
+        # ----------------------------------------------------------------------
+        # 1. Trading calendar is mandatory (fail-closed if missing)
+        if trading_calendar is None:
             is_available_as_of = False
-            rejection_reason = f"PIT As-Of Check rejected: Announcement filing time ({filing_dt}) is after decision cutoff ({decision_ts})."
-
-    if is_available_as_of:
-        if effective_available_at is None or effective_available_at > decision_ts:
+            rejection_reason = "EVIDENCE_VERIFIED_ASOF rejected: Official trading calendar is missing (trading_calendar is None); fail-closed verification requires explicit trading calendar."
+        elif d_str not in trading_calendar:
             is_available_as_of = False
-            rejection_reason = (
-                f"PIT As-Of Check rejected: Effective availability ({effective_available_at}) "
-                f"is after decision cutoff ({decision_ts}) or unproven before historical decision."
-            )
+            rejection_reason = f"PIT As-Of Check rejected: Date {d_str} is not an official trading day."
+
+        # 2. Verifiable historical provider log is mandatory (no substitution of +5 min hypothesis)
+        if is_available_as_of:
+            if verified_provider_available_at is None:
+                is_available_as_of = False
+                rejection_reason = (
+                    "EVIDENCE_VERIFIED_ASOF rejected: Announcement lacks verified historical provider availability log "
+                    "(verified_provider_available_at is None). Replay estimates cannot substitute."
+                )
+                effective_available_at = None
+                effective_availability_source = "UNAVAILABLE_NO_VERIFIED_LOG"
+                pit_evidence_level = "EVIDENCE_MISSING_UNVERIFIED"
+            else:
+                effective_available_at = verified_provider_available_at
+                effective_availability_source = "VERIFIED_PROVIDER_FEED"
+                pit_evidence_level = "FORMAL_AS_OF_VERIFIED"
+        else:
+            effective_available_at = verified_provider_available_at
+            effective_availability_source = "VERIFIED_PROVIDER_FEED" if verified_provider_available_at else "UNAVAILABLE_NO_VERIFIED_LOG"
+            pit_evidence_level = "FORMAL_AS_OF_VERIFIED" if verified_provider_available_at else "EVIDENCE_MISSING_UNVERIFIED"
+
+        # 3. Post-20:00 cutoff and future announcement checks
+        if is_available_as_of and filing_dt is not None:
+            if filing_dt > decision_ts:
+                is_available_as_of = False
+                rejection_reason = f"PIT As-Of Check rejected: Announcement filing time ({filing_dt}) is after decision cutoff ({decision_ts})."
+
+        if is_available_as_of and effective_available_at is not None:
+            if effective_available_at > decision_ts:
+                is_available_as_of = False
+                rejection_reason = f"PIT As-Of Check rejected: Effective availability ({effective_available_at}) is after decision cutoff ({decision_ts})."
+
+        if is_available_as_of:
+            is_formal_pit_validated = True
+            slot_ingested = True
+
+    else:
+        # ----------------------------------------------------------------------
+        # Mode B: ESTIMATED_REPLAY (Historical Replay Hypothesis)
+        # ----------------------------------------------------------------------
+        is_formal_pit_validated = False  # Strictly False under estimated replay!
+
+        if verified_provider_available_at is not None:
+            effective_available_at = verified_provider_available_at
+            effective_availability_source = "VERIFIED_PROVIDER_FEED"
+            pit_evidence_level = "VERIFIED_PROVIDER_FEED"
+        elif estimated_provider_available_at is not None:
+            effective_available_at = estimated_provider_available_at
+            effective_availability_source = "ESTIMATED_HYPOTHESIS_PLUS_5MIN"
+            pit_evidence_level = "ESTIMATED_HYPOTHESIS_UNVERIFIED"
+        else:
+            effective_available_at = observed_retrieved_at
+            effective_availability_source = "OBSERVED_RETRIEVAL_ONLY"
+            pit_evidence_level = "OBSERVED_RETRIEVAL_UNVERIFIED"
+
+        # Trading calendar check
+        if trading_calendar is not None and d_str not in trading_calendar:
+            is_available_as_of = False
+            rejection_reason = f"PIT As-Of Check rejected: Date {d_str} is not an official trading day."
+
+        # Post-cutoff check (Post-20:00 rejected in both modes)
+        if is_available_as_of and filing_dt is not None:
+            if filing_dt > decision_ts:
+                is_available_as_of = False
+                rejection_reason = f"PIT As-Of Check rejected: Announcement filing time ({filing_dt}) is after decision cutoff ({decision_ts})."
+
+        # Effective availability cutoff check
+        if is_available_as_of:
+            if effective_available_at is None or effective_available_at > decision_ts:
+                is_available_as_of = False
+                rejection_reason = (
+                    f"PIT As-Of Check rejected: Effective availability ({effective_available_at}) "
+                    f"is after decision cutoff ({decision_ts}) or unproven before historical decision."
+                )
+
+        if is_available_as_of:
+            slot_ingested = True
+
+    is_estimated_hypothesis = (effective_availability_source == "ESTIMATED_HYPOTHESIS_PLUS_5MIN")
 
     # 3. Text Embedding (BGE 512D -> 128D)
     engine = load_trusted_pretrained_embedding_engine(local_files_only=True)
@@ -1703,10 +1842,8 @@ def execute_minimal_pipeline_integration(
     active_slots = np.zeros((8, 160), dtype=np.float32)
 
     # Enforce PIT As-Of Gate: event is ONLY ingested into slots if proven available before decision cutoff
-    slot_ingested = False
-    if is_available_as_of:
+    if slot_ingested:
         recent_slots[0] = event_160d
-        slot_ingested = True
 
     all_news_slots = np.concatenate([recent_slots, active_slots], axis=0)
 
@@ -1742,9 +1879,13 @@ def execute_minimal_pipeline_integration(
         "estimated_provider_available_at": estimated_provider_available_at.isoformat() if estimated_provider_available_at else None,
         "is_estimated_hypothesis": is_estimated_hypothesis,
         "verified_provider_available_at": verified_provider_available_at.isoformat() if verified_provider_available_at else None,
-        "availability_source": availability_source,
+        "effective_availability_source": effective_availability_source,
+        "availability_source": effective_availability_source,
+        "pit_mode": mode.value,
+        "pit_evidence_level": pit_evidence_level,
         "is_available_as_of": is_available_as_of,
         "slot_ingested": slot_ingested,
+        "is_formal_pit_validated": is_formal_pit_validated,
         "rejection_reason": rejection_reason,
         "decision_cutoff": f"{decision_cutoff_str} Asia/Taipei",
         "decision_timestamp": decision_ts.isoformat(),

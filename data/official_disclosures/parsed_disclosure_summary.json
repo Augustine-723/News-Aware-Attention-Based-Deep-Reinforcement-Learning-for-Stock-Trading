@@ -1,0 +1,33 @@
+{
+  "snapshot_type": "PARSED_DISCLOSURE_SUMMARY",
+  "raw_response_snapshot_file": "twse_openapi_raw_response_snapshot.json",
+  "raw_response_hash": "949d1b51b851737030c47c6bfe97af6f6143d34247ab45ac543ae9f78e83394d",
+  "raw_response_bytes_len": 155496,
+  "source_channel": "TWSE_OPENAPI",
+  "endpoint": "https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+  "sample_period": "2026-CURRENT-ROLLING",
+  "matched_announcement": {
+    "announcement_id": "LOCAL-OPENAPI-2881-1151117-83c25dbc",
+    "stock_id": "2881",
+    "filing_datetime": "2026-11-17T15:47:58+08:00",
+    "headline": "富邦金控代子公司富邦投信公告修訂「取得或處分資產處\r\n理程序」",
+    "raw_content": "1.股東常會日期:115/11/17\n2.重要決議事項一、盈餘分配或盈虧撥補:無\n3.重要決議事項二、章程修訂:無\n4.重要決議事項三、營業報告書及財務報表:無\n5.重要決議事項四、董監事選舉:無\n6.重要決議事項五、其他事項:通過修訂「取得或處分資產處理程序」\n7.其他應敘明事項:董事會代行股東會職權",
+    "source_url": "https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+    "query_parameters": {},
+    "retrieved_at": "2026-11-18T09:25:20+08:00",
+    "raw_response_hash": "949d1b51b851737030c47c6bfe97af6f6143d34247ab45ac543ae9f78e83394d",
+    "parsed_payload_hash": "83c25dbccd75afca21c83928c5b9d74c2fc9f540cb3675a7c0751dced11581ba",
+    "verification_status": "SOURCE_EXISTENCE_VERIFIED",
+    "pit_status": "ESTIMATED_PIT_ONLY",
+    "retrieval_session_id": "REG-PROD-20261118092520-949d1b51",
+    "source_channel": "TWSE_OPENAPI",
+    "license_name": "Taiwan Open Government Data License (TWSE OpenAPI)",
+    "local_record_id": "LOCAL-OPENAPI-2881-1151117-83c25dbc",
+    "is_local_record_id": true,
+    "publication_time_parsed": true,
+    "parser_version": "v8.14-openapi-json-v1",
+    "source_locator": "JSON_ARRAY_RECORD[stock_id=2881,index=0]",
+    "raw_retention_status": "FULL_RAW_BYTES_RETAINED",
+    "raw_response_snapshot_file": "twse_openapi_raw_response_snapshot.json"
+  }
+}

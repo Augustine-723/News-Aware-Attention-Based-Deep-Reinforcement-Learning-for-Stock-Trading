@@ -13,6 +13,7 @@ Validates:
 
 import hashlib
 import json
+import os
 import numpy as np
 import pandas as pd
 import pytest
@@ -51,6 +52,8 @@ from stock_rl.evaluation.official_source_collector import (
     EvidenceManifest,
     GenuineHttpsRetrievalService,
     execute_minimal_pipeline_integration,
+    PITExecutionMode,
+    _parse_raw_record_publication_datetime,
 )
 from stock_rl.evaluation.provenance import (
     load_trusted_pretrained_embedding_engine,
@@ -1160,4 +1163,396 @@ def test_openapi_live_sample_isolated_from_2024_q1():
     assert pilot_scope["openapi_current_rolling_sample_isolated"] is True
     assert pilot_scope["twse_openapi_sample_period"] == "2026-CURRENT-ROLLING"
     assert pilot_scope["historical_q1_retrieved_count"] == 0
+
+
+# ==============================================================================
+# 11. V8.14 Final Evidence Contract Patch Tests (P0-1, P0-2, P1-3, P1-4)
+# ==============================================================================
+
+def test_p0_1_production_session_requires_genuine_service_context():
+    """
+    P0-1: Caller self-attestation via static string or direct registration call is strictly rejected.
+    Single-process control boundary is labeled ENGINEERING_TRUST_BOUNDARY_ONLY.
+    """
+    assert RetrievalSessionRegistry.TRUST_BOUNDARY_LEVEL == "ENGINEERING_TRUST_BOUNDARY_ONLY"
+    assert RetrievalSessionRegistry.AUDIT_MODEL == "PROCESS_INTERNAL_CONTROL_AUDIT"
+
+    # Ordinary direct call to register_production_session raises PermissionError
+    t_now = pd.Timestamp.now(tz="Asia/Taipei")
+    with pytest.raises(PermissionError, match="Unauthorized caller"):
+        RetrievalSessionRegistry.register_production_session(
+            source_channel="TWSE_OPENAPI",
+            endpoint_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+            request_start_time=t_now,
+            response_end_time=t_now,
+            http_status=200,
+            raw_response_bytes=b'{"sample": "data"}',
+            service_auth_key="ANY_SELF_ATTESTED_STRING",
+        )
+
+    # Ordinary caller calling register_genuine_session cannot achieve is_production_certified=True
+    sess = RetrievalSessionRegistry.register_genuine_session(
+        source_channel="TWSE_OPENAPI",
+        endpoint_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        request_start_time=t_now,
+        response_end_time=t_now,
+        http_status=200,
+        raw_response_bytes=b'{"sample": "data"}',
+        service_provenance="GENUINE_HTTPS_RETRIEVAL_SERVICE",
+    )
+    assert sess.is_production_certified is False
+    assert sess.is_simulated is True
+    assert sess.trust_boundary_level == "ENGINEERING_TRUST_BOUNDARY_ONLY"
+
+
+def test_p0_1_historical_verified_source_count_strictly_zero():
+    """
+    P0-1: Formal historical verified source count remains strictly 0.
+    """
+    from stock_rl.evaluation.pilot_dataset import PilotSourceManifest
+    verified_events = PilotSourceManifest.get_verified_events() if hasattr(PilotSourceManifest, "get_verified_events") else []
+    assert len(verified_events) == 0
+
+    metrics = OfficialHistoricalNewsCollector.evaluate_q1_2024_collection_metrics()
+    assert metrics["pilot_scope"]["historical_q1_retrieved_count"] == 0
+
+
+def test_p0_2_pit_modes_separation_estimated_replay_vs_evidence_verified_asof():
+    """
+    P0-2: Strict separation of ESTIMATED_REPLAY from EVIDENCE_VERIFIED_ASOF.
+    1. Sample retrieved in 2026 without provider log fails in EVIDENCE_VERIFIED_ASOF.
+    2. Same sample in ESTIMATED_REPLAY is processed under hypothesis, is_formal_pit_validated=False.
+    3. Post-20:00 announcement rejected in both modes.
+    4. Future announcement (T+1) or non-trading day rejected in both modes.
+    5. Missing official trading calendar fails closed in EVIDENCE_VERIFIED_ASOF.
+    """
+    trading_calendar = ["2024-03-15", "2024-03-18"]
+    headline = "富邦金董事會決議股利分派"
+    content = "富邦金控公告董事會決議發放現金股利。"
+    raw_bytes = content.encode("utf-8")
+    raw_hash = hashlib.sha256(raw_bytes).hexdigest()
+    parsed_hash = compute_normalized_content_hash(headline, content)
+
+    session = RetrievalSessionRegistry.register_simulated_session(
+        source_channel="TWSE_OPENAPI",
+        endpoint_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        request_start_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=raw_bytes,
+    )
+
+    # 1. 2024 announcement without verified provider log (verified_provider_available_at=None)
+    entry_no_log = EvidenceManifestEntry(
+        announcement_id="OPENAPI-2881-20240315-NOLOG",
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2026-04-01 10:00:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        verified_provider_available_at=None,
+    )
+
+    # In EVIDENCE_VERIFIED_ASOF mode: MUST FAIL CLOSED!
+    res_verified_mode = execute_minimal_pipeline_integration(
+        entry_no_log,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.EVIDENCE_VERIFIED_ASOF,
+        trading_calendar=trading_calendar,
+    )
+    assert res_verified_mode["pit_mode"] == "EVIDENCE_VERIFIED_ASOF"
+    assert res_verified_mode["is_available_as_of"] is False
+    assert res_verified_mode["slot_ingested"] is False
+    assert res_verified_mode["is_formal_pit_validated"] is False
+    assert "lacks verified historical provider availability log" in res_verified_mode["rejection_reason"]
+    assert res_verified_mode["pit_evidence_level"] == "EVIDENCE_MISSING_UNVERIFIED"
+
+    # In ESTIMATED_REPLAY mode: processed under explicit hypothesis, but is_formal_pit_validated is False!
+    res_replay_mode = execute_minimal_pipeline_integration(
+        entry_no_log,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.ESTIMATED_REPLAY,
+        trading_calendar=trading_calendar,
+    )
+    assert res_replay_mode["pit_mode"] == "ESTIMATED_REPLAY"
+    assert res_replay_mode["is_available_as_of"] is True
+    assert res_replay_mode["slot_ingested"] is True
+    assert res_replay_mode["is_formal_pit_validated"] is False
+    assert res_replay_mode["pit_evidence_level"] == "ESTIMATED_HYPOTHESIS_UNVERIFIED"
+    assert res_replay_mode["effective_availability_source"] == "ESTIMATED_HYPOTHESIS_PLUS_5MIN"
+
+    # 2. Post-20:00 announcement (rejected in BOTH modes)
+    entry_post_cutoff = EvidenceManifestEntry(
+        announcement_id="OPENAPI-2881-20240315-POST2000",
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-15 20:15:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-15 20:16:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        verified_provider_available_at=pd.Timestamp("2024-03-15 20:18:00", tz="Asia/Taipei"),
+    )
+    res_post_replay = execute_minimal_pipeline_integration(
+        entry_post_cutoff,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.ESTIMATED_REPLAY,
+        trading_calendar=trading_calendar,
+    )
+    res_post_verified = execute_minimal_pipeline_integration(
+        entry_post_cutoff,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.EVIDENCE_VERIFIED_ASOF,
+        trading_calendar=trading_calendar,
+    )
+    assert res_post_replay["slot_ingested"] is False
+    assert res_post_verified["slot_ingested"] is False
+    assert "after decision cutoff" in res_post_replay["rejection_reason"]
+    assert "after decision cutoff" in res_post_verified["rejection_reason"]
+
+    # 3. Future announcement (T+1) or non-trading day (rejected in BOTH modes)
+    entry_future = EvidenceManifestEntry(
+        announcement_id="OPENAPI-2881-20240316-FUT",
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-16 10:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-16 10:01:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+    )
+    for p_mode in [PITExecutionMode.ESTIMATED_REPLAY, PITExecutionMode.EVIDENCE_VERIFIED_ASOF]:
+        res_fut = execute_minimal_pipeline_integration(
+            entry_future,
+            target_stock_id="2881",
+            decision_cutoff_str="20:00:00",
+            decision_date_str="2024-03-15",
+            pit_mode=p_mode,
+            trading_calendar=trading_calendar,
+        )
+        assert res_fut["slot_ingested"] is False
+
+    # 4. Missing trading calendar in EVIDENCE_VERIFIED_ASOF fails closed (does NOT default to pass!)
+    entry_with_log = EvidenceManifestEntry(
+        announcement_id="OPENAPI-2881-20240315-WITHLOG",
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-15 16:01:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        verified_provider_available_at=pd.Timestamp("2024-03-15 16:02:00", tz="Asia/Taipei"),
+    )
+    res_no_calendar = execute_minimal_pipeline_integration(
+        entry_with_log,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        pit_mode=PITExecutionMode.EVIDENCE_VERIFIED_ASOF,
+        trading_calendar=None,  # Missing trading calendar!
+    )
+    assert res_no_calendar["slot_ingested"] is False
+    assert res_no_calendar["is_available_as_of"] is False
+    assert "Official trading calendar is missing" in res_no_calendar["rejection_reason"]
+
+
+def test_p1_3_raw_snapshot_reproducibility_and_parsed_summary():
+    """
+    P1-3: Raw response snapshot reproducibility.
+    1. twse_openapi_raw_response_snapshot.json exists, is 155,496 bytes, SHA-256 matches.
+    2. parsed_disclosure_summary.json exists and references the raw snapshot.
+    3. raw_retention_status='INDEPENDENT_REPRODUCTION_PENDING' causes verify_entry_integrity to reject.
+    """
+    raw_path = "data/official_disclosures/twse_openapi_raw_response_snapshot.json"
+    sum_path = "data/official_disclosures/parsed_disclosure_summary.json"
+
+    assert os.path.exists(raw_path), f"Raw response snapshot missing at {raw_path}"
+    assert os.path.exists(sum_path), f"Parsed summary missing at {sum_path}"
+
+    raw_bytes = open(raw_path, "rb").read()
+    assert len(raw_bytes) == 155496
+    expected_hash = "949d1b51b851737030c47c6bfe97af6f6143d34247ab45ac543ae9f78e83394d"
+    actual_hash = hashlib.sha256(raw_bytes).hexdigest()
+    assert actual_hash == expected_hash
+
+    summary = json.load(open(sum_path, "r", encoding="utf-8"))
+    assert summary["snapshot_type"] == "PARSED_DISCLOSURE_SUMMARY"
+    assert summary["raw_response_snapshot_file"] == "twse_openapi_raw_response_snapshot.json"
+    assert summary["raw_response_hash"] == expected_hash
+    assert summary["raw_response_bytes_len"] == 155496
+
+    # When raw retention cannot be maintained, mark INDEPENDENT_REPRODUCTION_PENDING
+    session = RetrievalSessionRegistry.register_simulated_session(
+        source_channel="TWSE_OPENAPI",
+        endpoint_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        request_start_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=raw_bytes,
+    )
+    pending_entry = EvidenceManifestEntry(
+        announcement_id="LOCAL-PENDING-001",
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2026-11-17 15:47:58", tz="Asia/Taipei"),
+        headline="富邦金控代子公司富邦投信公告修訂「取得或處分資產處\r\n理程序」",
+        raw_content="1.股東常會日期:115/11/17\n2.重要決議事項一、盈餘分配或盈虧撥補:無",
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp.now(tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=actual_hash,
+        parsed_payload_hash="some_hash",
+        retrieval_session_id=session.session_id,
+        raw_retention_status="INDEPENDENT_REPRODUCTION_PENDING",
+    )
+    manifest = EvidenceManifest(manifest_id="PENDING-TEST")
+    is_valid, msg = manifest.verify_entry_integrity(pending_entry)
+    assert is_valid is False
+    assert "INDEPENDENT_REPRODUCTION_PENDING" in msg
+
+
+def test_p1_4_publication_time_reparsing_and_exact_field_matching():
+    """
+    P1-4: Exact field matching, publication datetime re-parsing, and counterexample rejections.
+    """
+    # 1. Parse official publication datetime from ROC year record
+    item_sample = {
+        "發言日期": "1151117",
+        "發言時間": "154758",
+        "公司代號": "2881",
+        "主旨 ": "富邦金控代子公司富邦投信公告修訂「取得或處分資產處\r\n理程序」",
+        "說明": "1.股東常會日期:115/11/17\n2.重要決議事項一、盈餘分配或盈虧撥補:無",
+    }
+    parsed_dt, is_parsed = _parse_raw_record_publication_datetime(item_sample)
+    assert is_parsed is True
+    assert parsed_dt == pd.Timestamp("2026-11-17 15:47:58", tz="Asia/Taipei")
+
+    raw_bytes = json.dumps([item_sample]).encode("utf-8")
+    raw_hash = hashlib.sha256(raw_bytes).hexdigest()
+    headline = "富邦金控代子公司富邦投信公告修訂「取得或處分資產處\r\n理程序」"
+    content = "1.股東常會日期:115/11/17\n2.重要決議事項一、盈餘分配或盈虧撥補:無"
+    parsed_hash = compute_normalized_content_hash(headline, content)
+
+    session = RetrievalSessionRegistry.register_simulated_session(
+        source_channel="TWSE_OPENAPI",
+        endpoint_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        request_start_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=raw_bytes,
+    )
+
+    valid_entry = EvidenceManifestEntry(
+        announcement_id="LOCAL-OPENAPI-2881-1151117-001",
+        stock_id="2881",
+        filing_datetime=parsed_dt,
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2026-11-18 09:00:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        local_record_id="LOCAL-OPENAPI-2881-1151117-001",
+        is_local_record_id=True,
+        publication_time_parsed=True,
+    )
+    manifest = EvidenceManifest(manifest_id="M1")
+    is_valid, msg = manifest.verify_entry_integrity(valid_entry)
+    assert is_valid is True, msg
+
+    # 2. Rejection: Publication datetime mismatch
+    bad_dt_entry = EvidenceManifestEntry(
+        announcement_id="LOCAL-OPENAPI-2881-1151117-002",
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2026-11-17 14:00:00", tz="Asia/Taipei"),  # Mismatched datetime!
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2026-11-18 09:00:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        local_record_id="LOCAL-OPENAPI-2881-1151117-002",
+        is_local_record_id=True,
+        publication_time_parsed=True,
+    )
+    is_valid_dt, msg_dt = manifest.verify_entry_integrity(bad_dt_entry)
+    assert is_valid_dt is False
+    assert "Publication datetime mismatch" in msg_dt or "Content binding verification failed" in msg_dt
+
+    # 3. Rejection: Similar headline mismatch (fuzzy substring matching prohibited)
+    similar_headline = "富邦金控代子公司富邦證券公告修訂「取得或處分資產處\r\n理程序」"
+    similar_hash = compute_normalized_content_hash(similar_headline, content)
+    bad_hl_entry = EvidenceManifestEntry(
+        announcement_id="LOCAL-OPENAPI-2881-1151117-003",
+        stock_id="2881",
+        filing_datetime=parsed_dt,
+        headline=similar_headline,  # Altered headline!
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2026-11-18 09:00:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=similar_hash,
+        retrieval_session_id=session.session_id,
+        local_record_id="LOCAL-OPENAPI-2881-1151117-003",
+        is_local_record_id=True,
+        publication_time_parsed=True,
+    )
+    is_valid_hl, msg_hl = manifest.verify_entry_integrity(bad_hl_entry)
+    assert is_valid_hl is False
+    assert "Content binding verification failed" in msg_hl
+
+    # 4. Rejection: Missing required fields
+    empty_stock_entry = EvidenceManifestEntry(
+        announcement_id="LOCAL-OPENAPI-EMPTY-004",
+        stock_id="",  # Empty stock_id!
+        filing_datetime=parsed_dt,
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2026-11-18 09:00:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+    )
+    is_valid_empty, msg_empty = manifest.verify_entry_integrity(empty_stock_entry)
+    assert is_valid_empty is False
+    assert "Required field 'stock_id' is missing or empty" in msg_empty
+
 
