@@ -33,7 +33,7 @@
 ### 二、 具體諮詢事項清單
 
 #### 1. 對應產品名稱與資料庫代碼（Table ID）
-- 涵蓋公開資訊觀測站完整內文（說明段落）之重大訊息產品，於 TEJ 系統中之官方正式產品名稱、資料庫代碼（Table Name / Sub-database Code）為何？
+- 涵蓋公開資訊觀測站完整內文（說明段落）之重大訊息產品，貴公司產品目錄所列 Taiwan daily corporate announcements full-text 於校園版之資料庫代碼（Table Name / Sub-database Code）為何？
 - 該資料庫是否以完整中文長文本提供，抑或僅包含標準化分類摘要？
 
 #### 2. 2024 年第一季（2024 Q1）歷史覆蓋率與個股紀錄

@@ -1159,6 +1159,7 @@ class PilotExperimentRunner:
                 f"over Capacity-Matched Method B (Delta rho = {round(delta_rho_bm, 4):+0.4f}), and over "
                 f"Shuffled-Semantic Control (Delta rho = {round(delta_rho_shuf, 4):+0.4f}), confirming that semantic gains "
                 f"do not stem merely from model capacity or random regularization. With N_test={len(self.test_samples)}, findings are exploratory."
+                if semantic_support else "The observed rank correlations leave semantic incremental value inconclusive."
             ),
         }
 

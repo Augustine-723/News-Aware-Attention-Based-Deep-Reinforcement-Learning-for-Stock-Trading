@@ -1643,7 +1643,7 @@ class PilotSourceManifest:
                     raw_v_status = SourceVerificationStatus(raw_v_status)
 
                 # Security Gate: Prohibit general RAW_PILOT_EVENTS from self-elevating to VERIFIED_SOURCE!
-                if raw_v_status == SourceVerificationStatus.VERIFIED_SOURCE:
+                if raw_v_status in (SourceVerificationStatus.VERIFIED_SOURCE, SourceVerificationStatus.SOURCE_EXISTENCE_VERIFIED):
                     v_status = SourceVerificationStatus.CURATED_UNVERIFIED
                     notes = "Self-elevation rejected: RAW_PILOT_EVENTS cannot self-certify as VERIFIED_SOURCE without trusted external source certifier."
                 else:
@@ -1668,13 +1668,8 @@ class PilotSourceManifest:
 
             ver_avail_dt = None
             is_formal_pit = False
-            if v_evidence and isinstance(v_evidence, dict) and v_evidence.get("verified_provider_available_at"):
-                ver_avail_dt = pd.Timestamp(v_evidence["verified_provider_available_at"])
-                is_formal_pit = bool(v_evidence.get("is_formal_pit_validated", False))
-            elif evidence_bundle and hasattr(evidence_bundle, "verified_provider_available_at") and evidence_bundle.verified_provider_available_at:
-                ver_avail_dt = pd.Timestamp(evidence_bundle.verified_provider_available_at)
-                is_formal_pit = bool(getattr(evidence_bundle, "is_formal_pit_validated", False))
-
+            # Pilot manifests have no provider receipt verification path.
+            # Only the official collector can authenticate historical feed availability.
             prov_avail_dt = ver_avail_dt if ver_avail_dt is not None else est_avail_dt
 
             rec = EventSourceRecord(

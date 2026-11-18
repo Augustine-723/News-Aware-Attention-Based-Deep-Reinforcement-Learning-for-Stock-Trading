@@ -390,7 +390,12 @@ def test_supervised_pilot_experiment_multi_seed_evaluation(pretrained_encoder):
 
     # 4. Controlled Audits
     audits = results["controlled_audits"]
-    assert audits["audit_1_semantic_incremental_value"]["status"] in ["VERIFIED_EXPLORATORY", "VERIFIED", "PASSED"]
+    semantic_gain = all(
+        mC["spearman_rho"]["mean"] > control["spearman_rho"]["mean"]
+        for control in (mB, mBm, mCs)
+    )
+    expected = "VERIFIED_EXPLORATORY" if semantic_gain else "INCONCLUSIVE"
+    assert audits["audit_1_semantic_incremental_value"]["status"] == expected
     assert audits["audit_2_shortcut_learning"]["status"] == "PASSED"
     assert audits["audit_3_revision_leakage"]["status"] == "PASSED"
     assert audits["audit_4_duplicate_event_leakage"]["status"] == "PASSED"
