@@ -164,9 +164,9 @@ Decision Cutoff (20:00)
 - **Epistemic Classifications**:
   - Daily event eligibility is formally designated **`DAILY_EVENT_ELIGIBILITY_IDENTICAL`** (audit verdict: **`LATENCY_EFFECT_NOT_IDENTIFIABLE`**).
   - Full state tensor equality across all 160 dimensions remains **`FULL_STATE_EQUALITY_NOT_TESTED`**; bitwise equivalence of Recent/Active slots under fixed sorting and projections is not claimed without empirical forward evaluation.
-  - Metadata inspection confirms `availability_timestamp` and $\tau$-dependent decay features are absent from the pilot metadata schema.
-  - Scientific implication: Any observed performance differences across DRL runs with varied $\tau$ **cannot be attributed to changes in the daily event eligibility set**; they may stem from random initialization seeds or unverified feature tensor variations.
-- **Quarantined Boundary Fixtures**: Synthetic boundary test fixtures (19:15, 19:40, 19:55, 20:05) are maintained strictly in unit test isolation (`is_quarantined_test_fixture=True`, `SYNTHETIC_FIXTURE_QUARANTINED`) to verify the time-gate mechanism. Crossing the 20:00 cutoff causes all 3 metrics to increment (`changed_event_count = 3`, `changed_stock_day_count = 2`, `changed_decision_state_count = 2`). Synthetic fixtures are strictly prohibited from empirical Alpha/Sharpe claims.
+  - **Dynamic Metadata Encoder Audit (P1-B)**: Inspection of `stock_rl.data.multimodal_pipeline.extract_event_metadata` confirms that dimension **E23 (`event_age`)** is dynamically computed via `(decision_time - avail_ts) / 86400.0`. Because $t_{\text{available}} = t_{\text{published}} + \tau$, varying $\tau$ changes the continuous numerical values of dimension E23 even though daily eligibility is identical (`TIME_DEPENDENT_FEATURE_DETECTED`).
+  - Scientific implication: Any observed performance differences across DRL runs with varied $\tau$ **cannot be attributed to changes in the daily event eligibility set**; they may stem from random initialization seeds or continuous feature variations in dimension E23.
+- **Quarantined Boundary Fixtures (P1-A)**: Synthetic boundary test fixtures (19:15, 19:40, 19:55, 20:05) are maintained strictly in unit test isolation (`is_quarantined_test_fixture=True`, `SYNTHETIC_FIXTURE_QUARANTINED`) to verify the time-gate mechanism. Dual-check quarantine enforcement ensures zero ID intersection and rejects any record carrying quarantine markers (including renamed fixtures). Crossing the 20:00 cutoff causes all 3 metrics to increment (`changed_event_count = 3`, `changed_stock_day_count = 2`, `changed_decision_state_count = 2`). Synthetic fixtures are strictly prohibited from empirical Alpha/Sharpe claims.
 
 #### Reformed Fragility Metrics (P1-3)
 1. **Primary Metric — Absolute Delta Sharpe**:
@@ -212,7 +212,7 @@ Standard $K$-Fold cross-validation is strictly prohibited in financial time-seri
 
 1. **Purge Window Justification**: A 10-day buffer isolates the Recent 32 memory slots, preventing cross-fold attention contamination.
 2. **Embargo Window Justification**: A 5-day post-validation buffer prevents serial correlation leakage into the out-of-sample test split.
-3. **Exploratory Design Hypotheses**: The 10-day purge and 5-day embargo are exploratory design hypotheses determined by label horizon, memory retention, and information dependencies.
+3. **Exploratory Design Hypotheses (`HYPOTHESIS_ONLY_UNPROVEN`)**: The 10-day purge and 5-day embargo are exploratory design hypotheses determined by label horizon, memory retention, and information dependencies. Their statistical adequacy has not been empirically proven on this sparse dataset (`HYPOTHESIS_ONLY_UNPROVEN`).
 4. **Walk-Forward Preflight Finding**: In the full 202-day period:
    - **Train Fold**: 26 events (25 clusters) across 24 event days (2023-06-01 to 2023-11-16, 115 trading days).
    - **Purge Window**: 2 events (2 clusters) across 2 event days (2023-11-17 to 2023-11-30, 10 trading days).

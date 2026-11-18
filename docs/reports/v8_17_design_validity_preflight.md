@@ -16,6 +16,17 @@
 
 Before committing computational resources to multi-arm deep reinforcement learning (DRL) ablations under `ESTIMATED_REPLAY`, this preflight audit evaluates the statistical identifiability, sample distribution, weekend rollover mechanics, and methodological validity of the candidate news dataset (`RAW_PILOT_EVENTS`).
 
+### V8.17 Final Epistemic Gate & Closure Matrix
+| Verification Item | Final V8.17 Status | Audit Verdict & Epistemic Boundary |
+| :--- | :--- | :--- |
+| **1. Daily Eligibility Audit** | **通過 (Passed)** | `DAILY_EVENT_ELIGIBILITY_IDENTICAL`: For all $\tau \in \{0, 5, 15, 30, 60\}\text{m}$, zero events cross the 20:00 cutoff. |
+| **2. Full Tensor Equality** | **未驗證 (NOT_VERIFIED)** | `FULL_STATE_EQUALITY_NOT_TESTED`: Encoder inspection revealed dimension E23 (`event_age`) varies dynamically with $\tau$. Bitwise tensor equality is unverified and strictly not claimed. |
+| **3. Quarantine Isolation** | **完成補強後通過 (Passed)** | `SYNTHETIC_FIXTURE_QUARANTINED`: Dual-check gate enforces both ID non-overlap and rejection of any quarantined markers (including renamed fixtures). Pre-ingestion validation verified. |
+| **4. Fold Configuration** | **已對齊 (Aligned)** | `CHRONOLOGICAL_FOLD_CONFIG_VERIFIED`: Canonical split aligned across code, test, and report: Train 115 / Purge 10 / Val 25 / Embargo 5 / Test 47 = 202 trading days. `CLUSTER_SPLIT_LEAKAGE_CHECKED` confirmed (0 shared clusters). |
+| **5. Purge / Embargo Adequacy** | **尚未證明 (Hypothesis Only)** | `HYPOTHESIS_ONLY_UNPROVEN`: 10-day purge and 5-day embargo are exploratory design hypotheses; their statistical sufficiency has not been proven empirically. |
+| **6. Formal PIT Status** | **NO-GO** | Verified Historical Disclosures = 0; Provider Availability Receipts = 0; Third-party cryptographic vendor feed missing. |
+| **7. Large-Scale RL Training** | **NO-GO** | Validation sample sparsity (4 events) and unidentifiable eligibility decay prohibit meaningful DRL optimization or alpha benchmarking. |
+
 ### Core Audit Findings
 1. **Population Inconsistency & Rollover Resolved (P0-1 & P1-1)**:
    - Evaluated across both the **Full Period** (2023-06-01 to 2024-03-29, 202 trading days) and the **2024 Q1 Sub-Period** (2024-01-02 to 2024-03-29, 56 trading days).
@@ -124,21 +135,24 @@ Earliest Filing (08:30)                                  Latest Filing (18:45)  
 | **$\tau = 30\text{ min}$** | 09:00:00 | 19:15:00 | 0 | 0 | 0 | 0 dates | **`LATENCY_ELIGIBILITY_IDENTICAL`** |
 | **$\tau = 60\text{ min}$** | 09:30:00 | 19:45:00 | 0 | 0 | 0 | 0 dates | **`LATENCY_ELIGIBILITY_IDENTICAL`** |
 
-### 2.3 Epistemic Boundaries: Eligibility vs. Full Tensor Equality (P1-4)
+### 2.3 Epistemic Boundaries: Eligibility vs. Full Tensor Equality (P1-4 & P1-B)
 1. **Daily Event Eligibility**:
    - Status: **`DAILY_EVENT_ELIGIBILITY_IDENTICAL`**
    - Audit Verdict: **`LATENCY_EFFECT_NOT_IDENTIFIABLE`**
-   - Every tested $\tau$ admits the exact same subset of disclosures on every trading day.
-2. **State Tensor Equality Boundary**:
-   - Status: **`FULL_STATE_EQUALITY_NOT_TESTED`**
-   - While metadata features do not directly contain `availability_timestamp` or $\tau$-dependent decay features, bitwise tensor equality across all 160 dimensions (including Recent/Active slot sorting under fixed neural projections) has not been empirically evaluated via forward passes.
-   - We strictly refrain from asserting full state tensor bitwise equivalence until forward tests are executed.
+   - Every tested $\tau \in \{0, 5, 15, 30, 60\}\text{m}$ admits the exact same subset of disclosures on every trading day.
+2. **Metadata Encoder Feature Audit & State Tensor Equality Boundary (P1-B)**:
+   - Dynamic Metadata Audit Status: **`TIME_DEPENDENT_FEATURE_DETECTED`**
+   - State Tensor Equality Status: **`FULL_STATE_EQUALITY_NOT_TESTED`**
+   - **Encoder Inspection Finding**: In `stock_rl.data.multimodal_pipeline.extract_event_metadata`, dimension **E23 (`event_age`)** is dynamically computed via:
+     $$\text{vec}[22] = \frac{\max(t_{\text{decision}} - t_{\text{available}}, 0)}{86400.0}$$
+     where $t_{\text{available}} = t_{\text{published}} + \tau$. When $\tau$ increases from 0 to 60 minutes, $t_{\text{available}}$ shifts forward, directly shrinking dimension E23 by $\frac{\tau}{1440}$ fractional days.
+   - **Epistemic Constraint**: Because dimension E23 varies continuously with $\tau$, the resulting 24D metadata vector and 160D full state tensor are **NOT bitwise identical** across $\tau$. Full state tensor equivalence has not been verified via fixed-input forward evaluations, and is labeled strictly as **`FULL_STATE_EQUALITY_NOT_TESTED`**.
 3. **Scientific Implication**:
-   - Any performance variation observed across DRL runs with varied $\tau$ **cannot be attributed to changes in the daily event eligibility set**. They may stem from random initialization seeds or unverified feature tensor variations.
+   - Any performance variation observed across DRL runs with varied $\tau$ **cannot be attributed to changes in the daily event eligibility set**. They may stem from random initialization seeds or continuous feature variations in dimension E23.
 
 ---
 
-## 3. Quarantined Synthetic Boundary Fixtures (P0-2 Item 7 & P1-5)
+## 3. Quarantined Synthetic Boundary Fixtures (P0-2 Item 7, P1-5 & P1-A)
 
 To verify that the software time-gate mechanism functions correctly without contaminating the empirical dataset, four isolated boundary test fixtures were generated:
 
@@ -168,11 +182,13 @@ flowchart LR
   - Verdict: **`LATENCY_EFFECT_IDENTIFIABLE`** (`DAILY_EVENT_ELIGIBILITY_CHANGED`)
 - Crossing the 20:00 cutoff successfully causes all three metrics to increment.
 
-### 3.2 Executable Quarantine Isolation (P1-5)
-- All fixtures are tagged with `is_quarantined_test_fixture=True` and `SYNTHETIC_FIXTURE_QUARANTINED`.
-- Method `DesignValidityPreflightAuditor.verify_quarantine_isolation()` enforces:
-  - Synthetic event IDs must have zero overlap with empirical candidate event IDs.
-  - Any accidental injection into empirical datasets immediately raises an executable `ValueError: QUARANTINE BREACH DETECTED`.
+### 3.2 Dual-Check Quarantine Enforcement & Pre-Ingestion Gate (P1-A & P1-5)
+- All synthetic fixtures are tagged with `is_quarantined_test_fixture=True` and `status=SYNTHETIC_FIXTURE_QUARANTINED`.
+- The quarantine enforcement mechanism operates via two strict layers:
+  1. **Event ID Non-Overlap**: Verifies that synthetic IDs have zero intersection with empirical candidate IDs.
+  2. **Quarantine Marker Inspection**: Inspects all empirical dataset records. Any record carrying `is_quarantined_test_fixture=True`, `is_quarantined=True`, `status="SYNTHETIC_FIXTURE_QUARANTINED"`, `category="SYNTHETIC_TEST"`, `cluster_id` starting with `"CLU-SYNTH"`, or `event_id` starting with `"SYNTH-"` is **immediately rejected**.
+  3. **Renamed Synthetic Event Defense**: Even if an attacker or automated script renames a synthetic fixture to a benign-looking ID (e.g. `RENAMED-EMPIRICAL-LOOKALIKE-999`), the presence of quarantine markers triggers an immediate `ValueError: QUARANTINE BREACH DETECTED`.
+  4. **Pre-Ingestion Execution Gate**: `DesignValidityPreflightAuditor.validate_empirical_dataset_pre_ingestion()` is executed prior to loading any data into empirical training or evaluation pipelines.
 
 ---
 
@@ -268,11 +284,12 @@ The report, test suite, and audit engine are aligned on a single canonical fold 
 - Shared Clusters between Validation and Test: **0**
 - Status: **`CLUSTER_SPLIT_LEAKAGE_CHECKED`** (No cluster spanning across evaluation splits).
 
-### 6.3 Exploratory Design Hypotheses
+### 6.3 Exploratory Design Hypotheses (`HYPOTHESIS_ONLY_UNPROVEN`)
 > [!NOTE]
 > The **10-day purge window** and **5-day embargo window** represent exploratory design hypotheses:
 > - The **10-day purge window** prevents attention working memory overlap (Recent 32 memory slots lookback buffer) between training and evaluation phases.
 > - The **5-day embargo window** accounts for short-term serial correlation and post-announcement price drift decay.
+> - **Adequacy Status**: **`HYPOTHESIS_ONLY_UNPROVEN`**. The theoretical adequacy of 10-day purge and 5-day embargo has not been empirically proven on this sparse candidate fixture set.
 
 ### 6.4 Methodological Verdict: `INSUFFICIENT_EFFECTIVE_SAMPLE`
 - **Validation Fold Defect**: The Validation fold contains only **4 events** across 25 trading sessions (3 event days). Tuning a deep neural network (e.g., learning rate, attention dropout, reward scale) or performing early stopping on 4 events is statistically invalid.

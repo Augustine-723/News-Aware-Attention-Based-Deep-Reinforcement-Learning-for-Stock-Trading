@@ -2,7 +2,8 @@
 Unit tests for V8.17 Design Validity Preflight & Audit Framework.
 Verifies sample scope corrections with weekend rollover, latency identifiability metrics,
 distinction between daily eligibility equality and full tensor equality,
-synthetic boundary fixtures quarantine, robust fragility metrics, and chronological fold alignment.
+synthetic boundary fixtures quarantine (including renamed fixtures),
+robust fragility metrics, and chronological fold alignment.
 """
 
 import pytest
@@ -85,13 +86,14 @@ def test_v8_17_p0_1_sample_scope_full_vs_q1(twse_trading_calendar):
 
 def test_v8_17_p0_2_latency_unidentifiable_on_real_events(twse_trading_calendar):
     """
-    P0-2, P1-3 & P1-4:
+    P0-2, P1-3 & P1-4 & P1-B:
     1. Latest recorded pub_time_str in RAW_PILOT_EVENTS is 18:45:00.
     2. For tau in {0, 5, 15, 30, 60} min, latest available time is 18:45 + 60m = 19:45:00 <= 20:00:00 cutoff.
     3. Confirms changed_event_count=0, changed_stock_day_count=0, changed_decision_state_count=0.
     4. Formally classifies daily eligibility as DAILY_EVENT_ELIGIBILITY_IDENTICAL.
     5. Formally classifies full state tensor equality as FULL_STATE_EQUALITY_NOT_TESTED.
-    6. Confirms metadata feature audit inspected features and verified availability_timestamp absence.
+    6. Verifies metadata encoder inspection detects time-dependent feature E23 (Event Age).
+    7. Tests verify_encoder=False correctly labels dynamic metadata audit as NOT_VERIFIED.
     """
     audit = DesignValidityPreflightAuditor.audit_latency_identifiability(
         raw_events=RAW_PILOT_EVENTS,
@@ -116,23 +118,28 @@ def test_v8_17_p0_2_latency_unidentifiable_on_real_events(twse_trading_calendar)
         assert tau_comp["changed_stock_days_count"] == 0
         assert tau_comp["differing_trading_days_count"] == 0
 
-    # Metadata audit checks
+    # Metadata audit checks (P1-B)
     meta_audit = audit["metadata_features_audit"]
     assert meta_audit["state_tensor_equality_status"] == PreflightStatus.FULL_STATE_EQUALITY_NOT_TESTED.value
-    assert meta_audit["contains_availability_timestamp"] is False
+    assert meta_audit["raw_dict_contains_availability_timestamp"] is False
+    assert meta_audit["contains_tau_dependent_decay_feature"] is True
+    assert meta_audit["dynamic_metadata_audit_status"] == PreflightStatus.TIME_DEPENDENT_FEATURE_DETECTED.value
+
+    # Standalone unverified encoder audit check
+    unverified_meta = DesignValidityPreflightAuditor.audit_metadata_encoder_features(verify_encoder=False)
+    assert unverified_meta["dynamic_metadata_audit_status"] == PreflightStatus.DYNAMIC_METADATA_AUDIT_NOT_VERIFIED.value
+    assert unverified_meta["state_tensor_equality_status"] == PreflightStatus.FULL_STATE_EQUALITY_NOT_TESTED.value
 
 
 def test_v8_17_p0_2_synthetic_boundary_fixtures_quarantined_and_active(twse_trading_calendar):
     """
-    P0-2 Item 7, P1-3 & P1-5:
+    P0-2 Item 7, P1-3, P1-5 & P1-A:
     1. Creates synthetic boundary fixtures (19:15, 19:40, 19:55, 20:05).
     2. Confirms fixtures are explicitly tagged SYNTHETIC_FIXTURE_QUARANTINED.
-    3. Verifies quarantine isolation check passes against empirical dataset.
-    4. Verifies quarantine breach detection when synthetic fixture is contaminated into empirical set.
-    5. Confirms that on synthetic boundary fixtures, crossing 20:00 causes all 3 metrics to increment:
-       - changed_event_count > 0 (3 events)
-       - changed_stock_day_count > 0 (2 stock days)
-       - changed_decision_state_count > 0 (2 decision dates)
+    3. Verifies quarantine isolation check passes against clean empirical dataset.
+    4. P1-A: Verifies quarantine breach detection when synthetic fixture is renamed but retains quarantine markers!
+    5. Verifies pre-ingestion quarantine gate passes on clean candidate events.
+    6. Confirms that on synthetic boundary fixtures, crossing 20:00 causes all 3 metrics to increment.
     """
     fixtures = DesignValidityPreflightAuditor.create_synthetic_boundary_fixtures(
         base_date="2024-03-15",
@@ -143,7 +150,7 @@ def test_v8_17_p0_2_synthetic_boundary_fixtures_quarantined_and_active(twse_trad
         assert f["is_quarantined_test_fixture"] is True
         assert f["status"] == PreflightStatus.SYNTHETIC_FIXTURE_QUARANTINED.value
 
-    # Quarantine isolation verification
+    # 1. Clean quarantine isolation verification
     iso_result = DesignValidityPreflightAuditor.verify_quarantine_isolation(
         synthetic_fixtures=fixtures,
         empirical_dataset=RAW_PILOT_EVENTS,
@@ -151,7 +158,14 @@ def test_v8_17_p0_2_synthetic_boundary_fixtures_quarantined_and_active(twse_trad
     assert iso_result["quarantine_isolation_verified"] is True
     assert iso_result["overlap_count"] == 0
 
-    # Quarantine breach detection
+    # 2. Pre-ingestion validation method check
+    pre_ingest = DesignValidityPreflightAuditor.validate_empirical_dataset_pre_ingestion(
+        empirical_dataset=RAW_PILOT_EVENTS,
+        synthetic_fixtures=fixtures,
+    )
+    assert pre_ingest["quarantine_pre_ingestion_verified"] is True
+
+    # 3. Standard ID-overlap quarantine breach detection
     contaminated_set = list(RAW_PILOT_EVENTS) + [fixtures[0]]
     with pytest.raises(ValueError, match="QUARANTINE BREACH DETECTED"):
         DesignValidityPreflightAuditor.verify_quarantine_isolation(
@@ -159,7 +173,23 @@ def test_v8_17_p0_2_synthetic_boundary_fixtures_quarantined_and_active(twse_trad
             empirical_dataset=contaminated_set,
         )
 
-    # Run latency audit on synthetic boundary fixtures
+    # 4. P1-A: Renamed synthetic event breach detection (new event_id, but retains quarantine markers)
+    renamed_fixture = dict(fixtures[0])
+    renamed_fixture["event_id"] = "RENAMED-EMPIRICAL-LOOKALIKE-999"
+    renamed_fixture["article_id"] = "ART-RENAMED-999"
+    # Even with a brand-new non-overlapping ID, having is_quarantined_test_fixture=True must trigger rejection!
+    renamed_contaminated_set = list(RAW_PILOT_EVENTS) + [renamed_fixture]
+    with pytest.raises(ValueError, match="QUARANTINE BREACH DETECTED"):
+        DesignValidityPreflightAuditor.validate_empirical_dataset_pre_ingestion(
+            empirical_dataset=renamed_contaminated_set,
+        )
+    with pytest.raises(ValueError, match="QUARANTINE BREACH DETECTED"):
+        DesignValidityPreflightAuditor.verify_quarantine_isolation(
+            synthetic_fixtures=fixtures,
+            empirical_dataset=renamed_contaminated_set,
+        )
+
+    # 5. Run latency audit on synthetic boundary fixtures
     synth_audit = DesignValidityPreflightAuditor.audit_latency_identifiability(
         raw_events=fixtures,
         trading_calendar=twse_trading_calendar,
@@ -220,6 +250,7 @@ def test_v8_17_p1_2_and_p1_5_chronological_fold_alignment_and_leakage(twse_tradi
     3. Verifies Cluster Split Leakage Checked (zero shared clusters across Train, Val, Test).
     4. Confirms Validation fold event count is 4 (< 10), triggering INSUFFICIENT_EFFECTIVE_SAMPLE.
     5. Confirms exploratory design hypotheses justification for 10d purge and 5d embargo.
+    6. Confirms adequacy status is explicitly labeled HYPOTHESIS_ONLY_UNPROVEN.
     """
     fold_audit = DesignValidityPreflightAuditor.audit_chronological_folds(
         raw_events=RAW_PILOT_EVENTS,
@@ -278,7 +309,8 @@ def test_v8_17_p1_2_and_p1_5_chronological_fold_alignment_and_leakage(twse_tradi
     assert len(leak_check["shared_clusters_train_test"]) == 0
     assert len(leak_check["shared_clusters_val_test"]) == 0
 
-    # Feasibility status
+    # Feasibility status & design hypothesis adequacy
     assert fold_audit["feasibility_status"] == PreflightStatus.INSUFFICIENT_EFFECTIVE_SAMPLE.value
     assert "design_hypotheses" in fold_audit
-    assert "10-day purge window and 5-day embargo window" in fold_audit["design_hypotheses"]["justification"]
+    assert fold_audit["design_hypotheses"]["adequacy_status"] == PreflightStatus.HYPOTHESIS_ONLY_UNPROVEN.value
+    assert "HYPOTHESIS_ONLY_UNPROVEN" in fold_audit["design_hypotheses"]["justification"]
