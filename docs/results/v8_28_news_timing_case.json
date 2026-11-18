@@ -1,0 +1,50 @@
+[
+  {
+    "stock": "2603",
+    "status": "estimated_candidate",
+    "publisher_timestamps": [
+      "2024-01-18T09:10:16.000Z"
+    ],
+    "estimated_available_at": "2024-01-18T17:15:16+08:00",
+    "verified_provider_available_at": null,
+    "observations": [
+      {
+        "decision_at": "2024-01-17T20:00:00+08:00",
+        "visible_event_ids": [],
+        "next_open": "2024-01-18T09:00:00+08:00",
+        "text_nonzeros": 0
+      },
+      {
+        "decision_at": "2024-01-18T20:00:00+08:00",
+        "visible_event_ids": [
+          "https://m.cnyes.com/news/id/5433463"
+        ],
+        "next_open": "2024-01-19T09:00:00+08:00",
+        "text_nonzeros": 0
+      }
+    ]
+  },
+  {
+    "stock": "2881",
+    "status": "index_and_publisher_dates_conflict",
+    "publisher_timestamps": [
+      "2024-01-21T18:00:00+08:00"
+    ],
+    "estimated_available_at": null,
+    "verified_provider_available_at": null,
+    "observations": [
+      {
+        "decision_at": "2024-01-17T20:00:00+08:00",
+        "visible_event_ids": [],
+        "next_open": "2024-01-18T09:00:00+08:00",
+        "text_nonzeros": 0
+      },
+      {
+        "decision_at": "2024-01-18T20:00:00+08:00",
+        "visible_event_ids": [],
+        "next_open": "2024-01-19T09:00:00+08:00",
+        "text_nonzeros": 0
+      }
+    ]
+  }
+]
