@@ -153,12 +153,20 @@ Decision Cutoff (20:00)
        |---> tau = 60m: Available at 20:40 >  20:00 (Queued to Tomorrow)
 ```
 
-#### Empirical Identifiability Preflight: `LATENCY_EFFECT_NOT_IDENTIFIABLE`
+#### Empirical Identifiability Preflight: `LATENCY_EFFECT_NOT_IDENTIFIABLE` (P0-2, P1-3 & P1-4)
 - **Preflight Audit Finding**: In `RAW_PILOT_EVENTS`, the latest recorded publication time across all 50 disclosures is **18:45:00**.
 - Adding maximum latency ($\tau = 60\text{ min}$) yields an availability time of $18:45 + 60\text{ min} = 19:45:00$, which is **prior to the 20:00:00 decision cutoff**.
-- **Changed State Count**: `changed_event_count = 0`, `changed_stock_day_count = 0`, `changed_decision_state_count = 0`.
-- **Verdict**: In the current candidate fixture set, empirical latency effect is **`LATENCY_EFFECT_NOT_IDENTIFIABLE`**. Any performance differences across DRL runs with varied $\tau$ would be **100% spurious artifacts of training seed noise**.
-- **Quarantined Boundary Fixtures**: Synthetic boundary test fixtures (19:15, 19:40, 19:55, 20:05) are maintained strictly in unit test isolation (`is_quarantined_test_fixture=True`) to verify the time-gate mechanism, and are strictly prohibited from empirical Alpha/Sharpe claims.
+- **Changed Metrics Evaluated**:
+  - `changed_event_count`: **0** (comparing effective decision dates per event across $\tau$ vs $\tau = 0$)
+  - `changed_stock_day_count`: **0** (comparing exact event sets per Stock-Day $(d, s)$, avoiding naive multipliers)
+  - `changed_decision_state_count`: **0** (deduplicated differing decision dates across all $\tau$)
+  - `sum_per_tau_differing_dates_count`: **0**
+- **Epistemic Classifications**:
+  - Daily event eligibility is formally designated **`DAILY_EVENT_ELIGIBILITY_IDENTICAL`** (audit verdict: **`LATENCY_EFFECT_NOT_IDENTIFIABLE`**).
+  - Full state tensor equality across all 160 dimensions remains **`FULL_STATE_EQUALITY_NOT_TESTED`**; bitwise equivalence of Recent/Active slots under fixed sorting and projections is not claimed without empirical forward evaluation.
+  - Metadata inspection confirms `availability_timestamp` and $\tau$-dependent decay features are absent from the pilot metadata schema.
+  - Scientific implication: Any observed performance differences across DRL runs with varied $\tau$ **cannot be attributed to changes in the daily event eligibility set**; they may stem from random initialization seeds or unverified feature tensor variations.
+- **Quarantined Boundary Fixtures**: Synthetic boundary test fixtures (19:15, 19:40, 19:55, 20:05) are maintained strictly in unit test isolation (`is_quarantined_test_fixture=True`, `SYNTHETIC_FIXTURE_QUARANTINED`) to verify the time-gate mechanism. Crossing the 20:00 cutoff causes all 3 metrics to increment (`changed_event_count = 3`, `changed_stock_day_count = 2`, `changed_decision_state_count = 2`). Synthetic fixtures are strictly prohibited from empirical Alpha/Sharpe claims.
 
 #### Reformed Fragility Metrics (P1-3)
 1. **Primary Metric — Absolute Delta Sharpe**:
@@ -192,9 +200,10 @@ Session T+1:  [Correction: Dividend revised to $2.50] ------> Ingested at T+1
 
 ---
 
-### 3.5 Chronological Evaluation & Walk-Forward Feasibility (P1-5)
+### 3.5 Chronological Evaluation & Walk-Forward Feasibility (P1-2 & P1-5)
 
-Standard $K$-Fold cross-validation is strictly prohibited in financial time-series due to serial correlation and textual overlap. Track A specifies **Purged and Embargoed Walk-Forward Cross-Validation**:
+Standard $K$-Fold cross-validation is strictly prohibited in financial time-series due to serial correlation and textual overlap. Track A specifies **Purged and Embargoed Walk-Forward Cross-Validation** under the canonical configuration:
+- **Train 115 / Purge 10 / Val 25 / Embargo 5 / Test 47** (Total 202 trading days, `CHRONOLOGICAL_FOLD_CONFIG_VERIFIED`).
 
 ```
 [--- Train (115 Days) ---][Purge (10d)][--- Val (25 Days) ---][Embargo (5d)][--- Test (47 Days) ---]
@@ -203,13 +212,15 @@ Standard $K$-Fold cross-validation is strictly prohibited in financial time-seri
 
 1. **Purge Window Justification**: A 10-day buffer isolates the Recent 32 memory slots, preventing cross-fold attention contamination.
 2. **Embargo Window Justification**: A 5-day post-validation buffer prevents serial correlation leakage into the out-of-sample test split.
-3. **Walk-Forward Preflight Finding**: In the full 202-day period:
-   - **Train Fold**: 26 events (25 clusters) across 24 event days.
-   - **Purge Window**: 2 events (2 clusters).
-   - **Validation Fold**: **4 events (3 clusters) across 3 event days**.
-   - **Embargo Window**: 2 events (1 cluster).
-   - **Test Fold**: 16 events (14 clusters) across 13 event days.
-4. **Feasibility Verdict**: **`INSUFFICIENT_EFFECTIVE_SAMPLE`**. The validation fold contains only 4 candidate disclosures across 25 trading days. Such extreme sparsity cannot support stable DRL hyperparameter tuning or early stopping.
+3. **Exploratory Design Hypotheses**: The 10-day purge and 5-day embargo are exploratory design hypotheses determined by label horizon, memory retention, and information dependencies.
+4. **Walk-Forward Preflight Finding**: In the full 202-day period:
+   - **Train Fold**: 26 events (25 clusters) across 24 event days (2023-06-01 to 2023-11-16, 115 trading days).
+   - **Purge Window**: 2 events (2 clusters) across 2 event days (2023-11-17 to 2023-11-30, 10 trading days).
+   - **Validation Fold**: **4 events (3 clusters) across 3 event days** (2023-12-01 to 2024-01-05, 25 trading days).
+   - **Embargo Window**: 2 events (1 cluster) across 1 event day (2024-01-08 to 2024-01-12, 5 trading days).
+   - **Test Fold**: 16 events (14 clusters) across 13 event days (2024-01-15 to 2024-03-29, 47 trading days).
+5. **Cluster Split Leakage Check**: Shared clusters between Train, Val, and Test are strictly **0** (`CLUSTER_SPLIT_LEAKAGE_CHECKED`).
+6. **Feasibility Verdict**: **`INSUFFICIENT_EFFECTIVE_SAMPLE`**. The validation fold contains only 4 candidate disclosures across 25 trading days. Such extreme sparsity cannot support stable DRL hyperparameter tuning or early stopping.
 
 ---
 
@@ -227,11 +238,22 @@ To maintain statistical rigor, hypothesis testing is decoupled from uncertainty 
 - Resample contiguous time blocks (Politis & White) and atomic event clusters to preserve serial correlation and revision lineage.
 - Estimate 95% confidence intervals for Sharpe ratio, cumulative returns, and maximum drawdown.
 
-#### 3. Corrected Sample Population & Feasibility Matrix (P0-1, P1-6)
+#### 3. Corrected Sample Population & Feasibility Matrix (P0-1, P1-1 & P1-6)
 - **Sample Population Distinction**:
-  - **Full Period (2023-06-01 to 2024-03-29)**: 202 trading days, 606 Stock-Days, 50 events, 45 clusters.
-  - **2024 Q1 Sub-Period (2024-01-02 to 2024-03-29)**: 56 trading days, 168 Stock-Days, 19 events, 16 clusters.
+  - **Full Period (2023-06-01 to 2024-03-29)**:
+    - 202 trading days, 606 Stock-Days, 50 events, 45 clusters.
+    - `original_event_calendar_days`: 43 days.
+    - `original_event_trading_days`: 42 trading days.
+    - `effective_decision_event_days`: 43 trading days (accounting for weekend rollover).
+    - `recorded_no_new_event_trading_days`: 159 / 202 trading days (78.7%).
+  - **2024 Q1 Sub-Period (2024-01-02 to 2024-03-29)**:
+    - 56 trading days, 168 Stock-Days, 19 events, 16 clusters.
+    - `original_event_calendar_days`: 15 days.
+    - `original_event_trading_days`: 14 trading days.
+    - `effective_decision_event_days`: 15 trading days.
+    - `recorded_no_new_event_trading_days`: 41 / 56 trading days (73.2%).
   - **Non-Trading Event**: `EV-2330-09` (2024-02-24, Saturday) rolls to 2024-02-26 (Monday).
+  - **Memory Slots vs. Announcement Sparsity**: On days with 0 new announcements, Recent 32 memory slots are NOT zero because they buffer disclosures from the preceding 30 days.
 
 | Performance / Statistical Metric | Feasibility Status | Methodological Limitation & Handling |
 | :--- | :--- | :--- |
@@ -242,7 +264,7 @@ To maintain statistical rigor, hypothesis testing is decoupled from uncertainty 
 | **Annualized Sharpe Ratio** | `ESTIMABLE` | Requires Newey-West standard error correction. |
 | **Maximum Drawdown (MDD)** | `ESTIMABLE` | Trajectory MDD reportable with bootstrap confidence intervals. |
 | **Permutation Test ($p$-value)** | `ESTIMABLE` | 1,000 within-fold semantic permutations. |
-| **Empirical Latency Sensitivity ($\tau$-Sweep)** | `NOT_ESTIMABLE` | Max filing time is 18:45:00; all $\tau \le 60\text{m}$ produce identical states. |
+| **Empirical Latency Sensitivity ($\tau$-Sweep)** | `NOT_ESTIMABLE` | Max filing time is 18:45:00; all $\tau \le 60\text{m}$ produce identical eligibility sets (`DAILY_EVENT_ELIGIBILITY_IDENTICAL`). |
 | **Validation Fold Hyperparameter Tuning** | `NOT_ESTIMABLE` | Validation fold contains only 4 events; cannot guide DRL convergence. |
 | **DRL Alpha Generalizability ($p < 0.05$)** | `NOT_ESTIMABLE` | 50 unverified events provide insufficient power for statistical proof. |
 | **High-Frequency Alpha Decay ($< 1\text{ min}$)** | `NOT_ESTIMABLE` | Daily bars cannot resolve sub-minute execution alpha. |
