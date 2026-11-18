@@ -1,0 +1,131 @@
+[
+  {
+    "stock": "2330",
+    "date": "2023-09-01",
+    "probe": {
+      "locator": "data[7]",
+      "url": "https://news.cnyes.com/news/id/5310060",
+      "http": "200 https://news.cnyes.com/news/id/5310060",
+      "observed_at": "2026-11-18T12:15:05.108243+00:00",
+      "matched_title_and_article_paragraphs": false,
+      "og_published_time": [
+        "2023-09-01T05:10:07.000Z"
+      ],
+      "response_sha256": "5555dac793cd61ec769189034e66571fc5067f72f88b04f09b9891da6aee0e17",
+      "review": "title and publication time found; article paragraphs unconfirmed"
+    },
+    "index_sha256": "7c2dd367573d759dd4437086c13b2a55cbf8574e79acaf2740b65b247925f401"
+  },
+  {
+    "stock": "2603",
+    "date": "2023-09-01",
+    "probe": {
+      "locator": "data[2]",
+      "url": "https://m.cnyes.com/news/id/5310354?exp=a",
+      "http": "200 https://m.cnyes.com/news/id/5310354?exp=a",
+      "observed_at": "2026-11-18T12:14:16.350507+00:00",
+      "matched_title_and_article_paragraphs": true,
+      "og_published_time": [
+        "2023-09-01T09:31:26.000Z"
+      ],
+      "response_sha256": "4f24463b30740054dd15dac589bcb9348c4763ea9d5097fb263e97f4c8a865e3"
+    },
+    "index_sha256": "cf3fc823a914c3f7d598c2851df45c55d1b708656a136d0d3a0933d04c4eab3e"
+  },
+  {
+    "stock": "2881",
+    "date": "2023-09-01",
+    "probe": {
+      "locator": "data[11]",
+      "url": "https://news.cnyes.com/news/id/5310335",
+      "http": "200 https://news.cnyes.com/news/id/5310335",
+      "observed_at": "2026-11-18T12:14:16.370903+00:00",
+      "matched_title_and_article_paragraphs": true,
+      "og_published_time": [
+        "2023-09-01T09:05:33.000Z"
+      ],
+      "response_sha256": "0821272576c8c8097961a5d2f0c08f17a46f0c585e4a9ddeac9ed9a39d50c50c"
+    },
+    "index_sha256": "18f67abda8c6ebb3b939f51419dae3fef6b0fd46dd09c49c14652a3f6da0d41f"
+  },
+  {
+    "stock": "2330",
+    "date": "2023-09-04",
+    "probe": {
+      "locator": "data[12]",
+      "url": "https://news.cnyes.com/news/id/5311750",
+      "http": "200 https://news.cnyes.com/news/id/5311750",
+      "observed_at": "2026-11-18T12:14:31.525311+00:00",
+      "matched_title_and_article_paragraphs": true,
+      "og_published_time": [
+        "2023-09-04T10:10:04.000Z"
+      ],
+      "response_sha256": "6c9488c6d71003c87cb881c4bb7b5e541d7e79fdfe2cc4517c6981e38b1774d6"
+    },
+    "index_sha256": "2073795efc5aa2e91190adb3cefab76fab9c964a85f462656a5f98c1212d04c4"
+  },
+  {
+    "stock": "2603",
+    "date": "2023-09-04",
+    "probe": {
+      "locator": "data[1]",
+      "url": "https://news.cnyes.com/news/id/5311788",
+      "http": "200 https://news.cnyes.com/news/id/5311788",
+      "observed_at": "2026-11-18T12:14:23.761090+00:00",
+      "matched_title_and_article_paragraphs": true,
+      "og_published_time": [
+        "2023-09-04T09:20:05.000Z"
+      ],
+      "response_sha256": "9e2ef88b4c0432b0b79adb9549457a675be639ed7b15db4fdb2ed15dc2f6fc1b"
+    },
+    "index_sha256": "4f87b843b0e020bc26fd610ad8b851d7a1db6f2b893ea2159831045ed5379019"
+  },
+  {
+    "stock": "2881",
+    "date": "2023-09-04",
+    "probe": {
+      "locator": "data[12]",
+      "url": "https://news.cnyes.com/news/id/5311792",
+      "http": "200 https://news.cnyes.com/news/id/5311792",
+      "observed_at": "2026-11-18T12:14:36.751438+00:00",
+      "matched_title_and_article_paragraphs": true,
+      "og_published_time": [
+        "2023-09-04T09:11:45.000Z"
+      ],
+      "response_sha256": "0602aa8bf84aae82c5ab3436e8f1f4a713daed410621268038295107c5a071c1"
+    },
+    "index_sha256": "d6a332eed5e2adeee4e447047a09db8486e82b52b71d7624d6503a61dfb22f0f"
+  },
+  {
+    "stock": "2603",
+    "date": "2023-09-05",
+    "probe": {
+      "locator": "data[0]",
+      "url": "https://news.cnyes.com/news/id/5313589",
+      "http": "200 https://news.cnyes.com/news/id/5313589",
+      "observed_at": "2026-11-18T12:14:39.255672+00:00",
+      "matched_title_and_article_paragraphs": true,
+      "og_published_time": [
+        "2023-09-05T09:11:37.000Z"
+      ],
+      "response_sha256": "f5688c525d091025c5ee2a114dce5a96e3addaa21a2fe95369030b949be52c4b"
+    },
+    "index_sha256": "1aa3ef14e221b65efc525cf57c85c0c506a1af493792a700b8e2caa4ba4bb494"
+  },
+  {
+    "stock": "2330",
+    "date": "2023-09-07",
+    "probe": {
+      "locator": "data[0]",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/4420445",
+      "http": "200 https://ec.ltn.com.tw/article/breakingnews/4420445",
+      "observed_at": "2026-11-18T12:14:40.622959+00:00",
+      "matched_title_and_article_paragraphs": true,
+      "og_published_time": [
+        "2023-09-07T08:20:38+08:00"
+      ],
+      "response_sha256": "a3a9acf209d470858fd73df9691fff51098d3d72b33dd0e63e2e251f4cd212a8"
+    },
+    "index_sha256": "f4e6340269ef92565f2cfc029c4ef79318a3549af343920996dde70c8d46cca4"
+  }
+]

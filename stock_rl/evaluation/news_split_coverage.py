@@ -22,7 +22,8 @@ def build_report():
     sessions = calendar.tz_localize(protocol["timezone"])
     decisions = sessions + pd.Timedelta(hours=protocol["decision_hour"])
     ledger = []
-    for name in ("finmind_stock_day_sample", "evergreen_split_sample", "fubon_tsmc_split_sample"):
+    for name in ("finmind_stock_day_sample", "evergreen_split_sample", "fubon_tsmc_split_sample",
+                 "first_week_publisher_checks"):
         for row in read_json(f"docs/evidence/{name}.json"):
             if "probe" not in row:
                 continue

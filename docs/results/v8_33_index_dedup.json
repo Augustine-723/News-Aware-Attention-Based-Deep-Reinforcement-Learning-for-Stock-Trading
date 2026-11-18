@@ -1,0 +1,55 @@
+{
+  "index_rows": 216,
+  "distinct_index_links": 149,
+  "distinct_destination_keys": 144,
+  "selected": [
+    {
+      "date": "2023-09-01",
+      "stock": "2330",
+      "index": 7,
+      "url": "https://news.cnyes.com/news/id/5310060"
+    },
+    {
+      "date": "2023-09-01",
+      "stock": "2603",
+      "index": 2,
+      "url": "https://m.cnyes.com/news/id/5310354?exp=a"
+    },
+    {
+      "date": "2023-09-01",
+      "stock": "2881",
+      "index": 11,
+      "url": "https://news.cnyes.com/news/id/5310335"
+    },
+    {
+      "date": "2023-09-04",
+      "stock": "2330",
+      "index": 12,
+      "url": "https://news.cnyes.com/news/id/5311750"
+    },
+    {
+      "date": "2023-09-04",
+      "stock": "2603",
+      "index": 1,
+      "url": "https://news.cnyes.com/news/id/5311788"
+    },
+    {
+      "date": "2023-09-04",
+      "stock": "2881",
+      "index": 12,
+      "url": "https://news.cnyes.com/news/id/5311792"
+    },
+    {
+      "date": "2023-09-05",
+      "stock": "2603",
+      "index": 0,
+      "url": "https://news.cnyes.com/news/id/5313589"
+    },
+    {
+      "date": "2023-09-07",
+      "stock": "2330",
+      "index": 0,
+      "url": "https://ec.ltn.com.tw/article/breakingnews/4420445"
+    }
+  ]
+}
