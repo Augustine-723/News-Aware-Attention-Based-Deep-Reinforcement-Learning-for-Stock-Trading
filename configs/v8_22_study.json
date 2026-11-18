@@ -1,0 +1,28 @@
+{
+  "protocol": "v8.22-pilot",
+  "scope": "three-stock integration pilot; full universe study pending",
+  "stocks": ["2330", "2603", "2881"],
+  "timezone": "Asia/Taipei",
+  "decision_hour": 20,
+  "execution": "next_trading_session_open",
+  "splits": {
+    "train": ["2023-09-01", "2023-12-29"],
+    "validation": ["2024-01-02", "2024-01-31"],
+    "test": ["2024-02-01", "2024-03-29"]
+  },
+  "seeds": [42, 100, 2024],
+  "epochs": 2,
+  "replay_capacity": 2048,
+  "batch_size": 16,
+  "update_every": 8,
+  "epsilon_decay_steps": 400,
+  "checkpoint_selection": "highest mean validation net return; earliest epoch on ties",
+  "primary_comparison": "M3 minus M0 out-of-sample net Sharpe on matched trading dates",
+  "methods": {
+    "M0": {"event_input": "empty", "status": "executable_pilot"},
+    "M1": {"event_input": "mask, count, availability and age", "status": "pending_verified_news"},
+    "M2": {"event_input": "M1 plus structured event and relation fields", "status": "pending_verified_news"},
+    "M3": {"event_input": "M2 plus real text embeddings", "status": "pending_verified_news"},
+    "M4": {"event_input": "M3 plus causally trained event importance", "status": "pending_verified_news"}
+  }
+}
