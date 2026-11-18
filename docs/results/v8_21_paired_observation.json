@@ -1,0 +1,84 @@
+{
+  "purpose": "SYNTHETIC_EVENT_INTEGRATION_ONLY",
+  "stock_id": "2330",
+  "schema_version": "v8.0-original",
+  "compared_market_fields": [
+    "price",
+    "technical",
+    "institutional",
+    "macro",
+    "stock_context",
+    "position",
+    "institutional_missing_mask",
+    "macro_missing_mask",
+    "stock_context_missing_mask"
+  ],
+  "events": [
+    {
+      "event_id": "SYNTH-AT-CUTOFF",
+      "source_published_at": "2024-02-05T20:00:00+08:00",
+      "available_at": "2024-02-05T20:00:00+08:00",
+      "first_observed_at": "2024-02-05T20:00:00+08:00"
+    },
+    {
+      "event_id": "SYNTH-AFTER-CUTOFF",
+      "source_published_at": "2024-02-05T19:59:59+08:00",
+      "available_at": "2024-02-05T20:00:01+08:00",
+      "first_observed_at": "2024-02-15T20:00:00+08:00"
+    },
+    {
+      "event_id": "SYNTH-NON-SESSION",
+      "source_published_at": "2024-02-06T18:00:00+08:00",
+      "available_at": "2024-02-06T18:00:00+08:00",
+      "first_observed_at": "2024-02-15T20:00:00+08:00"
+    }
+  ],
+  "observations": [
+    {
+      "decision_at": "2024-02-02T20:00:00+08:00",
+      "next_session_open": "2024-02-05T09:00:00+08:00",
+      "market_tensors_equal": true,
+      "control_event_count": 0,
+      "fixture_event_count": 0,
+      "fixture_slots": []
+    },
+    {
+      "decision_at": "2024-02-05T20:00:00+08:00",
+      "next_session_open": "2024-02-15T09:00:00+08:00",
+      "market_tensors_equal": true,
+      "control_event_count": 0,
+      "fixture_event_count": 1,
+      "fixture_slots": [
+        {
+          "slot": 0,
+          "event_id": "SYNTH-AT-CUTOFF",
+          "event_age_days": 0.0
+        }
+      ]
+    },
+    {
+      "decision_at": "2024-02-15T20:00:00+08:00",
+      "next_session_open": "2024-02-16T09:00:00+08:00",
+      "market_tensors_equal": true,
+      "control_event_count": 0,
+      "fixture_event_count": 3,
+      "fixture_slots": [
+        {
+          "slot": 0,
+          "event_id": "SYNTH-NON-SESSION",
+          "event_age_days": 9.083333015441895
+        },
+        {
+          "slot": 1,
+          "event_id": "SYNTH-AFTER-CUTOFF",
+          "event_age_days": 9.999988555908203
+        },
+        {
+          "slot": 2,
+          "event_id": "SYNTH-AT-CUTOFF",
+          "event_age_days": 10.0
+        }
+      ]
+    }
+  ]
+}
