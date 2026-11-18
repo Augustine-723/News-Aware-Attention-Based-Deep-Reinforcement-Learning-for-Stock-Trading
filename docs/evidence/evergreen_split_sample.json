@@ -1,0 +1,44 @@
+[
+  {
+    "date": "2023-12-18",
+    "stock": "2603",
+    "raw_sha256": "d7b72318afa217fe2a5a03997344a752fb660b41357eba57514c4ae487d39cdd",
+    "rows": 32,
+    "api": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=2603&start_date=2023-12-18",
+    "probe": {
+      "locator": "data[0]",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/4524057",
+      "observed_at": "2026-11-18T11:54:25.630572+00:00",
+      "http": "200 https://ec.ltn.com.tw/article/breakingnews/4524057",
+      "exit_code": 0,
+      "response_sha256": "7ac9b0bd0b1a4ee7760e580e44532fb6c758b34ed2cbb22b2baf1f0514454abc",
+      "matched_title_and_article_paragraphs": true,
+      "og_published_time": [
+        "2023-12-18T09:37:05+08:00"
+      ],
+      "license_status": "unverified",
+      "verified_provider_available_at": null
+    }
+  },
+  {
+    "date": "2024-03-15",
+    "stock": "2603",
+    "raw_sha256": "efe646738d53021fc482b331dfc94b1c18b901f16d40de10dee03acf863ec02f",
+    "rows": 19,
+    "api": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockNews&data_id=2603&start_date=2024-03-15",
+    "probe": {
+      "locator": "data[1]",
+      "url": "https://ec.ltn.com.tw/article/breakingnews/4608545",
+      "observed_at": "2026-11-18T11:54:25.866735+00:00",
+      "http": "200 https://ec.ltn.com.tw/article/breakingnews/4608545",
+      "exit_code": 0,
+      "response_sha256": "43d7091afa5eeef2b0cc0e5cb67dd729c305390e8487e2862e277972bd5ca70d",
+      "matched_title_and_article_paragraphs": true,
+      "og_published_time": [
+        "2024-03-15T09:36:26+08:00"
+      ],
+      "license_status": "unverified",
+      "verified_provider_available_at": null
+    }
+  }
+]
