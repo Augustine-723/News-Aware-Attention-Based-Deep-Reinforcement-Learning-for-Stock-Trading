@@ -211,7 +211,7 @@ class EvidenceManifestEntry:
     """
     announcement_id: str
     stock_id: str
-    filing_datetime: pd.Timestamp
+    filing_datetime: Optional[pd.Timestamp]
     headline: str
     raw_content: str
     source_url: str
@@ -225,6 +225,13 @@ class EvidenceManifestEntry:
     license_metadata: Optional[LicenseMetadata] = None
     retrieval_session_id: str = ""
     source_channel: OfficialSourceChannel = OfficialSourceChannel.TWSE_OPENAPI
+    local_record_id: Optional[str] = None
+    is_local_record_id: bool = False
+    publication_time_parsed: bool = True
+    parser_version: str = "v8.14-openapi-json-v1"
+    source_locator: str = ""
+    raw_retention_status: str = "FULL_RAW_BYTES_RETAINED"
+    verified_provider_available_at: Optional[pd.Timestamp] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -243,6 +250,12 @@ class EvidenceManifestEntry:
             "retrieval_session_id": self.retrieval_session_id,
             "source_channel": self.source_channel.value if hasattr(self.source_channel, "value") else str(self.source_channel),
             "license_name": self.license_metadata.license_name if self.license_metadata else "Taiwan Open Government Data License",
+            "local_record_id": self.local_record_id,
+            "is_local_record_id": self.is_local_record_id,
+            "publication_time_parsed": self.publication_time_parsed,
+            "parser_version": self.parser_version,
+            "source_locator": self.source_locator,
+            "raw_retention_status": self.raw_retention_status,
         }
 
 
@@ -250,7 +263,7 @@ class EvidenceManifestEntry:
 class EvidenceManifest:
     """
     Auditable manifest of genuine official evidence records.
-    Provides independent verification of entry integrity and reproducibility.
+    Provides independent verification of entry integrity, raw response re-parsing, and reproducibility.
     """
     manifest_id: str
     entries: List[EvidenceManifestEntry] = field(default_factory=list)
@@ -261,20 +274,90 @@ class EvidenceManifest:
         self.entries.append(entry)
 
     def verify_entry_integrity(self, entry: EvidenceManifestEntry) -> Tuple[bool, str]:
+        # 1. Raw response retention check (P0-2 item 8)
         if not entry.raw_response_bytes:
+            if getattr(entry, "raw_retention_status", "") == "INDEPENDENT_REPRODUCTION_PENDING":
+                return False, "raw_response_bytes cannot be retained (INDEPENDENT_REPRODUCTION_PENDING); independent raw data hash recomputation is pending."
             return False, "raw_response_bytes is empty."
+
+        # 2. Raw bytes SHA-256 digest check
         actual_resp_hash = hashlib.sha256(entry.raw_response_bytes).hexdigest()
         if actual_resp_hash != entry.raw_response_hash:
             return False, f"raw_response_hash mismatch: expected {entry.raw_response_hash}, got {actual_resp_hash}."
+
+        # 3. Parsed payload hash check
         expected_payload_hash = compute_normalized_content_hash(entry.headline, entry.raw_content)
         if expected_payload_hash != entry.parsed_payload_hash:
             return False, f"parsed_payload_hash mismatch: expected {entry.parsed_payload_hash}, got {expected_payload_hash}."
+
+        # 4. Session registry cross-check
         session = RetrievalSessionRegistry.get_session(entry.retrieval_session_id)
         if session is None:
             return False, f"retrieval_session_id '{entry.retrieval_session_id}' not found in registry."
         if session.raw_response_hash != entry.raw_response_hash:
             return False, "session raw_response_hash mismatch."
-        return True, "Entry integrity and cryptographic digests verified."
+
+        # 5. P0-2: Re-parse raw response bytes to verify target announcement binding
+        if entry.source_channel == OfficialSourceChannel.TWSE_OPENAPI:
+            try:
+                parsed_json = json.loads(entry.raw_response_bytes.decode("utf-8"))
+            except Exception as e:
+                return False, f"Failed to re-parse raw OpenAPI JSON: {e}"
+
+            if not isinstance(parsed_json, list):
+                if isinstance(parsed_json, dict) and "data" in parsed_json:
+                    parsed_json = parsed_json["data"]
+                else:
+                    parsed_json = [parsed_json]
+
+            matched = False
+            for item in parsed_json:
+                if not isinstance(item, dict):
+                    continue
+                item_stock = str(item.get("公司代號", "") or item.get("stock_id", "") or item.get("Code", "")).strip()
+                item_sub = str(item.get("主旨", "") or item.get("headline", "") or item.get("Subject", "")).strip()
+                item_content = str(item.get("詳細內容", "") or item.get("說明", "") or item.get("body_text", "") or item.get("content", "") or item_sub).strip()
+
+                if item_stock == entry.stock_id:
+                    headline_matched = (
+                        entry.headline == item_sub
+                        or entry.headline in item_sub
+                        or item_sub in entry.headline
+                    )
+                    content_matched = (
+                        entry.raw_content == item_content
+                        or entry.raw_content in item_content
+                        or item_content in entry.raw_content
+                    )
+                    if headline_matched and content_matched:
+                        matched = True
+                        break
+
+            if not matched:
+                return False, (
+                    f"Content binding verification failed: Target announcement for stock '{entry.stock_id}' "
+                    f"with headline '{entry.headline[:30]}' was not found in parsed raw response bytes "
+                    "(raw response is authentic, but parsed announcement content does not match payload)."
+                )
+
+        elif entry.source_channel == OfficialSourceChannel.TWSE_MOPS_HTML_ARCHIVE:
+            decoded_text = entry.raw_response_bytes.decode("utf-8", errors="ignore")
+            if entry.stock_id not in decoded_text:
+                return False, f"Content binding verification failed: stock_id '{entry.stock_id}' not found in raw MOPS response."
+            if entry.headline not in decoded_text and entry.raw_content not in decoded_text:
+                return False, "Content binding verification failed: Neither headline nor content was found in raw MOPS response."
+
+        # 6. Local record ID audit (P0-2 item 3)
+        if entry.is_local_record_id:
+            if not entry.local_record_id or not entry.local_record_id.startswith("LOCAL-"):
+                return False, "Announcement marked as is_local_record_id=True but local_record_id format is invalid."
+
+        # 7. Publication time parsing integrity (P0-2 item 5)
+        if not entry.publication_time_parsed and entry.filing_datetime is not None:
+            if entry.filing_datetime == entry.retrieved_at:
+                return False, "Integrity check failed: filing_datetime cannot silently substitute retrieved_at when publication_time_parsed=False."
+
+        return True, "Entry integrity, raw response re-parsing, and cryptographic digests verified."
 
 
 class OfficialHistoricalNewsCollector:
@@ -1128,16 +1211,30 @@ class OfficialHistoricalNewsCollector:
         historical_avail_count = sum(1 for r in records if r.historical_provider_availability_included)
         verified_source_count = sum(1 for r in records if r.verification_status == SourceVerificationStatus.VERIFIED_SOURCE)
 
-        # Query failure metrics with fine-grained error segregation (P0-2)
+        # Query failure metrics with fine-grained error segregation (P0-2, P1)
         failed_http = [a for a in executed_authentic if a.response_status == QueryResolutionStatus.QUERY_FAILED_HTTP]
         failed_parse = [a for a in executed_authentic if a.response_status == QueryResolutionStatus.QUERY_FAILED_PARSE]
         failed_other = [a for a in executed_authentic if a.response_status == QueryResolutionStatus.QUERY_FAILED]
         all_failed = failed_http + failed_parse + failed_other
         rate_limit_blocks = [a for a in executed_authentic if a.http_status in [403, 429]]
+        waf_access_blocked = [
+            a for a in executed_authentic
+            if "FOR SECURITY REASONS" in (a.error_info or "")
+            or "安全性考量" in (a.error_info or "")
+            or a.http_status in [403, 429]
+        ]
+        successful_parsed = [
+            a for a in executed_authentic
+            if a.http_status == 200
+            and a.response_status in (QueryResolutionStatus.QUERY_COMPLETED_SUCCESS, QueryResolutionStatus.QUERY_COMPLETED_ZERO_RESULTS)
+            and a not in waf_access_blocked
+        ]
         failure_rate = round(len(all_failed) / len(executed_authentic), 4) if executed_authentic else 0.0
 
         source_failure_rate = {
             "total_queries_executed": len(executed_authentic),
+            "successful_parsed_responses": len(successful_parsed),
+            "waf_access_blocked_responses": len(waf_access_blocked),
             "failed_queries": len(all_failed),
             "failed_queries_http": len(failed_http),
             "failed_queries_parse": len(failed_parse),
@@ -1153,6 +1250,10 @@ class OfficialHistoricalNewsCollector:
                 "target_constituents": target_constituents,
                 "total_trading_sessions": total_sessions,
                 "total_planned_stock_day_units": total_planned_stock_day_units,
+                "twse_openapi_sample_period": "2026-CURRENT-ROLLING",
+                "openapi_current_rolling_sample_isolated": True,
+                "historical_q1_retrieved_count": 0,
+                "isolation_note": "TWSE OpenAPI current disclosures (2026-CURRENT-ROLLING) are strictly isolated and cannot count toward the 2024 Q1 Historical Dataset (P1). Historical Q1 retrieved count is strictly 0.",
             },
             "real_collection_coverage": real_collection_coverage,
             "collection_coverage": real_collection_coverage,  # Backwards compatibility alias
@@ -1220,6 +1321,7 @@ class GenuineHttpsRetrievalService:
     """
     TWSE_OPENAPI_URL: str = "https://openapi.twse.com.tw/v1/opendata/t187ap04_L"
     MOPS_ARCHIVE_URL: str = "https://mops.twse.com.tw/mops/web/t05st01"
+    _SERVICE_AUTH_KEY: str = RetrievalSessionRegistry._AUTHENTIC_SERVICE_AUTH_KEY
 
     @classmethod
     def query_twse_openapi_disclosures(
@@ -1296,7 +1398,9 @@ class GenuineHttpsRetrievalService:
                 if cid == target_stock_str:
                     matched_items.append(it)
 
-        session_rec = RetrievalSessionRegistry.register_genuine_session(
+        # Register formal production session with authentic service authorization (P0-1)
+        session_rec = RetrievalSessionRegistry.register_production_session(
+            service_auth_key=cls._SERVICE_AUTH_KEY,
             source_channel="TWSE_OPENAPI",
             endpoint_url=cls.TWSE_OPENAPI_URL,
             request_start_time=t_start,
@@ -1333,9 +1437,11 @@ class GenuineHttpsRetrievalService:
         if matched_items:
             first = matched_items[0]
             sub = str(first.get("主旨", "") or "重大訊息公告").strip()
-            content = str(first.get("詳細內容", "") or sub).strip()
+            content = str(first.get("詳細內容", "") or first.get("說明", "") or sub).strip()
             filing_date_str = str(first.get("出表日期", "")).strip()
             filing_time_str = str(first.get("出表時間", "")).strip()
+            publication_time_parsed = False
+            filing_dt = None
             try:
                 if len(filing_date_str) == 7:
                     roc_yr = int(filing_date_str[:3])
@@ -1344,13 +1450,13 @@ class GenuineHttpsRetrievalService:
                     dd = filing_date_str[5:7]
                     dt_str = f"{ce_yr}-{mm}-{dd} {filing_time_str}"
                     filing_dt = pd.Timestamp(dt_str, tz="Asia/Taipei")
-                else:
-                    filing_dt = t_start
+                    publication_time_parsed = True
             except Exception:
-                filing_dt = t_start
+                publication_time_parsed = False
+                filing_dt = None
 
             norm_hash = compute_normalized_content_hash(sub, content)
-            ann_id = f"OPENAPI-{target_stock_str}-{filing_dt.strftime('%Y%m%d%H%M%S')}"
+            local_rec_id = f"LOCAL-OPENAPI-{target_stock_str}-{filing_date_str or 'NODATE'}-{norm_hash[:8]}"
 
             license_meta = LicenseMetadata(
                 license_name="Taiwan Open Government Data License (TWSE OpenAPI)",
@@ -1363,7 +1469,7 @@ class GenuineHttpsRetrievalService:
             )
 
             manifest_entry = EvidenceManifestEntry(
-                announcement_id=ann_id,
+                announcement_id=local_rec_id,
                 stock_id=target_stock_str,
                 filing_datetime=filing_dt,
                 headline=sub,
@@ -1379,7 +1485,15 @@ class GenuineHttpsRetrievalService:
                 license_metadata=license_meta,
                 retrieval_session_id=session_rec.session_id,
                 source_channel=OfficialSourceChannel.TWSE_OPENAPI,
+                local_record_id=local_rec_id,
+                is_local_record_id=True,
+                publication_time_parsed=publication_time_parsed,
+                parser_version="v8.14-openapi-json-v1",
+                source_locator=f"JSON_ARRAY_RECORD[stock_id={target_stock_str},index=0]",
+                raw_retention_status="FULL_RAW_BYTES_RETAINED",
             )
+
+        return query_record, manifest_entry
 
         return query_record, manifest_entry
 
@@ -1485,30 +1599,66 @@ def execute_minimal_pipeline_integration(
     entry: EvidenceManifestEntry,
     target_stock_id: str = "2881",
     decision_cutoff_str: str = "20:00:00",
+    decision_date_str: Optional[str] = None,
+    allow_estimated_hypothesis: bool = True,
+    trading_calendar: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """
     Executes minimal end-to-end integration of a genuine official disclosure into
-    the V8 news-aware decision pipeline:
+    the V8 news-aware decision pipeline with strict Point-in-Time (PIT) As-Of availability gating:
     Official Raw Response -> Source Evidence Manifest -> Event Parsing -> Stock/Event Relation ->
     BGE 512D -> Fixed Projection 128D -> Metadata 24D + Relation 8D ->
-    Recent (32) / Active (8) Slots -> PIT Decision State.
+    [PIT As-Of Gate] -> Recent (32) / Active (8) Slots -> PIT Decision State.
     """
-    article = RawNewsArticle(
-        source_type=NewsSourceType.TWSE_OPENAPI,
-        source_name="TWSE OpenAPI Official Disclosure",
-        stock_id=entry.stock_id,
-        headline=entry.headline,
-        body_text=entry.raw_content,
-        url=entry.source_url,
-        source_published_at=entry.filing_datetime,
-        provider_available_at=entry.filing_datetime + pd.Timedelta(minutes=5),
-        article_id=f"ART-{entry.announcement_id}",
-        event_id=f"EV-{entry.announcement_id}",
-        evidence_audit_level=EvidenceAuditLevel.VERIFIED_EVIDENCE,
-        raw_payload_hash=entry.parsed_payload_hash,
-    )
+    # 1. Distinguish timestamps and hypothesis (P0-3 items 1 & 2)
+    observed_retrieved_at = entry.retrieved_at
+    filing_dt = entry.filing_datetime
+    estimated_provider_available_at = (filing_dt + pd.Timedelta(minutes=5)) if filing_dt else None
+    is_estimated_hypothesis = True  # +5 min is strictly an estimated hypothesis, not historical fact
+    verified_provider_available_at = getattr(entry, "verified_provider_available_at", None)
 
-    # 1. Text Embedding
+    if verified_provider_available_at is not None:
+        effective_available_at = verified_provider_available_at
+        availability_source = "VERIFIED_PROVIDER_FEED"
+    elif allow_estimated_hypothesis and estimated_provider_available_at is not None:
+        effective_available_at = estimated_provider_available_at
+        availability_source = "ESTIMATED_HYPOTHESIS_PLUS_5MIN"
+    else:
+        effective_available_at = observed_retrieved_at
+        availability_source = "OBSERVED_RETRIEVAL_ONLY"
+
+    # Determine decision timestamp
+    if decision_date_str:
+        d_str = decision_date_str
+    elif filing_dt:
+        d_str = filing_dt.strftime("%Y-%m-%d")
+    else:
+        d_str = observed_retrieved_at.strftime("%Y-%m-%d")
+
+    decision_ts = pd.Timestamp(f"{d_str} {decision_cutoff_str}", tz="Asia/Taipei")
+
+    # 2. PIT As-Of Availability Check (P0-3 items 3 & 4)
+    is_available_as_of = True
+    rejection_reason = ""
+
+    if trading_calendar is not None and d_str not in trading_calendar:
+        is_available_as_of = False
+        rejection_reason = f"PIT As-Of Check rejected: Date {d_str} is not an official trading day."
+
+    if is_available_as_of and filing_dt is not None:
+        if filing_dt > decision_ts:
+            is_available_as_of = False
+            rejection_reason = f"PIT As-Of Check rejected: Announcement filing time ({filing_dt}) is after decision cutoff ({decision_ts})."
+
+    if is_available_as_of:
+        if effective_available_at is None or effective_available_at > decision_ts:
+            is_available_as_of = False
+            rejection_reason = (
+                f"PIT As-Of Check rejected: Effective availability ({effective_available_at}) "
+                f"is after decision cutoff ({decision_ts}) or unproven before historical decision."
+            )
+
+    # 3. Text Embedding (BGE 512D -> 128D)
     engine = load_trusted_pretrained_embedding_engine(local_files_only=True)
     if engine is not None and hasattr(engine, "model_weights") and engine.model_weights is not None:
         encoder = engine.model_weights
@@ -1529,23 +1679,38 @@ def execute_minimal_pipeline_integration(
         cls_512d = model_output[0][:, 0].squeeze(0).cpu().numpy()
         emb_128d = encoder(tokens["input_ids"], tokens["attention_mask"]).squeeze(0).cpu().numpy()
 
-    # 2. Metadata extraction (24D)
-    decision_ts = pd.Timestamp(f"{entry.filing_datetime.strftime('%Y-%m-%d')} {decision_cutoff_str}", tz="Asia/Taipei")
+    # 4. Construct RawNewsArticle and extract metadata & relations
+    article = RawNewsArticle(
+        source_type=NewsSourceType.TWSE_OPENAPI,
+        source_name="TWSE OpenAPI Official Disclosure",
+        stock_id=entry.stock_id,
+        headline=entry.headline,
+        body_text=entry.raw_content,
+        url=entry.source_url,
+        source_published_at=filing_dt or observed_retrieved_at,
+        provider_available_at=effective_available_at,
+        article_id=f"ART-{entry.announcement_id}",
+        event_id=f"EV-{entry.announcement_id}",
+        evidence_audit_level=EvidenceAuditLevel.VERIFIED_EVIDENCE,
+        raw_payload_hash=entry.parsed_payload_hash,
+    )
     meta_24d = extract_event_metadata(article, decision_time=decision_ts)
-
-    # 3. Stock-event relation (8D)
     rel_8d = extract_event_stock_relation(article, target_stock_id)
-
-    # 4. Combined event representation (160D)
     event_160d = np.concatenate([emb_128d, meta_24d, rel_8d], axis=0)
 
     # 5. Dual-Slot Layout (32 Recent + 8 Active)
     recent_slots = np.zeros((32, 160), dtype=np.float32)
     active_slots = np.zeros((8, 160), dtype=np.float32)
-    recent_slots[0] = event_160d
+
+    # Enforce PIT As-Of Gate: event is ONLY ingested into slots if proven available before decision cutoff
+    slot_ingested = False
+    if is_available_as_of:
+        recent_slots[0] = event_160d
+        slot_ingested = True
+
     all_news_slots = np.concatenate([recent_slots, active_slots], axis=0)
 
-    # 6. Market Context (60 days, 100D schema)
+    # 6. Market Context (60 days, 100D schema) - Explicitly Synthetic Market Placeholder (P0-3 item 6)
     market_context = np.zeros((60, 100), dtype=np.float32)
 
     # Validation assertions
@@ -1572,8 +1737,19 @@ def execute_minimal_pipeline_integration(
         "active_slots_shape": list(active_slots.shape),
         "news_slots_shape": list(all_news_slots.shape),
         "market_context_shape": list(market_context.shape),
+        "market_context_status": "SYNTHETIC_MARKET_PLACEHOLDER",
+        "observed_retrieved_at": observed_retrieved_at.isoformat() if observed_retrieved_at else None,
+        "estimated_provider_available_at": estimated_provider_available_at.isoformat() if estimated_provider_available_at else None,
+        "is_estimated_hypothesis": is_estimated_hypothesis,
+        "verified_provider_available_at": verified_provider_available_at.isoformat() if verified_provider_available_at else None,
+        "availability_source": availability_source,
+        "is_available_as_of": is_available_as_of,
+        "slot_ingested": slot_ingested,
+        "rejection_reason": rejection_reason,
         "decision_cutoff": f"{decision_cutoff_str} Asia/Taipei",
         "decision_timestamp": decision_ts.isoformat(),
         "execution_contract": "NEXT_TRADING_DAY_OPEN",
-        "integration_status": "SUCCESSFUL",
+        "pipeline_verification_level": "INTERFACE_SPECIFICATION_VERIFICATION_ONLY",
+        "empirical_drl_validated": False,
+        "integration_status": "SUCCESSFUL" if slot_ingested else "AS_OF_REJECTED",
     }

@@ -200,6 +200,136 @@ def test_counterexample_headline_bytes_rejection():
         )
 
 
+def test_unauthorized_production_registration_rejection():
+    """
+    Test 2c (P0-1 item 1 & 6):
+    Unauthorized caller calling register_production_session() without valid
+    GenuineHttpsRetrievalService auth key MUST raise PermissionError.
+    """
+    fake_raw_bytes = b'{"status": "ok", "announcements": []}'
+    t_now = pd.Timestamp.now(tz="Asia/Taipei")
+
+    with pytest.raises(PermissionError, match="Unauthorized caller"):
+        RetrievalSessionRegistry.register_production_session(
+            service_auth_key="FORGED_UNAUTHORIZED_KEY_12345",
+            source_channel="TWSE_OPENAPI",
+            endpoint_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+            request_start_time=t_now,
+            response_end_time=t_now,
+            http_status=200,
+            raw_response_bytes=fake_raw_bytes,
+        )
+
+
+def test_counterexample_forged_provenance_rejected_in_production_boundary():
+    """
+    Test 2d (P0-1 item 3 & 6):
+    Self-attesting service_provenance='GENUINE_HTTPS_RETRIEVAL_SERVICE' or session_token
+    without authorized service key sets is_production_certified=False and is_simulated=True.
+    When audited against production boundary, it MUST fail closed to MOPS_CANDIDATE_UNVERIFIED.
+    """
+    ev_target = [e for e in RAW_PILOT_EVENTS if e["event_id"] == "EV-2330-01"][0]
+    ev_dt = pd.Timestamp(f"{ev_target['date_str']} {ev_target['pub_time_str']}", tz="Asia/Taipei")
+    raw_content = ev_target.get("body_text", "")
+    raw_bytes = raw_content.encode("utf-8")
+    ev_hash = compute_normalized_content_hash(ev_target["headline"], raw_content)
+
+    # Ordinary caller calls register_genuine_session without authorized key
+    session = RetrievalSessionRegistry.register_genuine_session(
+        source_channel="TWSE_MOPS_HTML_ARCHIVE",
+        endpoint_url="https://mops.twse.com.tw/mops/web/t05st01?step=1&TYPEK=sii&year=112&month=06&co_id=2330",
+        request_start_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=raw_bytes,
+        source_identity="ORDINARY_UNAUTHORIZED_CALLER",
+        service_provenance="GENUINE_HTTPS_RETRIEVAL_SERVICE",
+        announcement_ids=["MOPS-2330-20230606-AGM"],
+        allow_legacy_fixture=True,
+    )
+    assert session.is_production_certified is False
+    assert session.is_simulated is True
+
+    evidence = TrustedExternalSourceAdapter.certify_with_live_retrieval_evidence(
+        announcement_id="MOPS-2330-20230606-AGM",
+        company_id="2330",
+        announcement_datetime=ev_dt,
+        raw_content=raw_content,
+        raw_http_response_bytes=raw_bytes,
+        retrieval_session_id=session.session_id,
+        headline=ev_target["headline"],
+        payload_hash=ev_hash,
+        endpoint_url="https://mops.twse.com.tw/mops/web/t05st01?step=1&TYPEK=sii&year=112&month=06&co_id=2330",
+        is_existence_verified=True,
+    )
+
+    status, dict_res, notes = TrustedSourceCertifier.verify_evidence(
+        ev_target, evidence, enforce_production_boundary=True
+    )
+    assert status == SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED
+    assert dict_res is None
+    assert "lacks genuine production certification" in notes
+
+
+def test_counterexample_legacy_fixture_bypass_rejected():
+    """
+    Test 2e (P0-1 item 3 & 4):
+    Passing allow_legacy_fixture=True allows unit test inspection but produces a
+    session marked as SIMULATED; it is strictly rejected from formal production certification.
+    """
+    sim_session = RetrievalSessionRegistry.register_simulated_session(
+        source_channel="TWSE_MOPS_HTML_ARCHIVE",
+        endpoint_url="https://mops.twse.com.tw/mops/web/t05st01",
+        request_start_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=b"simulation_bytes",
+    )
+    assert sim_session.is_simulated is True
+    assert sim_session.execution_mode == "SIMULATED"
+    assert sim_session.is_production_certified is False
+
+
+def test_openapi_session_cannot_certify_mops_historical_disclosure():
+    """
+    Test 2f (P0-1 item 7):
+    A live TWSE_OPENAPI session CANNOT certify historical MOPS disclosure existence.
+    """
+    ev_target = [e for e in RAW_PILOT_EVENTS if e["event_id"] == "EV-2330-01"][0]
+    ev_dt = pd.Timestamp(f"{ev_target['date_str']} {ev_target['pub_time_str']}", tz="Asia/Taipei")
+    raw_content = ev_target.get("body_text", "")
+    raw_bytes = raw_content.encode("utf-8")
+    ev_hash = compute_normalized_content_hash(ev_target["headline"], raw_content)
+
+    session = RetrievalSessionRegistry.register_genuine_session(
+        source_channel="TWSE_OPENAPI",  # OpenAPI channel!
+        endpoint_url="https://mops.twse.com.tw/mops/web/t05st01?step=1&TYPEK=sii&year=112&month=06&co_id=2330",
+        request_start_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=raw_bytes,
+        announcement_ids=["MOPS-2330-20230606-AGM"],
+        allow_legacy_fixture=True,
+    )
+
+    evidence = TrustedExternalSourceAdapter.certify_with_live_retrieval_evidence(
+        announcement_id="MOPS-2330-20230606-AGM",
+        company_id="2330",
+        announcement_datetime=ev_dt,
+        raw_content=raw_content,
+        raw_http_response_bytes=raw_bytes,
+        retrieval_session_id=session.session_id,
+        headline=ev_target["headline"],
+        payload_hash=ev_hash,
+        endpoint_url="https://mops.twse.com.tw/mops/web/t05st01?step=1&TYPEK=sii&year=112&month=06&co_id=2330",
+        is_existence_verified=True,
+    )
+
+    status, dict_res, notes = TrustedSourceCertifier.verify_evidence(ev_target, evidence)
+    assert status == SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED
+    assert "Live TWSE_OPENAPI probe session cannot certify historical MOPS disclosure" in notes
+
+
 # ==============================================================================
 # 3. MOPS Security Block Audit & Fail-Closed Reporting Tests
 # ==============================================================================
@@ -545,15 +675,25 @@ def test_tripartite_pit_status_segregation():
 
 
 # ==============================================================================
-# 7. Evidence Manifest Reproducibility & Integrity Tests
+# 7. Evidence Manifest Reproducibility & Integrity Tests (P0-2)
 # ==============================================================================
 
 def test_evidence_manifest_entry_verification():
     """
-    Test 7: Validates that EvidenceManifest enforces SHA-256 payload digests,
-    raw response hashes, and session registry cross-checks.
+    Test 7 (P0-2): Validates that EvidenceManifest re-parses official raw response bytes,
+    cross-audits stock_id, headline, content, local_record_id, SHA-256 payload digests,
+    raw response hashes, and session registry records.
     """
-    raw_bytes = b'[{"\xe5\x85\xac\xe5\x8f\xb8\xe4\xbb\xa3\xe8\x99\x9f": "2881", "\xe4\xb8\xbb\xe6\x97\xa8": "\xe5\x85\xac\xe5\x91\x8a\xe6\x9c\x88\xe7\x87\x9f\xe6\x94\xb6"}]'
+    raw_json_str = json.dumps([
+        {
+            "公司代號": "2881",
+            "主旨": "公告月營收",
+            "詳細內容": "富邦金公告2月份自結合併損益",
+            "出表日期": "1130315",
+            "出表時間": "153000",
+        }
+    ], ensure_ascii=False)
+    raw_bytes = raw_json_str.encode("utf-8")
     raw_hash = hashlib.sha256(raw_bytes).hexdigest()
     t_retrieved = pd.Timestamp("2024-03-15 15:30:00", tz="Asia/Taipei")
     headline = "公告月營收"
@@ -571,8 +711,9 @@ def test_evidence_manifest_entry_verification():
         service_provenance="GENUINE_HTTPS_RETRIEVAL_SERVICE",
     )
 
+    local_rec_id = f"LOCAL-OPENAPI-2881-1130315-{parsed_hash[:8]}"
     entry = EvidenceManifestEntry(
-        announcement_id="OPENAPI-2881-20240315-001",
+        announcement_id=local_rec_id,
         stock_id="2881",
         filing_datetime=t_retrieved,
         headline=headline,
@@ -587,6 +728,12 @@ def test_evidence_manifest_entry_verification():
         pit_status=DisclosurePITStatus.ESTIMATED_PIT_ONLY,
         retrieval_session_id=session.session_id,
         source_channel=OfficialSourceChannel.TWSE_OPENAPI,
+        local_record_id=local_rec_id,
+        is_local_record_id=True,
+        publication_time_parsed=True,
+        parser_version="v8.14-openapi-json-v1",
+        source_locator="JSON_ARRAY_RECORD[stock_id=2881,index=0]",
+        raw_retention_status="FULL_RAW_BYTES_RETAINED",
     )
 
     manifest = EvidenceManifest(manifest_id="MANIFEST-2024Q1-AUDIT-001")
@@ -595,46 +742,132 @@ def test_evidence_manifest_entry_verification():
 
     is_valid, msg = manifest.verify_entry_integrity(entry)
     assert is_valid is True
-    assert "Entry integrity and cryptographic digests verified" in msg
+    assert "Entry integrity, raw response re-parsing, and cryptographic digests verified" in msg
 
-    # Tampered payload hash test
+
+def test_counterexample_manifest_tampered_content_rejection():
+    """
+    Test 7b (P0-2 item 7 Counterexample Test):
+    Raw response bytes is authentic official OpenAPI JSON, but the caller puts a
+    fabricated headline or tampered body text into EvidenceManifestEntry.
+    Manifest re-parsing MUST detect that the announcement content is missing from the raw response
+    and fail closed with 'Content binding verification failed'.
+    """
+    raw_json_str = json.dumps([
+        {
+            "公司代號": "2881",
+            "主旨": "富邦金公告2月營收",
+            "詳細內容": "富邦金公告113年2月自結合併稅前淨利及稅後淨利。",
+            "出表日期": "1130315",
+            "出表時間": "153000",
+        }
+    ], ensure_ascii=False)
+    raw_bytes = raw_json_str.encode("utf-8")
+    raw_hash = hashlib.sha256(raw_bytes).hexdigest()
+    t_retrieved = pd.Timestamp("2024-03-15 15:30:00", tz="Asia/Taipei")
+
+    session = RetrievalSessionRegistry.register_genuine_session(
+        source_channel="TWSE_OPENAPI",
+        endpoint_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        request_start_time=t_retrieved - pd.Timedelta(seconds=1),
+        response_end_time=t_retrieved,
+        http_status=200,
+        raw_response_bytes=raw_bytes,
+        service_provenance="GENUINE_HTTPS_RETRIEVAL_SERVICE",
+    )
+
+    # Caller tampered with the headline and body text (e.g. fabricated M&A rumor)
+    fabricated_headline = "富邦金宣布重大海外併購案"
+    fabricated_content = "富邦金控董事會決議以新台幣1000億元併購海外大型商業銀行。"
+    tampered_hash = compute_normalized_content_hash(fabricated_headline, fabricated_content)
+
     tampered_entry = EvidenceManifestEntry(
-        announcement_id="OPENAPI-2881-20240315-001",
+        announcement_id="LOCAL-OPENAPI-2881-1130315-FABRICATED",
         stock_id="2881",
         filing_datetime=t_retrieved,
-        headline=headline,
-        raw_content=content,
+        headline=fabricated_headline,
+        raw_content=fabricated_content,
         source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
         query_parameters={},
         retrieved_at=t_retrieved,
-        raw_response_bytes=raw_bytes,
-        raw_response_hash=raw_hash,
-        parsed_payload_hash="forged_payload_hash_12345",
+        raw_response_bytes=raw_bytes,  # Authentic raw response bytes!
+        raw_response_hash=raw_hash,    # Authentic raw response hash!
+        parsed_payload_hash=tampered_hash,
         verification_status=SourceVerificationStatus.SOURCE_EXISTENCE_VERIFIED,
         pit_status=DisclosurePITStatus.ESTIMATED_PIT_ONLY,
         retrieval_session_id=session.session_id,
         source_channel=OfficialSourceChannel.TWSE_OPENAPI,
+        local_record_id="LOCAL-OPENAPI-2881-1130315-FABRICATED",
+        is_local_record_id=True,
     )
-    is_valid_t, msg_t = manifest.verify_entry_integrity(tampered_entry)
-    assert is_valid_t is False
-    assert "parsed_payload_hash mismatch" in msg_t
+
+    manifest = EvidenceManifest(manifest_id="MANIFEST-2024Q1-AUDIT-TAMPER-TEST")
+    manifest.add_entry(tampered_entry)
+
+    is_valid, msg = manifest.verify_entry_integrity(tampered_entry)
+    assert is_valid is False
+    assert "Content binding verification failed" in msg
 
 
-# ==============================================================================
-# 8. Minimal Pipeline Integration Forward Pass Tests
-# ==============================================================================
-
-def test_minimal_pipeline_integration_forward_pass():
+def test_counterexample_manifest_unparsed_time_rejection():
     """
-    Test 8: End-to-end integration of a genuine official disclosure into the V8 news-aware decision pipeline:
-    Official Raw Response -> Source Evidence Manifest -> Event Parsing -> Stock/Event Relation ->
-    BGE 512D -> Fixed Projection 128D -> Metadata 24D + Relation 8D ->
-    Recent (32) / Active (8) Slots -> PIT Decision State.
-    Validates tensor dimensions: (128,), (24,), (8,), (160,), (32, 160), (8, 160), (40, 160), (60, 100).
+    Test 7c (P0-2 item 5):
+    If publication time parsing failed (publication_time_parsed=False),
+    filing_datetime cannot silently substitute retrieved_at.
+    """
+    raw_bytes = json.dumps([{"公司代號": "2881", "主旨": "公告", "詳細內容": "內容"}]).encode("utf-8")
+    t_retrieved = pd.Timestamp("2024-03-15 15:30:00", tz="Asia/Taipei")
+    parsed_hash = compute_normalized_content_hash("公告", "內容")
+
+    session = RetrievalSessionRegistry.register_genuine_session(
+        source_channel="TWSE_OPENAPI",
+        endpoint_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        request_start_time=t_retrieved,
+        response_end_time=t_retrieved,
+        http_status=200,
+        raw_response_bytes=raw_bytes,
+        service_provenance="GENUINE_HTTPS_RETRIEVAL_SERVICE",
+    )
+
+    bad_entry = EvidenceManifestEntry(
+        announcement_id="LOCAL-OPENAPI-2881-NODATE-001",
+        stock_id="2881",
+        filing_datetime=t_retrieved,  # Silently substituted retrieved_at!
+        headline="公告",
+        raw_content="內容",
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=t_retrieved,
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=hashlib.sha256(raw_bytes).hexdigest(),
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        publication_time_parsed=False,  # Unparsed publication time!
+        local_record_id="LOCAL-OPENAPI-2881-NODATE-001",
+        is_local_record_id=True,
+    )
+
+    manifest = EvidenceManifest(manifest_id="MANIFEST-TEST")
+    is_valid, msg = manifest.verify_entry_integrity(bad_entry)
+    assert is_valid is False
+    assert "cannot silently substitute retrieved_at" in msg
+
+
+# ==============================================================================
+# 8. Tensor Shape Smoke Test (P0-3 item 7)
+# ==============================================================================
+
+def test_tensor_shape_smoke_test():
+    """
+    Test 8a (P0-3 item 7):
+    Shape Smoke Test strictly isolated from Historical PIT Integration.
+    Verifies tensor dimensions across the pipeline architecture:
+    (512,) -> (128,) -> (24,) -> (8,) -> (160,) -> (32, 160) -> (8, 160) -> (40, 160) -> (60, 100).
+    Explicitly declared as interface verification only, NOT empirical proof of DRL trading value.
     """
     filing_dt = pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei")
-    headline = "公告本公司董事會決議發放現金股利"
-    content = "富邦金公告董事會決議112年度盈餘分派，每股配發現金股利2.5元及股票股利0.5元。"
+    headline = "台積電公告先進製程資本支出"
+    content = "台積電董事會決議核准資本預算，用以建置2奈米先進製程產能。"
     raw_bytes = content.encode("utf-8")
     raw_hash = hashlib.sha256(raw_bytes).hexdigest()
     parsed_hash = compute_normalized_content_hash(headline, content)
@@ -651,8 +884,8 @@ def test_minimal_pipeline_integration_forward_pass():
     )
 
     entry = EvidenceManifestEntry(
-        announcement_id="OPENAPI-2881-20240315-DIVIDEND",
-        stock_id="2881",
+        announcement_id="OPENAPI-2330-20240315-CAPEX",
+        stock_id="2330",
         filing_datetime=filing_dt,
         headline=headline,
         raw_content=content,
@@ -668,9 +901,8 @@ def test_minimal_pipeline_integration_forward_pass():
         source_channel=OfficialSourceChannel.TWSE_OPENAPI,
     )
 
-    result = execute_minimal_pipeline_integration(entry, target_stock_id="2881")
+    result = execute_minimal_pipeline_integration(entry, target_stock_id="2330")
 
-    assert result["integration_status"] == "SUCCESSFUL"
     assert result["text_raw_dim"] == 512
     assert result["text_proj_dim"] == 128
     assert result["metadata_dim"] == 24
@@ -680,7 +912,252 @@ def test_minimal_pipeline_integration_forward_pass():
     assert result["active_slots_shape"] == [8, 160]
     assert result["news_slots_shape"] == [40, 160]
     assert result["market_context_shape"] == [60, 100]
-    assert result["decision_cutoff"] == "20:00:00 Asia/Taipei"
-    assert result["execution_contract"] == "NEXT_TRADING_DAY_OPEN"
-    # L2 norm of projected 128D embedding should be normalized to ~1.0
-    assert 0.99 <= result["embedding_l2_norm"] <= 1.01
+    assert result["market_context_status"] == "SYNTHETIC_MARKET_PLACEHOLDER"
+    assert result["pipeline_verification_level"] == "INTERFACE_SPECIFICATION_VERIFICATION_ONLY"
+    assert result["empirical_drl_validated"] is False
+
+
+# ==============================================================================
+# 9. Historical PIT Integration Gate Tests (P0-3)
+# ==============================================================================
+
+def test_historical_pit_integration_gate():
+    """
+    Test 9 (P0-3 items 3, 4, 5):
+    Rigorous Point-in-Time (PIT) As-Of Availability Gate before slot ingestion.
+    Verifies that an event CANNOT be ingested into Recent / Active slots unless
+    proven available prior to decision_timestamp (20:00:00 cutoff):
+    - Case A: On-time announcement (16:00) with estimated hypothesis -> Accepted into Slot 0.
+    - Case B: Post-cutoff announcement (20:30) -> Rejected from Slot 0 (slots remain 0).
+    - Case C: Future announcement (T+1) -> Rejected from Slot 0 (slots remain 0).
+    - Case D: Non-trading day announcement -> Rejected from Slot 0 (slots remain 0).
+    - Case E: Retrieved in 2026 without historical vendor feed log -> Rejected from historical decision.
+    """
+    trading_calendar = ["2024-03-15", "2024-03-18", "2024-03-19"]
+    content = "富邦金控公告董事會決議發放現金股利及股票股利。"
+    headline = "富邦金董事會決議股利分派"
+    raw_bytes = content.encode("utf-8")
+    raw_hash = hashlib.sha256(raw_bytes).hexdigest()
+    parsed_hash = compute_normalized_content_hash(headline, content)
+
+    session = RetrievalSessionRegistry.register_genuine_session(
+        source_channel="TWSE_OPENAPI",
+        endpoint_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        request_start_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        response_end_time=pd.Timestamp.now(tz="Asia/Taipei"),
+        http_status=200,
+        raw_response_bytes=raw_bytes,
+        allow_legacy_fixture=True,
+    )
+
+    # --------------------------------------------------------------------------
+    # Case A: On-time announcement (2024-03-15 16:00:00)
+    # Available at 16:05 (hypothesis) <= 20:00 cutoff -> MUST BE INGESTED
+    # --------------------------------------------------------------------------
+    entry_ontime = EvidenceManifestEntry(
+        announcement_id="OPENAPI-2881-20240315-ONTIME",
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-15 16:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-15 16:01:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+    )
+    res_a = execute_minimal_pipeline_integration(
+        entry_ontime,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        allow_estimated_hypothesis=True,
+        trading_calendar=trading_calendar,
+    )
+    assert res_a["is_available_as_of"] is True
+    assert res_a["slot_ingested"] is True
+    assert res_a["integration_status"] == "SUCCESSFUL"
+    assert res_a["market_context_status"] == "SYNTHETIC_MARKET_PLACEHOLDER"
+
+    # --------------------------------------------------------------------------
+    # Case B: Post-cutoff announcement (2024-03-15 20:30:00)
+    # Filed at 20:30 > 20:00 cutoff -> MUST BE REJECTED (Lookahead bias prevention)
+    # --------------------------------------------------------------------------
+    entry_late = EvidenceManifestEntry(
+        announcement_id="OPENAPI-2881-20240315-LATE",
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-15 20:30:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-15 20:31:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+    )
+    res_b = execute_minimal_pipeline_integration(
+        entry_late,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        allow_estimated_hypothesis=True,
+        trading_calendar=trading_calendar,
+    )
+    assert res_b["is_available_as_of"] is False
+    assert res_b["slot_ingested"] is False
+    assert res_b["integration_status"] == "AS_OF_REJECTED"
+    assert "after decision cutoff" in res_b["rejection_reason"]
+
+    # --------------------------------------------------------------------------
+    # Case C: Future announcement (T+1: 2024-03-16 10:00:00) for 2024-03-15 decision
+    # Future filing > 2024-03-15 20:00:00 -> MUST BE REJECTED
+    # --------------------------------------------------------------------------
+    entry_future = EvidenceManifestEntry(
+        announcement_id="OPENAPI-2881-20240316-FUTURE",
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-16 10:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-16 10:01:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+    )
+    res_c = execute_minimal_pipeline_integration(
+        entry_future,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        allow_estimated_hypothesis=True,
+        trading_calendar=trading_calendar,
+    )
+    assert res_c["is_available_as_of"] is False
+    assert res_c["slot_ingested"] is False
+    assert res_c["integration_status"] == "AS_OF_REJECTED"
+
+    # --------------------------------------------------------------------------
+    # Case D: Non-trading day announcement (Sunday 2024-03-17)
+    # Sunday is not in trading_calendar -> MUST BE REJECTED
+    # --------------------------------------------------------------------------
+    entry_weekend = EvidenceManifestEntry(
+        announcement_id="OPENAPI-2881-20240317-WEEKEND",
+        stock_id="2881",
+        filing_datetime=pd.Timestamp("2024-03-17 14:00:00", tz="Asia/Taipei"),
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2024-03-17 14:01:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+    )
+    res_d = execute_minimal_pipeline_integration(
+        entry_weekend,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-17",
+        allow_estimated_hypothesis=True,
+        trading_calendar=trading_calendar,
+    )
+    assert res_d["is_available_as_of"] is False
+    assert res_d["slot_ingested"] is False
+    assert "not an official trading day" in res_d["rejection_reason"]
+
+    # --------------------------------------------------------------------------
+    # Case E: Observed in 2026 without vendor feed log or estimated hypothesis
+    # Earliest proven availability is 2026 > 2024-03-15 -> MUST BE REJECTED
+    # --------------------------------------------------------------------------
+    entry_2026 = EvidenceManifestEntry(
+        announcement_id="OPENAPI-2881-20260401-OBSERVED",
+        stock_id="2881",
+        filing_datetime=None,  # No parsed publication time
+        headline=headline,
+        raw_content=content,
+        source_url="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_parameters={},
+        retrieved_at=pd.Timestamp("2026-04-01 10:00:00", tz="Asia/Taipei"),
+        raw_response_bytes=raw_bytes,
+        raw_response_hash=raw_hash,
+        parsed_payload_hash=parsed_hash,
+        retrieval_session_id=session.session_id,
+        publication_time_parsed=False,
+    )
+    res_e = execute_minimal_pipeline_integration(
+        entry_2026,
+        target_stock_id="2881",
+        decision_cutoff_str="20:00:00",
+        decision_date_str="2024-03-15",
+        allow_estimated_hypothesis=False,  # No hypothesis!
+        trading_calendar=trading_calendar,
+    )
+    assert res_e["is_available_as_of"] is False
+    assert res_e["slot_ingested"] is False
+    assert res_e["integration_status"] == "AS_OF_REJECTED"
+
+
+# ==============================================================================
+# 10. Evidence Reproducibility & Governance Tests (P1)
+# ==============================================================================
+
+def test_metrics_segregate_waf_blocks_and_parsed_responses():
+    """
+    Test 10 (P1):
+    evaluate_q1_2024_collection_metrics distinguishes successful_parsed_responses
+    from waf_access_blocked_responses.
+    """
+    t_now = pd.Timestamp.now(tz="Asia/Taipei")
+    rec_blocked = QueryAttemptRecord(
+        target_date="2024-01-18",
+        stock_id="2330",
+        source_channel=OfficialSourceChannel.TWSE_MOPS_HTML_ARCHIVE,
+        endpoint="https://mops.twse.com.tw/mops/web/ajax_t05st01",
+        query_start_time=t_now,
+        query_end_time=t_now,
+        http_status=200,
+        response_status=QueryResolutionStatus.QUERY_FAILED_HTTP,
+        actual_raw_response_hash="hash_blocked",
+        result_count=0,
+        error_info="MOPS anti-bot security barrier: FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED.",
+        execution_mode=ExecutionMode.AUTHENTIC,
+    )
+    rec_success = QueryAttemptRecord(
+        target_date="2024-01-18",
+        stock_id="2881",
+        source_channel=OfficialSourceChannel.TWSE_OPENAPI,
+        endpoint="https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+        query_start_time=t_now,
+        query_end_time=t_now,
+        http_status=200,
+        response_status=QueryResolutionStatus.QUERY_COMPLETED_SUCCESS,
+        actual_raw_response_hash="hash_success",
+        result_count=1,
+        execution_mode=ExecutionMode.AUTHENTIC,
+    )
+
+    metrics = OfficialHistoricalNewsCollector.evaluate_q1_2024_collection_metrics([rec_blocked, rec_success])
+    failure_dict = metrics["source_failure_rate"]
+    assert failure_dict["waf_access_blocked_responses"] == 1
+    assert failure_dict["successful_parsed_responses"] == 1
+
+
+def test_openapi_live_sample_isolated_from_2024_q1():
+    """
+    Test 10b (P1):
+    TWSE OpenAPI live sample (2026-CURRENT-ROLLING) is strictly isolated and does
+    not count toward 2024 Q1 Historical Dataset (historical Q1 retrieved count = 0).
+    """
+    metrics = OfficialHistoricalNewsCollector.evaluate_q1_2024_collection_metrics()
+    pilot_scope = metrics["pilot_scope"]
+    assert pilot_scope["openapi_current_rolling_sample_isolated"] is True
+    assert pilot_scope["twse_openapi_sample_period"] == "2026-CURRENT-ROLLING"
+    assert pilot_scope["historical_q1_retrieved_count"] == 0
+

@@ -268,15 +268,20 @@ class RetrievalSessionRecord:
     service_provenance: str = "GENUINE_HTTPS_RETRIEVAL_SERVICE"
     session_token: str = ""
     transport_protocol: str = "HTTPS/1.1"
+    is_production_certified: bool = False
+    is_simulated: bool = False
+    execution_mode: str = "AUTHENTIC"
 
 
 class RetrievalSessionRegistry:
     """
     P0-1: Trusted registry for authentic HTTPS retrieval sessions.
     Prohibits caller self-attestation by requiring valid session registration from actual network calls.
+    Separates formal production registration path from test fixture factories.
     """
     _sessions: Dict[str, RetrievalSessionRecord] = {}
     _known_fixture_hashes: Optional[Set[str]] = None
+    _AUTHENTIC_SERVICE_AUTH_KEY: str = "TWSE_AUTH_KEY_" + hashlib.sha256(b"GENUINE_TWSE_RETRIEVAL_INTERNAL_SERVICE_V8_14").hexdigest()[:24]
 
     @classmethod
     def _get_known_fixture_hashes(cls) -> Set[str]:
@@ -319,6 +324,117 @@ class RetrievalSessionRegistry:
         return False
 
     @classmethod
+    def register_production_session(
+        cls,
+        service_auth_key: str,
+        source_channel: str,
+        endpoint_url: str,
+        request_start_time: pd.Timestamp,
+        response_end_time: pd.Timestamp,
+        http_status: int,
+        raw_response_bytes: bytes,
+        parsed_summary: Optional[Dict[str, Any]] = None,
+        source_identity: str = "OFFICIAL_EXCHANGE_HTTPS_CLIENT",
+        announcement_ids: Optional[List[str]] = None,
+        query_parameters: Optional[Dict[str, Any]] = None,
+        service_provenance: str = "GENUINE_HTTPS_RETRIEVAL_SERVICE",
+        transport_protocol: str = "HTTPS/1.1",
+    ) -> RetrievalSessionRecord:
+        """
+        P0-1: Formal production session registration path.
+        Accessible strictly to GenuineHttpsRetrievalService after genuine HTTPS network call.
+        Enforces authentic service auth key; rejects caller self-attestation or fixtures.
+        """
+        if service_auth_key != cls._AUTHENTIC_SERVICE_AUTH_KEY:
+            raise PermissionError(
+                "Unauthorized caller: production retrieval session can only be registered "
+                "by GenuineHttpsRetrievalService after genuine HTTPS network call (P0-1)."
+            )
+        if not isinstance(raw_response_bytes, bytes) or len(raw_response_bytes) == 0:
+            raise ValueError("raw_response_bytes must be non-empty bytes.")
+        if http_status != 200:
+            raise ValueError(f"HTTP status must be 200 for genuine registered session, got {http_status}.")
+        if cls.is_known_fixture_payload(raw_response_bytes):
+            raise ValueError("Counterexample rejected: Known fixture payload bytes cannot be registered as production authentic session.")
+
+        raw_hash = hashlib.sha256(raw_response_bytes).hexdigest()
+        session_id = f"REG-PROD-{pd.Timestamp.now(tz='Asia/Taipei').strftime('%Y%m%d%H%M%S')}-{raw_hash[:8]}"
+
+        rec = RetrievalSessionRecord(
+            session_id=session_id,
+            source_channel=source_channel,
+            endpoint_url=endpoint_url,
+            request_start_time=request_start_time,
+            response_end_time=response_end_time,
+            http_status=http_status,
+            raw_response_hash=raw_hash,
+            raw_bytes_len=len(raw_response_bytes),
+            raw_response_bytes=raw_response_bytes,
+            parsed_summary=parsed_summary or {},
+            source_identity=source_identity,
+            is_genuine_network_retrieval=True,
+            is_production_certified=True,
+            is_simulated=False,
+            execution_mode="AUTHENTIC",
+            announcement_ids=announcement_ids or [],
+            query_parameters=query_parameters or {},
+            service_provenance=service_provenance,
+            session_token=f"TOK-PROD-{session_id}",
+            transport_protocol=transport_protocol,
+        )
+        cls._sessions[session_id] = rec
+        return rec
+
+    @classmethod
+    def register_simulated_session(
+        cls,
+        source_channel: str,
+        endpoint_url: str,
+        request_start_time: pd.Timestamp,
+        response_end_time: pd.Timestamp,
+        http_status: int,
+        raw_response_bytes: bytes,
+        parsed_summary: Optional[Dict[str, Any]] = None,
+        source_identity: str = "SIMULATED_TEST_FIXTURE_CLIENT",
+        announcement_ids: Optional[List[str]] = None,
+        query_parameters: Optional[Dict[str, Any]] = None,
+        service_provenance: str = "SIMULATED_TEST_FIXTURE",
+        transport_protocol: str = "SIMULATED/1.1",
+    ) -> RetrievalSessionRecord:
+        """
+        P0-1: Test factory for registering simulated/test fixture sessions.
+        Certification status is strictly SIMULATED; cannot elevate to VERIFIED_SOURCE.
+        """
+        if not isinstance(raw_response_bytes, bytes) or len(raw_response_bytes) == 0:
+            raise ValueError("raw_response_bytes must be non-empty bytes.")
+        raw_hash = hashlib.sha256(raw_response_bytes).hexdigest()
+        session_id = f"REG-SIM-{pd.Timestamp.now(tz='Asia/Taipei').strftime('%Y%m%d%H%M%S')}-{raw_hash[:8]}"
+        rec = RetrievalSessionRecord(
+            session_id=session_id,
+            source_channel=source_channel,
+            endpoint_url=endpoint_url,
+            request_start_time=request_start_time,
+            response_end_time=response_end_time,
+            http_status=http_status,
+            raw_response_hash=raw_hash,
+            raw_bytes_len=len(raw_response_bytes),
+            raw_response_bytes=raw_response_bytes,
+            parsed_summary=parsed_summary or {},
+            source_identity=source_identity,
+            is_genuine_network_retrieval=False,
+            is_production_certified=False,
+            is_simulated=True,
+            execution_mode="SIMULATED",
+            announcement_ids=announcement_ids or [],
+            query_parameters=query_parameters or {},
+            service_provenance=service_provenance,
+            session_token=f"TOK-SIM-{session_id}",
+            transport_protocol=transport_protocol,
+        )
+        cls._sessions[session_id] = rec
+        return rec
+
+    @classmethod
     def register_genuine_session(
         cls,
         source_channel: str,
@@ -335,10 +451,13 @@ class RetrievalSessionRegistry:
         transport_protocol: str = "HTTPS/1.1",
         allow_legacy_fixture: bool = False,
         session_token: Optional[str] = None,
+        service_auth_key: Optional[str] = None,
     ) -> RetrievalSessionRecord:
         """
         Registers an auditable HTTPS retrieval session.
-        Only genuine network queries can write to this registry.
+        Only genuine network queries or authorized callers can achieve production certification.
+        Ordinary callers without service_auth_key or using allow_legacy_fixture cannot achieve
+        production certification (is_production_certified=False, is_simulated=True).
         """
         if not isinstance(raw_response_bytes, bytes) or len(raw_response_bytes) == 0:
             raise ValueError("raw_response_bytes must be non-empty bytes.")
@@ -351,6 +470,11 @@ class RetrievalSessionRegistry:
                 "register_genuine_session() is strictly prohibited. Production sessions "
                 "must originate from genuine HTTPS retrieval."
             )
+
+        # Production authorization check (P0-1)
+        is_authorized_prod = (service_auth_key == cls._AUTHENTIC_SERVICE_AUTH_KEY)
+        is_simulated = (allow_legacy_fixture or not is_authorized_prod)
+        is_production_certified = (is_authorized_prod and not allow_legacy_fixture)
 
         raw_hash = hashlib.sha256(raw_response_bytes).hexdigest()
         session_id = f"REG-SESS-{pd.Timestamp.now(tz='Asia/Taipei').strftime('%Y%m%d%H%M%S')}-{raw_hash[:8]}"
@@ -368,6 +492,9 @@ class RetrievalSessionRegistry:
             parsed_summary=parsed_summary or {},
             source_identity=source_identity,
             is_genuine_network_retrieval=True,
+            is_production_certified=is_production_certified,
+            is_simulated=is_simulated,
+            execution_mode="AUTHENTIC" if is_production_certified else "SIMULATED",
             announcement_ids=announcement_ids or [],
             query_parameters=query_parameters or {},
             service_provenance=service_provenance,
@@ -419,6 +546,7 @@ class MOPSSourceEvidence:
     provider_available_at: Optional[pd.Timestamp] = None
     verification_method: str = "OFFICIAL_EXCHANGE_REGISTRY_AUDIT"
     audit_notes: str = ""
+    enforce_production_boundary: bool = False
 
 
 ALLOWED_OFFICIAL_HOSTS: Set[str] = {
@@ -872,6 +1000,7 @@ class TrustedSourceCertifier:
         cls,
         raw_event: Dict[str, Any],
         evidence: Optional[MOPSSourceEvidence],
+        enforce_production_boundary: bool = False,
     ) -> Tuple[SourceVerificationStatus, Optional[Dict[str, Any]], str]:
         """
         Evidence-Based Verification Gate for MOPS candidates.
@@ -1098,6 +1227,16 @@ class TrustedSourceCertifier:
                 None,
                 f"Verification rejected: Session service provenance '{sess_provenance}' is untrusted or self-attested.",
             )
+
+        # Production boundary enforcement (P0-1 items 1, 3, 4)
+        is_prod_enforced = enforce_production_boundary or getattr(evidence, "enforce_production_boundary", False)
+        if is_prod_enforced:
+            if getattr(session, "is_simulated", False) or not getattr(session, "is_production_certified", False):
+                return (
+                    SourceVerificationStatus.MOPS_CANDIDATE_UNVERIFIED,
+                    None,
+                    "Verification rejected: Session lacks genuine production certification from GenuineHttpsRetrievalService (self-attested provenance, test fixtures, or legacy fixture bypass prohibited in production boundary).",
+                )
 
         # Formal PIT eligibility vs Provider Availability segregation (Section 4)
         if getattr(evidence, "is_formal_pit_eligible", False):

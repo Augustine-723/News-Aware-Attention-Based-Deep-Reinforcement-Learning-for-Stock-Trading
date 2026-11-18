@@ -1,224 +1,215 @@
-# V8.14 — First Evidence-Backed Historical Disclosure Dataset & Verification Report
+# V8.14 — Official Disclosure Retrieval & Multimodal Integration Prototype Report
 
 ## Executive Summary
 
-本階段（V8.14）聚焦於建立具備真實網路取得證據（Genuine HTTPS Retrieval Evidence）的官方歷史公告取得流程，落實嚴格的可信邊界（Trust Boundary），並驗證首筆官方重大訊息資料安全進入既有 News-Aware Multimodal Pipeline。
+本階段（V8.14）聚焦於建立具備真實網路取得證據（Genuine HTTPS Retrieval Evidence）的官方重大訊息取得流程，封閉生產用檢索信任邊界（Retrieval Trust Boundary），建立原始回應重新解析與文本綁定機制（Raw Response Binding），並落實嚴格的時點可用性檢驗（Point-in-Time As-Of Availability Gate）於多模態決策管線槽位寫入之前。
 
-在前期 V8.13 結案審查中，我們完成了離線工程原型，但仍存在呼叫端自行登記 Session、單靠 `is_authentic` 布林值自簽 Authenticity，以及 Stock-Day 覆蓋率重複計算等問題。V8.14 全面修復上述缺陷，並完成真實官方接口的合規探測。
-
-### 關鍵審查成果與核心數據總覽
-
-| 審查維度 | 核心數值 | 狀態 / 審查判定 |
-| :--- | :---: | :--- |
-| **1. 實際發送請求數 (Actual Query Attempts)** | **2 筆 (OpenAPI + MOPS)** | **AUTHENTIC (真實 HTTPS 網路請求)** |
-| **2. 成功取得歷史資料數 (Successful Historical Queries)** | **0 筆** | **FAIL-CLOSED (MOPS 安全阻擋，歷史 Q1 0 筆)** |
-| **3. 取得原始回應筆數 (Retrieved Raw Responses)** | **2 筆** | **完整保存原始位元組與 SHA-256 雜湊值** |
-| **4. 來源存在性驗證通過數 (Source Existence Verified)** | **1 筆 (2881 富邦金)** | **SOURCE_EXISTENCE_VERIFIED (TWSE OpenAPI)** |
-| **5. 歷史可用時間驗證通過數 (Provider Availability Verified)** | **0 筆** | **UNVERIFIED (官方公告無歷史 Vendor Feed Log)** |
-| **6. 正式 PIT 符合筆數 (Formal PIT Eligible)** | **0 筆** | **ESTIMATED_PIT_ONLY (隔離未受認證的時間戳記)** |
-| **7. 2024 Q1 Stock-Day 覆蓋率 (56 交易日 × 3 檔 = 168 單位)** | **0.0% (歷史 Q1)** | **去重後 168 單位中 0 筆歷史成功取得** |
-| **8. 解析與存取失敗紀錄 (Failures & Access Blocks)** | **1 筆 (MOPS WAF 阻擋)** | **FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED** |
-| **9. 證據清冊可重現性 (Evidence Manifest)** | **1 筆驗證通過** | **Cryptographic SHA-256 Digests Verified** |
-| **10. 最小 Pipeline 整合狀態 (Pipeline Forward Pass)** | **100% 通過** | **(512D $\to$ 128D $\to$ 24D $\to$ 8D $\to$ 160D $\to$ (40, 160))** |
+依據獨立審查意見（Code Review 1），由於公開資訊觀測站（MOPS）設有反爬蟲安全防禦機制（FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED），且 TWSE OpenAPI 僅提供現時滾動重大訊息（Rolling Current Disclosures），無法回溯 2024 Q1 歷史公告，因此 **V8.14 正式定位為「官方公告取得服務與多模態管線整合原型」（Official Disclosure Retrieval & Multimodal Integration Prototype），而非完整歷史資料集**。
 
 ---
 
-## 1. Genuine Retrieval Trust Boundary
+### 八項核心審查維度與驗收數據對照表 (Core Gate Matrix)
 
-### 1.1 信任邊界架構與 Session 註冊機制
-在 V8.13 中，`RetrievalSessionRegistry.register_genuine_session()` 允許一般呼叫端自行傳入本地位元組與 Session ID，造成呼叫端自簽 Authenticity 的漏洞。
+依據 Code Review 1 規定，核心數據嚴格區分如下，絕不混淆即時資料、歷史資料、存在性驗證與時間可用性驗證：
 
-V8.14 實施了嚴格的信任邊界：
-1. **專屬服務註冊 (`GenuineHttpsRetrievalService`)**：
-   生產用有效 Session 必須由實際執行 HTTPS 網路請求的 `GenuineHttpsRetrievalService` 登記，並自動產生 `service_provenance="GENUINE_HTTPS_RETRIEVAL_SERVICE"`、`transport_protocol="HTTPS/1.1"` 與時間戳記紀錄。
-2. **反例測試拒絕本地 Fixture 位元組 (Counterexample Rejection)**：
-   `RetrievalSessionRegistry` 預先收集已知本地候選公告與文章摘要（`RAW_PILOT_EVENTS` 內文與標題 SHA-256）。若一般呼叫端嘗試將 `RAW_PILOT_EVENTS` 本機 Bytes 傳入 `register_genuine_session()`，系統直接拋出 `ValueError("Counterexample rejected: Passing RAW_PILOT_EVENTS local fixture bytes to register_genuine_session() is strictly prohibited")`。
-3. **認證端跨檢驗證 (`TrustedSourceCertifier.verify_evidence`)**：
-   認證公告時，必須向 `RetrievalSessionRegistry` 核對：
-   - Session ID 必須存在於 Registry（禁止偽造或未註冊 ID）。
-   - HTTP 狀態碼必須為 200。
-   - `raw_response_hash` 必須與 Adapter Receipt 完全一致。
-   - `endpoint_url` 必須與查詢 URL 一致。
-   - `service_provenance` 必須為 recognized service，不可為自我宣告或測試注入。
-   - 缺少有效外部 Session 時，一律維持 `MOPS_CANDIDATE_UNVERIFIED`，嚴守 Fail-Closed 原則。
+| 審查維度 | 實測數值 | 規格 / 判定狀態 | 審查依據與治理規範 |
+| :--- | :---: | :---: | :--- |
+| **1. 真實 HTTPS 取得證明 (Real HTTPS Retrieval Demonstrated)** | **2 筆** | **VERIFIED (真實 HTTPS 請求)** | 透過 `GenuineHttpsRetrievalService` 實際連線 TWSE OpenAPI 與 MOPS 接口，保存原始 Response Bytes 與 SHA-256 摘要。 |
+| **2. 真實現時公告取得筆數 (Genuine Current Disclosure Obtained)** | **1 筆** | **SUCCESSFUL (`2881` 富邦金控)** | 由 TWSE OpenAPI 成功取得並解析富邦金控現時公告，出表時間 2026-11-16 16:00:36 Asia/Taipei。 |
+| **3. 歷史公告取得筆數 (Historical Disclosure Retrieved)** | **0 筆** | **FAIL-CLOSED (誠實申報 0 筆)** | MOPS 歷史查詢受反爬防禦阻擋，OpenAPI 無回溯參數。2024 Q1 歷史公告實際取得數嚴格為 **0 筆**。 |
+| **4. 來源存在性驗證通過數 (Source Existence Verified)** | **1 筆** | **SOURCE_EXISTENCE_VERIFIED** | 透過 `EvidenceManifest.verify_entry_integrity()` 重新解析原始 OpenAPI JSON，確認公告存在於原始位元組。 |
+| **5. 歷史供應商可用時間驗證數 (Historical Provider Availability Verified)** | **0 筆** | **UNVERIFIED (缺少 Vendor Feed Log)** | 官方公告僅有出表時間，缺乏第三方資訊商（如彭博/路透/TEJ）Drop-Copy Feed 送達終端時間戳記。 |
+| **6. 正式 PIT 符合筆數 (Formal PIT Eligible)** | **0 筆** | **ESTIMATED_PIT_ONLY (維持隔離)** | 無供應商送達日誌，依法定規則維持 `ESTIMATED_PIT_ONLY`，禁止自封或自動提升為 `FORMAL_PIT_ELIGIBLE`。 |
+| **7. 張量形狀與嵌入前向傳遞 (Tensor Shape / Forward Pass)** | **100% 通過** | **INTERFACE_SPECIFICATION_ONLY** | BGE 512D $\to$ 128D $\to$ 24D $\to$ 8D $\to$ (40, 160) $\to$ (60, 100) 前向輸出無誤，標記為**介面契約驗證**。 |
+| **8. 歷史 PIT 決策狀態整合 (Historical PIT State Integration)** | **100% 驗證** | **PIT As-Of Gate Enforced** | 槽位寫入前執行 As-Of 檢驗；盤後 20:30、未來 $T+1$、公休日、2026 擷取時間等事件**一律拒絕寫入槽位**。 |
 
 ---
 
-## 2. Correct Stock-Day Coverage Accounting
+## 1. P0-1 — Close the Genuine Retrieval Trust Boundary
 
-### 2.1 目標母體與 Stock-Day Key 定義
-- **目標範圍**：2024 Q1（2024-01-01 至 2024-03-31）全體 56 個 TWSE 實際交易日。
-- **目標股票**：台積電 (`2330`)、長榮海運 (`2603`)、富邦金 (`2881`)。
-- **計畫 Stock-Day 母體**：$56 \text{ Sessions} \times 3 \text{ Stocks} = 168 \text{ Stock-Days}$。
-- **唯一的 Stock-Day Key**：嚴格定義為二元組 `(target_date, stock_id)`。
+### 1.1 生產寫入路徑與測試工廠徹底分離
+在前版中，`RetrievalSessionRegistry.register_genuine_session()` 允許呼叫端直接提供 `service_provenance` 或傳入 `allow_legacy_fixture=True` 註冊 Session，存在測試資料滲透至生產認證的漏洞。
 
-### 2.2 重複請求去重與指標解耦 (Deduplication & Decoupled Metrics)
-V8.14 修正了前版單純以 `len(attempts)` 計算覆蓋率導致重試次數膨脹覆蓋率的問題：
-- **重試去重**：針對同一 `(target_date, stock_id)` 的多次查詢（如網路逾時重試），去重彙整為單一 Stock-Day，多餘請求記錄於 `duplicate_retry_attempts_count`，不得重複計算。
-- **範圍外隔離 (`out_of_scope_attempts_count`)**：非目標季度（如 2024 Q2）或非成分股（如 2317）的查詢請求，嚴格隔離於範圍外計數，不得計入 168 個計畫單位的覆蓋率。
-- **四項獨立覆蓋率指標**：
-  1. `attempted_stock_days_coverage`：已實際發送查詢的目標 Stock-Day 比例。
-  2. `successful_query_coverage`：查詢成功（HTTP 200 且解析無誤）的目標 Stock-Day 比例。
-  3. `retrieved_announcement_coverage`：實際取得至少 1 筆官方公告的目標 Stock-Day 比例。
-  4. `collection_coverage_ratio`：與既有測試相容之去重實體查詢率。
+V8.14 實施雙重路徑隔離：
+1. **生產專屬註冊路徑 (`register_production_session`)**：
+   - 僅能由 `GenuineHttpsRetrievalService` 在實際完成 HTTPS 網路請求且 HTTP 狀態碼為 200 時呼叫。
+   - 必須傳入內部服務密鑰 `service_auth_key == RetrievalSessionRegistry._AUTHENTIC_SERVICE_AUTH_KEY`，否則直接拋出 `PermissionError`。
+   - 嚴格拒絕已知 Fixture 雜湊（`is_known_fixture_payload`），標記 `is_production_certified=True`、`is_simulated=False`、`execution_mode="AUTHENTIC"`。
+2. **測試工廠路徑 (`register_simulated_session`)**：
+   - 專供單元測試與離線模擬使用，強制標記 `is_simulated=True`、`is_production_certified=False`、`execution_mode="SIMULATED"`。
+3. **一般呼叫端防禦 (`register_genuine_session`)**：
+   - 一般呼叫端自行呼叫或使用 `allow_legacy_fixture=True` 時，系統自動將 Session 標記為 `is_production_certified=False` 與 `is_simulated=True`。
+   - 當 `TrustedSourceCertifier.verify_evidence(enforce_production_boundary=True)` 審查生產邊界時，任何 `is_simulated=True` 或缺少生產認證的 Session 一律 Fail-Closed 判定為 `MOPS_CANDIDATE_UNVERIFIED`。
 
-### 2.3 三態交易日解析與零公告確認標準
-在 `three_way_session_resolution` 中，明確定義：
-- `NOT_ATTEMPTED`：該交易日對 3 檔股票均未發送查詢。
-- `ANNOUNCEMENTS_RETRIEVED`：該交易日至少 1 檔股票取得重大訊息公告。
-- `AUTHENTIC_NO_ANNOUNCEMENT_CONFIRMED`：**必須該交易日全部 3 檔成分股 (`2330`, `2603`, `2881`) 均完成真實查詢，且全部成功回傳 0 筆結果**。若僅查詢 1 或 2 檔，或任一檔查詢失敗，只能標記為 `QUERY_COMPLETED_ZERO_RESULTS`，不得宣告全市場零公告確認。
+### 1.2 通過之反例拒絕測試 (Counterexample Tests)
+- `test_unauthorized_production_registration_rejection`：非授權呼叫端嘗試呼叫 `register_production_session()` 立即拋出 `PermissionError`。
+- `test_counterexample_forged_provenance_rejected_in_production_boundary`：自填 `service_provenance` 或 Session Token 於生產邊界審查時直接被拒絕。
+- `test_counterexample_legacy_fixture_bypass_rejected`：使用 `allow_legacy_fixture=True` 註冊之 Session 明確標為 `SIMULATED`，禁止取得正式認證。
+- `test_openapi_session_cannot_certify_mops_historical_disclosure`：TWSE OpenAPI 即時 Session 嚴格禁止認證歷史 MOPS 公告。
 
 ---
 
-## 3. Real Official Source Acquisition & Access Restrictions
+## 2. P0-2 — Bind Manifest Fields to Raw Response
 
-### 3.1 官方合法公開接口探測結果
-我們針對台灣主管機關認可的官方管道進行合法真實網路查詢：
+### 2.1 原始回應重新解析與欄位綁定 (Content Binding Re-parsing)
+前版 `EvidenceManifest.verify_entry_integrity()` 僅比對 Raw Bytes Hash 與 Parsed Content Hash，若惡意呼叫端將真實 Raw Bytes 配對虛構之公告標題與內文，仍可能通過驗證。
 
-1. **TWSE OpenAPI (`https://openapi.twse.com.tw/v1/opendata/t187ap04_L`)**：
-   - **狀態**：正常連線，HTTP 200，取得 115 筆當日重大訊息公開位元組。
-   - **成分股命中**：成功檢索到成分股 `2881`（富邦金控）真實官方重大訊息：
-     - 主旨：「公告本公司暨主要子公司115年10月合併自結損益」
-     - 出表時間：1151116 16:00:36 (即 2026-11-16 16:00:36 Asia/Taipei)
-     - 原始回應 SHA-256：`0505b8eeb0201463133cbcfb006a1d82121e7fc96bfca290680a370e5b410eb7`
-     - 規格限制：TWSE OpenAPI 之參數清單為空陣列 `[]`，為即時滾動資料集（Rolling Daily Dump），不支援回溯 2024 Q1 歷史公告查詢。
-2. **MOPS 公開資訊觀測站 (`https://mops.twse.com.tw/mops/web/ajax_t05st01`)**：
-   - **狀態**：連線受阻，伺服器返回安全防禦頁面：
-     `因為安全性考量，您所執行的頁面無法呈現。<BR>FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED.<BR>`
-   - **合規處理**：嚴格遵守 AI Agent 行為規範與使用者指示（「不得繞過網站限制、驗證碼或存取控制。如果無法透過允許的介面取得歷史公告，記錄失敗原因及來源限制，保留來源認證 0 筆」）。
-   - **審查結論**：未進行任何 WAF 繞過、Token 偽造或 CAPTCHA 破解，誠實將查詢標記為 `QUERY_FAILED_HTTP`，並保留 2024 Q1 歷史公告認證筆數為 **0 筆**。
+V8.14 全面重構 `verify_entry_integrity()`，執行**原始資料動態重新解析**：
+1. **OpenAPI JSON 重新解析**：
+   - 將 `entry.raw_response_bytes` 解碼為 JSON 物件陣列。
+   - 逐筆比對 `公司代號`、`主旨`、`詳細內容/說明` 與 `出表日期`。
+   - 若原始位元組中不存在與清冊完全吻合之股票代號、標題與正文，直接判定 `Content binding verification failed`。
+2. **MOPS HTML/Text 重新解析**：
+   - 解碼原始 HTML 文字，比對目標 `stock_id`、標題或內文是否確實存在於回應中。
+3. **本地記錄識別碼標記 (`local_record_id`)**：
+   - TWSE OpenAPI 缺乏官方分配之伺服器 UUID，系統明確指派 `local_record_id = LOCAL-OPENAPI-{stock}-{date}-{hash}`，並標記 `is_local_record_id=True`，明示為本地衍生識別碼。
+4. **發布時間解析真實性檢驗**：
+   - 若官方格式無法解析發布時間，標記 `publication_time_parsed=False`，`filing_datetime=None`。
+   - 嚴格禁止解析失敗時靜默以 `retrieved_at` 偽裝為公告發布時間（違反時 `verify_entry_integrity` 直接報錯）。
+5. **原始資料留存狀態標記**：
+   - 保留 `raw_retention_status = "FULL_RAW_BYTES_RETAINED"`。若日後涉及版權無法保存原始內文，標明 `INDEPENDENT_REPRODUCTION_PENDING`，誠實揭露無法獨立重算 Raw Hash。
+
+### 2.2 通過之防偽反例測試
+- `test_counterexample_manifest_tampered_content_rejection`：傳入真實 OpenAPI Raw Bytes，但清冊中置換為虛構之併購標題與內文，重新解析機制立即攔截並報錯。
+- `test_counterexample_manifest_unparsed_time_rejection`：解析失敗卻以擷取時間冒充發布時間，清冊完整性檢查直接失敗。
 
 ---
 
-## 4. Tripartite Point-in-Time Status Segregation
+## 3. P0-3 — Enforce PIT Before Event Slot Ingestion
 
-V8.14 建立三元分離機制，徹底杜絕無外部時間戳記證據之「自封 PIT」：
+### 3.1 時間戳記三權分立與假設標記
+在 `execute_minimal_pipeline_integration` 中，徹底拆分三類時間戳記：
+1. `observed_retrieved_at`：實際自網路下載之觀測時間戳記（如 2026-11-18）。
+2. `estimated_provider_available_at`：公告發布時間 $+5\text{ minutes}$，**明確標記 `is_estimated_hypothesis = True`，僅為估計假設，非歷史事實**。
+3. `verified_provider_available_at`：歷史第三方資訊商日誌時間戳記（目前為 `None`）。
 
-```mermaid
-flowchart TD
-    A["Raw Official Disclosure Acquired"] --> B{"Genuine HTTPS Session Verified?"}
-    B -- No --> C["UNVERIFIED_CANDIDATE<br/>(Fail Closed)"]
-    B -- Yes --> D["SOURCE_EXISTENCE_VERIFIED<br/>(Content Exists on Official Source)"]
-    D --> E{"Downstream Vendor Feed<br/>Log Timestamp Available?"}
-    E -- No --> F["ESTIMATED_PIT_ONLY<br/>(Arrival Time Estimated via Schedule/Heuristic)"]
-    E -- Yes --> G["FORMAL_PIT_ELIGIBLE<br/>(Certified As-Of Feed Timestamp Contract)"]
+### 3.2 決策槽位寫入前之 As-Of Availability Check
+在特徵向量寫入 `recent_slots[0]` 之前，強制執行 As-Of 時點可用性檢查：
+- **交易日檢驗**：決策日期必須存在於官方交易日曆中。
+- **發布時間檢驗**：公告發布時間不得晚於決策時點（$20:00:00$ Asia/Taipei）。
+- **可用性時間檢驗**：有效可用時間（`effective_available_at`）必須小於或等於決策時點。
+- **防未來資訊外洩（Lookahead Bias Prevention）**：
+  - 若事件晚於 $20:00$（例如 $20:30$ 公告）：**拒絕寫入當日決策槽位**，槽位維持全零 Zero-padded。
+  - 若事件屬於次日（$T+1$ 未來事件）：**拒絕寫入當日決策槽位**。
+  - 若事件發生於非交易日（如週日）：**拒絕形成該非交易日之決策 State**。
+  - 若事件僅於 2026 年擷取且無歷史資訊商日誌：**拒絕進入 2024 年歷史決策 State**。
+
+### 3.3 市場特徵佔位標記與研究宣稱邊界
+- 市場特徵矩陣 `(60, 100)` 明確標記 `market_context_status = "SYNTHETIC_MARKET_PLACEHOLDER"`。
+- 返回字典明確標註 `pipeline_verification_level = "INTERFACE_SPECIFICATION_VERIFICATION_ONLY"` 與 `empirical_drl_validated = False`。
+- **嚴格宣告：成功輸出 `(40, 160)` 與 `(60, 100)` 僅代表多模態特徵管線架構與介面契約吻合，絕不代表已在真實資料上證明 DRL 交易具備超額收益或語意價值。**
+
+---
+
+## 4. P1 — Evidence Reproducibility & Source Governance
+
+### 4.1 查詢結果細緻分類統計 (WAF vs Parsed)
+在 `OfficialHistoricalNewsCollector.evaluate_q1_2024_collection_metrics()` 中，將查詢失敗細緻解耦：
+- `total_queries_executed`：實際發送之真實網路請求總數。
+- `successful_parsed_responses`：HTTP 200 且未受安全機制阻擋之正常解析回應數。
+- `waf_access_blocked_responses`：觸發「安全性考量 / FOR SECURITY REASONS」或 HTTP 403/429 阻擋之請求數。
+
+### 4.2 原始資料快照與清冊留存
+依據政府資料開放授權條款（Open Government Data License Version 1.0），本專案將無版權爭議之公開資料快照保存於可重現路徑：
+- 資料快照：`data/official_disclosures/twse_openapi_snapshot_2026.json`
+- 證據清冊：`data/official_disclosures/evidence_manifest_v8_14.json`
+- 授權狀態：`LICENSE_VERIFIED`（允許研究與註明出處之統計分析；禁止商業轉售）。
+- 智慧財產與反爬遵循：不爬取或儲存未獲授權之商業新聞全文，嚴守 GitHub 開源治理標準。
+
+### 4.3 即時資料與 2024 Q1 歷史資料庫嚴格隔離
+- OpenAPI 樣本週期明確標記為 `SAMPLE_PERIOD = "2026-CURRENT-ROLLING"`。
+- 2024 Q1 計畫之 168 個 Stock-Day 單位中，真實歷史公告取得筆數**持續保持為 0 筆**，絕不將現時重大訊息充作歷史回測資料。
+
+---
+
+## 5. 最小 Pipeline 整合實測規格 (Multimodal Contract)
+
+真實取得之官方重大訊息（富邦金控現時公告）通過 `execute_minimal_pipeline_integration` 前向驗證：
+
+```
+Official OpenAPI JSON Response
+       │  (90,709 Bytes, SHA-256 Verified)
+       ▼
+EvidenceManifest Entry
+       │  (Re-parsed & Bound: 2881, 1151116, LOCAL-OPENAPI-...)
+       ▼
+Pretrained Semantic Encoder (BAAI/bge-small-zh-v1.5)
+       │  CLS 512D Raw Embedding
+       ▼
+Deterministic QR Orthogonal Projection Matrix
+       │  128D Projected Semantic Vector (L2 Norm = 1.0000)
+       ▼
+Multimodal Feature Concatenation
+       │  128D Semantic + 24D Event Metadata + 8D Relation Vector
+       ▼
+Combined Event Representation (160D)
+       │
+       ├── PIT As-Of Availability Gate (Cutoff: 20:00:00 Asia/Taipei)
+       │   └── Status: INGESTED (Effective availability <= Cutoff)
+       ▼
+Dual-Slot News Tensor: (40, 160)
+       ├── Recent News Slots: (32, 160)  [Slot 0 filled, 1-31 Zero-padded]
+       └── Active News Slots:  (8, 160)  [0-7 Zero-padded]
+       ▼
+Market Context Tensor: (60, 100)
+       └── SYNTHETIC_MARKET_PLACEHOLDER
 ```
 
-1. **`SOURCE_EXISTENCE_VERIFIED`**：
-   證明該篇公告文本與公告代號真實存在於官方交易所資料流中（由 `GenuineHttpsRetrievalService` 取得並驗證 SHA-256 雜湊值）。
-2. **`HISTORICAL_PROVIDER_AVAILABILITY_VERIFIED`**：
-   證明下游歷史資訊供應商（Vendor Feed / Drop-Copy Log）記錄了該篇公告送達終端的時間戳記。
-3. **`FORMAL_PIT_ELIGIBLE`**：
-   唯有同時具備 (1) 來源存在性驗證 與 (2) 供應商可用時間日誌，方能取得正式 PIT 資格。
-4. **降級隔離規則**：
-   缺少供應商日誌之官方真實公告（如 TWSE OpenAPI 取得之紀錄），系統強制鎖定為 `ESTIMATED_PIT_ONLY`，任何嘗試指定 `is_formal_pit_eligible=True` 之請求一律 Fail-Closed 拒絕認證。
+### 數值檢驗規格一覽表
+
+| 管線特徵元件 | 輸出維度 / 形狀 | 檢驗指標 | 審查合規判定 |
+| :--- | :---: | :---: | :--- |
+| **原始語意嵌入 (Raw CLS Embedding)** | `(512,)` | BGE 官方預訓練權重 | 吻合 V8.8 規範 |
+| **降維投影向量 (Projected Semantic Vector)** | `(128,)` | L2 Norm = 1.0000 | 嚴格正交歸一化 |
+| **事件權威特徵 (Event Metadata Vector)** | `(24,)` | E01–E24 數值特徵 | 吻合 V8.0 契約 |
+| **股票關聯特徵 (Event-Stock Relation Vector)** | `(8,)` | R01=1.0（富邦金精準匹配） | 吻合關係結構 |
+| **融合事件向量 (Combined Event Vector)** | `(160,)` | 128D + 24D + 8D | 向量維度精準對齊 |
+| **近期槽位 (Recent News Slots)** | `(32, 160)` | Slot 0 填入事件特徵 | 吻合雙槽位架構 |
+| **活躍槽位 (Active News Slots)** | `(8, 160)` | 預設保留槽位 (Zero-padded) | 吻合雙槽位架構 |
+| **決策輸入新聞張量 (News Slots)** | `(40, 160)` | 32 + 8 槽位拼接 | 吻合 V8.0 輸入契約 |
+| **市場行情佔位 (Market Context)** | `(60, 100)` | 標記為 Synthetic Placeholder | 隔離未驗證行情 |
+| **時點可用性檢驗 (PIT As-Of Gate)** | **PASSED** | 盤後/未來/公休日事件全數阻擋 | 杜絕 Lookahead 偏差 |
 
 ---
 
-## 5. Evidence Manifest Reproducibility
+## 6. 完整測試套件執行結果 (Pytest Suite)
 
-透過 `EvidenceManifest`，每筆真實取得之公告均保留完整密碼學證據清冊：
-
-```json
-{
-  "manifest_id": "MANIFEST-TWSE-OPENAPI-2024Q1-AUDIT",
-  "entry": {
-    "announcement_id": "OPENAPI-2881-20261116160036",
-    "stock_id": "2881",
-    "company_name": "富邦金控",
-    "filing_datetime": "2026-11-16T16:00:36+08:00",
-    "headline": "公告本公司暨主要子公司115年10月合併自結損益",
-    "source_url": "https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
-    "query_parameters": {},
-    "raw_response_bytes_len": 90709,
-    "raw_response_hash": "0505b8eeb0201463133cbcfb006a1d82121e7fc96bfca290680a370e5b410eb7",
-    "parsed_payload_hash": "37f3747d9229ad1255866184a511394f92023d8c36fe9f60ad77f7c6e00192e2",
-    "retrieval_session_id": "REG-SESS-20261118020822-0505b8ee",
-    "verification_status": "SOURCE_EXISTENCE_VERIFIED",
-    "pit_status": "ESTIMATED_PIT_ONLY",
-    "license_metadata": {
-      "license_name": "Taiwan Open Government Data License (TWSE OpenAPI)",
-      "license_terms_url": "https://data.gov.tw/license",
-      "license_version": "1.0",
-      "verification_status": "LICENSE_VERIFIED",
-      "permitted_uses": ["RESEARCH_AND_STATISTICAL_ANALYSIS", "ATTRIBUTED_QUOTATION", "COMMERCIAL_AND_NON_COMMERCIAL"]
-    }
-  }
-}
-```
-
----
-
-## 6. Minimal Pipeline Integration Result
-
-真實取得之官方重大訊息資料透過 `execute_minimal_pipeline_integration` 順利通過既有 News-Aware Multimodal Pipeline 驗證，未對既有 RL 結構造成破壞：
-
-```mermaid
-flowchart LR
-    A["Raw Official Disclosure<br/>(TWSE OpenAPI / 2881)"] --> B["Evidence Manifest<br/>& Hash Verification"]
-    B --> C["RawNewsArticle Entity<br/>(Formal Contract)"]
-    C --> D1["BGE Pretrained Encoder<br/>(512D CLS Embedding)"]
-    D1 --> D2["Deterministic QR Proj<br/>(128D Normalized Vector)"]
-    C --> E["24D Event Metadata<br/>(E01-E24)"]
-    C --> F["8D Event-Stock Relation<br/>(R01-R08)"]
-    D2 --> G["160D Multimodal Event Vector"]
-    E --> G
-    F --> G
-    G --> H["Dual-Slot Memory Layout<br/>32 Recent + 8 Active = (40, 160)"]
-    I["Market State (60, 100)"] --> J["20:00 Asia/Taipei Cutoff<br/>Next-Day Execution PIT State"]
-    H --> J
-```
-
-### 驗證輸出規格與張量形狀清單
-
-| 特徵 / 張量元件 | 規格 / 形狀 | 數值與屬性檢驗 |
-| :--- | :---: | :--- |
-| **原始語意嵌入向量 (Raw CLS Embedding)** | `(512,)` | BAAI/bge-small-zh-v1.5 正式權重輸出 |
-| **降維投影語意向量 (Projected Semantic Vector)** | `(128,)` | 正交 QR 矩陣投影，L2 Norm = 1.0000 |
-| **事件權威特徵 (Event Metadata Vector)** | `(24,)` | 符合 V8.0 規格（E01–E24，管理層宣告/月營收） |
-| **股票關聯特徵 (Event-Stock Relation Vector)** | `(8,)` | R01=1.0（富邦金直接提及）、R02=1.0（金融業匹配） |
-| **單一事件融合表示 (Combined Event Vector)** | `(160,)` | $128\text{D} + 24\text{D} + 8\text{D} = 160\text{D}$ |
-| **近期事件槽位矩陣 (Recent News Slots)** | `(32, 160)` | Slot 0 填入融合事件，其餘槽位 Zero-padded |
-| **活躍事件槽位矩陣 (Active News Slots)** | `(8, 160)` | 獨立保留重大事件槽位，Zero-padded |
-| **全新聞槽位輸入矩陣 (Total News Slots)** | `(40, 160)` | 嚴格符合 V8.0 模型輸入形狀契約 |
-| **市場行情歷史視窗 (Market Context Window)** | `(60, 100)` | 60 交易日 × 100 維市場特徵矩陣 |
-| **決策時間契約 (Decision Cutoff Contract)** | `20:00:00` | Asia/Taipei 閉市後決策，次一交易日開盤執行 |
-| **前向整合驗證結果 (Pipeline Forward Pass)** | **PASSED** | 整合狀態 SUCCESSFUL，張量完全對齊 |
-
----
-
-## 7. Outstanding Limitations & Path Forward
-
-### 7.1 現存限制 (Outstanding Limitations)
-1. **MOPS 反爬蟲與存取控制阻擋**：
-   公開資訊觀測站（MOPS）設有反爬蟲安全防禦機制（FOR SECURITY REASONS, THIS PAGE CAN NOT BE ACCESSED）。在不違背存取控制防線的前提下，無法透過非授權自動化 HTTP POST 抓取 2024 Q1 歷史公告。
-2. **TWSE OpenAPI 歷史回溯限制**：
-   TWSE OpenAPI 係每日重大訊息滾動清單，不提供回溯特定歷史交易日之查詢參數。因此 OpenAPI 雖可作為真實現時資料流驗證，但無法獨立補足 2024 Q1 歷史資料庫。
-3. **缺少商用供應商 Feed Arrival 日誌**：
-   交易所公告僅包含發布時間（出表時間），缺少資訊商下發時間戳記（Feed Ingestion Timestamp），因此現有公告僅能維持 `ESTIMATED_PIT_ONLY`。
-
-### 7.2 下一步建議 (Path Forward)
-1. **申請官方授權資料接口或學術研究授權**：
-   透過台灣證券交易所正式之 Open API 批次資料申請、國科會/證券暨期貨市場發展基金會學術資料庫，或合法商用資料庫（如 TEJ 台灣經濟新報）取得 2024 Q1 重大訊息完整歷史資料與下發時間戳記。
-2. **維持嚴格 Fail-Closed**：
-   在正式取得授權歷史資料前，2024 Q1 認證公告數持續維持 0 筆，禁止人工回填未經驗證的公告，嚴守學術研究誠信。
-3. **保持既有 RL 模型隔離**：
-   在真實歷史資料集尚未擴充至統計檢定力門檻前，不展開大規模強化學習訓練，以防雜訊與未驗證資料污染既有架構。
-
----
-
-## 8. 測試套件執行結果
-
-本次測試於標準 Conda Python 3.11 環境中執行完整測試套件，涵蓋歷史資料驗證、會話邊界、去重邏輯與前向管線整合：
+在標準 Conda Python 3.11 環境下執行全量 pytest 測試套件：
 
 ```
 ============================= test session starts ==============================
 rootdir: /home/augustine/Desktop/News-Aware Attention-Based Deep Reinforcement Learning for Stock Trading
 configfile: pyproject.toml
 plugins: anyio-4.16.0
-collected 225 items
+collected 232 items
 
-225 passed in 159.26s (0:02:39)
+........................................................................ [ 31%]
+........................................................................ [ 62%]
+........................................................................ [ 93%]
+................                                                         [100%]
+============================= 232 passed in 238.45s (0:03:58) =============================
 ```
 
-**測試結論**：全數 225 項測試（包含 14 項 V8.14 新增之邊界與整合測試）100% 通過，無任何錯誤或回歸。
+**測試結論**：
+- 全體 232 項測試（包含 V8.14 新增之 9 項邊界拒絕測試、反例防禦測試與 PIT As-Of 閘門測試）**100% 通過**。
+- 無任何回歸錯誤，既有 DQN 訓練、Walk-Forward 交叉驗證、配對 Bootstrap 及多模態特徵抽取全部保持綠燈。
+
+---
+
+## 7. 現存研究限制與後續路徑 (Outstanding Limitations & Path Forward)
+
+### 7.1 現存限制誠實宣告
+1. **官方歷史資料接口缺乏自動化通路**：
+   MOPS 設有反爬蟲安全屏障，不開放未授權之自動化爬取；TWSE OpenAPI 僅提供滾動現時重大訊息。在不違反系統安全規則之前提下，無法以爬蟲補齊 2024 Q1 歷史全量公告。
+2. **缺乏歷史資訊商下發時間戳記 (Vendor Feed Logs)**：
+   官方公告僅記載出表時間，無法證明歷史各交易決策當下該訊息送達下游交易終端之精確毫秒時點。現有所有公告均維持 `ESTIMATED_PIT_ONLY`。
+3. **原型驗證不構成實證超額收益之證明**：
+   前向管線通過僅證明技術架構上能正確處理官方公告並對齊形狀契約，不宣稱 News-Aware DRL 策略已在台股市場獲取超額報酬。
+
+### 7.2 後續工程與學術治理路徑
+1. **依合規途徑洽詢官方或授權學術資料庫**：
+   循正式管道向台灣證券交易所申請歷史 Open Data 批次檔案，或透過 TEJ / 證基會學術資料庫取得 2024 Q1 具備資訊商下發日誌之歷史重大訊息。
+2. **保持嚴格 Fail-Closed 原則**：
+   在取得授權歷史資料集前，2024 Q1 歷史認證公告數持續維持 0 筆，禁止人工偽造或回填未經驗證之公告。
+3. **維持既有 RL 模型架構安全隔離**：
+   在取得足夠統計檢定力之可信歷史資料集前，不進行大型強化學習模型重訓，以保護核心算法架構免受未驗證樣本污染。

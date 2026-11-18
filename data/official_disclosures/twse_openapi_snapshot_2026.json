@@ -1,0 +1,31 @@
+{
+  "query_metadata": {
+    "endpoint": "https://openapi.twse.com.tw/v1/opendata/t187ap04_L",
+    "retrieved_at": "2026-11-18T08:52:43+08:00",
+    "http_status": 200,
+    "source_channel": "TWSE_OPENAPI",
+    "sample_period": "2026-CURRENT-ROLLING",
+    "historical_q1_coverage": 0,
+    "raw_response_hash": "0505b8eeb0201463133cbcfb006a1d82121e7fc96bfca290680a370e5b410eb7",
+    "license_metadata": {
+      "license_name": "Taiwan Open Government Data License Version 1.0",
+      "license_terms_url": "https://data.gov.tw/license",
+      "verification_status": "LICENSE_VERIFIED",
+      "commercial_redistribution_eligible": false,
+      "permitted_uses": ["RESEARCH_AND_STATISTICAL_ANALYSIS", "ATTRIBUTED_QUOTATION"]
+    }
+  },
+  "constituent_matched_disclosure": {
+    "company_id": "2881",
+    "company_name": "富邦金控",
+    "filing_datetime": "2026-11-16T16:00:36+08:00",
+    "headline": "公告本公司暨主要子公司115年10月合併自結損益",
+    "body_text": "富邦金控公告115年10月份自結合併稅前淨利及稅後淨利，累計稅後淨利達法定公告標準。",
+    "local_record_id": "LOCAL-OPENAPI-2881-1151116-37f3747d",
+    "is_local_record_id": true,
+    "publication_time_parsed": true,
+    "verification_status": "SOURCE_EXISTENCE_VERIFIED",
+    "pit_status": "ESTIMATED_PIT_ONLY",
+    "raw_retention_status": "FULL_RAW_BYTES_RETAINED"
+  }
+}
