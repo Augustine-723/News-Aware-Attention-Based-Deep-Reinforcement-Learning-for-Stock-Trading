@@ -1,0 +1,204 @@
+{
+  "purpose": "FROZEN_M0_CHECKPOINT_SYNTHETIC_INPUT_SMOKE",
+  "stock_id": "2330",
+  "schema_version": "v8.0-original",
+  "compared_market_fields": [
+    "price",
+    "technical",
+    "institutional",
+    "macro",
+    "stock_context",
+    "position",
+    "institutional_missing_mask",
+    "macro_missing_mask",
+    "stock_context_missing_mask"
+  ],
+  "events": [
+    {
+      "event_id": "SYNTH-AT-CUTOFF",
+      "source_published_at": "2024-02-05T20:00:00+08:00",
+      "available_at": "2024-02-05T20:00:00+08:00",
+      "first_observed_at": "2024-02-05T20:00:00+08:00"
+    },
+    {
+      "event_id": "SYNTH-AFTER-CUTOFF",
+      "source_published_at": "2024-02-05T19:59:59+08:00",
+      "available_at": "2024-02-05T20:00:01+08:00",
+      "first_observed_at": "2024-02-15T20:00:00+08:00"
+    },
+    {
+      "event_id": "SYNTH-NON-SESSION",
+      "source_published_at": "2024-02-06T18:00:00+08:00",
+      "available_at": "2024-02-06T18:00:00+08:00",
+      "first_observed_at": "2024-02-15T20:00:00+08:00"
+    }
+  ],
+  "observations": [
+    {
+      "decision_at": "2024-02-02T20:00:00+08:00",
+      "next_session_open": "2024-02-05T09:00:00+08:00",
+      "market_tensors_equal": true,
+      "control_event_count": 0,
+      "fixture_event_count": 0,
+      "fixture_slots": [],
+      "frozen_inference": {
+        "M0": {
+          "event_count": 0,
+          "q_values_cash_long": [
+            0.14727801084518433,
+            0.12756401300430298
+          ],
+          "max_abs_q_delta_from_m0": 0.0,
+          "greedy_action": "cash"
+        },
+        "M1": {
+          "event_count": 0,
+          "q_values_cash_long": [
+            0.14727801084518433,
+            0.12756401300430298
+          ],
+          "max_abs_q_delta_from_m0": 0.0,
+          "greedy_action": "cash"
+        },
+        "M2": {
+          "event_count": 0,
+          "q_values_cash_long": [
+            0.14727801084518433,
+            0.12756401300430298
+          ],
+          "max_abs_q_delta_from_m0": 0.0,
+          "greedy_action": "cash"
+        },
+        "M3": {
+          "event_count": 0,
+          "q_values_cash_long": [
+            0.14727801084518433,
+            0.12756401300430298
+          ],
+          "max_abs_q_delta_from_m0": 0.0,
+          "greedy_action": "cash"
+        }
+      }
+    },
+    {
+      "decision_at": "2024-02-05T20:00:00+08:00",
+      "next_session_open": "2024-02-15T09:00:00+08:00",
+      "market_tensors_equal": true,
+      "control_event_count": 0,
+      "fixture_event_count": 1,
+      "fixture_slots": [
+        {
+          "slot": 0,
+          "event_id": "SYNTH-AT-CUTOFF",
+          "event_age_days": 0.0
+        }
+      ],
+      "frozen_inference": {
+        "M0": {
+          "event_count": 0,
+          "q_values_cash_long": [
+            0.15310758352279663,
+            0.13407260179519653
+          ],
+          "max_abs_q_delta_from_m0": 0.0,
+          "greedy_action": "cash"
+        },
+        "M1": {
+          "event_count": 1,
+          "q_values_cash_long": [
+            0.15140491724014282,
+            0.13057559728622437
+          ],
+          "max_abs_q_delta_from_m0": 0.003497004508972168,
+          "greedy_action": "cash"
+        },
+        "M2": {
+          "event_count": 1,
+          "q_values_cash_long": [
+            0.14999425411224365,
+            0.13589870929718018
+          ],
+          "max_abs_q_delta_from_m0": 0.0031133294105529785,
+          "greedy_action": "cash"
+        },
+        "M3": {
+          "event_count": 1,
+          "q_values_cash_long": [
+            0.14971867203712463,
+            0.13465598225593567
+          ],
+          "max_abs_q_delta_from_m0": 0.003388911485671997,
+          "greedy_action": "cash"
+        }
+      }
+    },
+    {
+      "decision_at": "2024-02-15T20:00:00+08:00",
+      "next_session_open": "2024-02-16T09:00:00+08:00",
+      "market_tensors_equal": true,
+      "control_event_count": 0,
+      "fixture_event_count": 3,
+      "fixture_slots": [
+        {
+          "slot": 0,
+          "event_id": "SYNTH-NON-SESSION",
+          "event_age_days": 9.083333015441895
+        },
+        {
+          "slot": 1,
+          "event_id": "SYNTH-AFTER-CUTOFF",
+          "event_age_days": 9.999988555908203
+        },
+        {
+          "slot": 2,
+          "event_id": "SYNTH-AT-CUTOFF",
+          "event_age_days": 10.0
+        }
+      ],
+      "frozen_inference": {
+        "M0": {
+          "event_count": 0,
+          "q_values_cash_long": [
+            0.13832677900791168,
+            0.14317648112773895
+          ],
+          "max_abs_q_delta_from_m0": 0.0,
+          "greedy_action": "long"
+        },
+        "M1": {
+          "event_count": 3,
+          "q_values_cash_long": [
+            0.1368212103843689,
+            0.13991117477416992
+          ],
+          "max_abs_q_delta_from_m0": 0.0032653063535690308,
+          "greedy_action": "long"
+        },
+        "M2": {
+          "event_count": 3,
+          "q_values_cash_long": [
+            0.13574272394180298,
+            0.1409972906112671
+          ],
+          "max_abs_q_delta_from_m0": 0.0025840550661087036,
+          "greedy_action": "long"
+        },
+        "M3": {
+          "event_count": 3,
+          "q_values_cash_long": [
+            0.1349855661392212,
+            0.14117874205112457
+          ],
+          "max_abs_q_delta_from_m0": 0.0033412128686904907,
+          "greedy_action": "long"
+        }
+      }
+    }
+  ],
+  "checkpoint": {
+    "seed": 42,
+    "selected_epoch": 2,
+    "sha256": "01b2668ade4f561c125f512b11a95f79c12d8847c43d30dfbe0254222354a708",
+    "fitting_data_hash": "f2cfbc050c44bee80d3c8bfa710dbf2212d739671d492241e0819192da834123"
+  }
+}

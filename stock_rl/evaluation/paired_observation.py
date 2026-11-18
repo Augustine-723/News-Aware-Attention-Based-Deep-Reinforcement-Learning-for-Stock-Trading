@@ -21,7 +21,7 @@ MARKET_INPUTS = (
 )
 
 
-def build_report():
+def build_report(observe=None):
     stock_id = "2330"
     ohlcv, institutional, macro, foreign, context, _ = load_real_market_feeds(
         stock_id, mode="estimated"
@@ -40,6 +40,7 @@ def build_report():
             published_at = available_at - pd.Timedelta(seconds=2)
         events.append({
             "event_id": event_id,
+            "relation": {"direct_company_mention": True},
             "text_embedding": generate_stable_embedding(event_id, EVENT_TEXT_DIM),
             "provenance": ProvenanceRecord(
                 source_id=event_id, source_published_at=published_at, available_at=available_at,
@@ -81,11 +82,14 @@ def build_report():
                     "slot": slot, "event_id": event_id,
                     "event_age_days": paired.event_metadata[0, slot, age_index].item(),
                 })
-        observed.append({
+        row = {
             "decision_at": decision.isoformat(), "next_session_open": next_open.isoformat(),
             "market_tensors_equal": equal, "control_event_count": int(empty.event_mask.sum()),
             "fixture_event_count": len(slots), "fixture_slots": slots,
-        })
+        }
+        if observe is not None:
+            row["frozen_inference"] = observe(empty, paired)
+        observed.append(row)
     return {
         "purpose": "SYNTHETIC_EVENT_INTEGRATION_ONLY",
         "stock_id": stock_id,
