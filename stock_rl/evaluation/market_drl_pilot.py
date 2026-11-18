@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PHASES = ("train", "validation", "test")
 
 
-def prepare_inputs(protocol, manifest):
+def prepare_inputs(protocol, manifest, timing_events=None):
     inputs = {phase: {} for phase in PHASES}
     calendar = pd.DatetimeIndex(pd.read_csv(
         Path(DATA_DIR) / "taiex.csv", usecols=["date"], parse_dates=["date"]
@@ -38,7 +38,8 @@ def prepare_inputs(protocol, manifest):
         if prices.index.has_duplicates or not prices.index.equals(calendar):
             raise ValueError(f"{stock}: invalid calendar")
         builder = HistoricalSnapshotBuilder(
-            prices, inst, macro, foreign, stock_context_records=context, event_records=[],
+            prices, inst, macro, foreign, stock_context_records=context,
+            event_records=[] if timing_events is None else timing_events[stock],
             active_event_records=[], shares_outstanding=STOCK_METADATA[stock]["shares_outstanding"],
             mode="estimated",
         )
@@ -49,7 +50,10 @@ def prepare_inputs(protocol, manifest):
                 raise ValueError(f"{stock}: insufficient {phase} sessions")
             decisions = sessions.index.normalize() + pd.Timedelta(hours=protocol["decision_hour"])
             batches = [builder.build_snapshot(timestamp) for timestamp in decisions]
-            if any(batch.event_mask.any() for batch in batches):
+            if timing_events is not None:
+                from stock_rl.evaluation.news_input_pilot import mask_event_inputs
+                batches = [mask_event_inputs(batch, "M1") for batch in batches]
+            elif any(batch.event_mask.any() for batch in batches):
                 raise RuntimeError("M0 requires empty event slots")
             ohlc = sessions[["open", "high", "low", "close"]].to_numpy()
             if not np.isfinite(ohlc).all() or (ohlc <= 0).any():
