@@ -1,0 +1,63 @@
+{
+  "manifest_id": "MANIFEST-TWSE-MOPS-2023-2024-OFFICIAL",
+  "created_at": "2026-11-19T07:22:07.113614+00:00",
+  "provenance_notes": "Official statutory material disclosures acquired directly from TWSE MOPS (mopsov.twse.com.tw) for stocks 2330, 2603, and 2881 covering 2023-09 through 2024-04 (Train, Validation, Test, and April Holdout).",
+  "compliance_notes": "Zero-bypass, polite rate-limited statutory public disclosures under Taiwan Securities and Exchange Act Art. 36 and TWSE Listed Company Material Information Verification and Disclosure Procedures. Strictly compliant with cybersecurity and platform terms of service.",
+  "dataset_file": "mops_official_disclosures_2023_2024.json",
+  "dataset_sha256": "b3ea32bec09b5eb3ca64f97a9cc49ac377ba3a8331ebe1f15fad1d4f579f708e",
+  "file_size_bytes": 190601,
+  "total_disclosures": 404,
+  "query_receipts_count": 24,
+  "summary_by_split": {
+    "train": {
+      "total": 166,
+      "by_stock": {
+        "2330": 54,
+        "2603": 22,
+        "2881": 90
+      }
+    },
+    "validation": {
+      "total": 27,
+      "by_stock": {
+        "2330": 10,
+        "2603": 7,
+        "2881": 10
+      }
+    },
+    "test": {
+      "total": 124,
+      "by_stock": {
+        "2330": 45,
+        "2603": 23,
+        "2881": 56
+      }
+    },
+    "holdout": {
+      "total": 87,
+      "by_stock": {
+        "2330": 24,
+        "2603": 2,
+        "2881": 61
+      }
+    }
+  },
+  "summary_by_stock": {
+    "2881": 217,
+    "2330": 133,
+    "2603": 54
+  },
+  "timing_audit": {
+    "cutoff_time": "20:00:00+08:00",
+    "after_20_00_count": 20,
+    "calendar_deferred_count": 24,
+    "non_trading_day_or_holiday_deferrals": 4
+  },
+  "pit_backtest_audit_status": {
+    "official_mops_disclosures_acquired": 404,
+    "second_level_timestamp_verified": true,
+    "commercial_vendor_terminal_first_available_logs": 0,
+    "formal_news_pit_backtest_verdict": "STRICTLY_NO_GO",
+    "rationale": "While statutory filing times (spoke_time) are 100% verified to the second, zero historical provider receipt/dissemination timestamps exist to prove when external traders or terminals first ingested the payloads. Exploratory modeling permitted under v8.0-original schema."
+  }
+}
