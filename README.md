@@ -2,6 +2,21 @@
 
 A point-in-time, event-driven, multimodal deep reinforcement learning research framework for Taiwan Stock Exchange (TWSE) listed common stocks, built in compliance with Specification V8.0 / V8.3.
 
+## 研究進度與資料索引（截至 V8.40）
+
+目前可執行三檔台股的歷史市場與籌碼實驗。每日台北時間 20:00 決策，下一交易日開盤執行，各股獨立選擇持股或現金。
+
+| 資料或實驗 | 現有範圍與用途 | 檔案與結果 |
+|---|---|---|
+| 市場與籌碼 | 2330、2603、2881；2023-06 至 2024-03 共 202 個交易日。含價量、法人、融資融券、產業與總體資料 | [市場資料](data/poc_real_data/)、[法人與融資融券消融實驗](docs/reports/v8_39_flow_margin_ablation.md) |
+| 2024-04 留出期 | 20 個交易日、19 個已實現報酬日。三個種子使用凍結模型；加入法人買賣超的淨報酬差依序為 −2.65、+0.27、+4.46 個百分點 | [實驗報告與重現指令](docs/reports/v8_40_april_holdout.md)、[逐股動作與權益](docs/results/v8_40_april_holdout.json)、[22 份來源回應的網址與雜湊](docs/evidence/april_market_sources.json) |
+| 官方公告 | 2024 Q1 三檔各一筆 MOPS 樣本，可核對申報時間與來源；台積電熊本案另有 SEC 申報證據。同一事件跨來源核對時須去重 | [MOPS 證據](docs/evidence/mops_three_stock_q1_sample.json)、[SEC 證據](data/official_disclosures/sec_2330_20240206_evidence.json) |
+| 探索性新聞 | 16 筆候選事件，訓練／驗證／測試為 10／3／3。文字實驗使用事後撰寫的摘要，替換成相同句子後，三個種子的測試動作皆相同 | [文字與時間敏感度](docs/reports/v8_37_text_sensitivity.md) |
+
+**重現範圍。** 四月的 GitHub 紀錄提供來源雜湊、模型雜湊、逐股結果與重跑指令。重跑需要取得相符的原始回應，並備妥或依報告重新訓練模型權重。公告申報時間與資料商首次可得時間屬於不同欄位；歷史供應商可得時間憑證仍為 0，正式新聞 PIT 回測尚待補足。
+
+**待實驗。** 用決策日收盤與過去 20 個交易日均價（含當日）分組，檢查有無法人籌碼時的持股差異、交易成本及長榮對組合差額的貢獻。這是看過四月結果後提出的探索性分析。
+
 ---
 
 ## 1. Schema Activation & Dual-Version Architecture
