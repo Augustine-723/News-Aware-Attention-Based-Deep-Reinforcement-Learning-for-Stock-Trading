@@ -1,0 +1,74 @@
+[
+  {
+    "seed": 42,
+    "first_return_session": "2024-02-02",
+    "last_return_session": "2024-03-29",
+    "matched_return_sessions": 33,
+    "stocks": [
+      "2330",
+      "2603",
+      "2881"
+    ],
+    "control_net_return": 0.1147844084574765,
+    "treatment_net_return": 0.03853062142631991,
+    "delta_net_return": -0.0762537870311566,
+    "control_sharpe": 3.752569922265906,
+    "treatment_sharpe": 4.748469767304501,
+    "delta_sharpe": 0.9958998450385947,
+    "delta_sharpe_ci95": null,
+    "block_length": 5,
+    "bootstrap_seed": 42,
+    "bootstrap_requested": 5000,
+    "bootstrap_defined": 4988,
+    "status": "ci_undefined_in_some_resamples"
+  },
+  {
+    "seed": 100,
+    "first_return_session": "2024-02-02",
+    "last_return_session": "2024-03-29",
+    "matched_return_sessions": 33,
+    "stocks": [
+      "2330",
+      "2603",
+      "2881"
+    ],
+    "control_net_return": 0.01854528920339482,
+    "treatment_net_return": 0.056973626448042936,
+    "delta_net_return": 0.038428337244648114,
+    "control_sharpe": 2.0241579286474094,
+    "treatment_sharpe": 4.210622296931242,
+    "delta_sharpe": 2.1864643682838327,
+    "delta_sharpe_ci95": null,
+    "block_length": 5,
+    "bootstrap_seed": 42,
+    "bootstrap_requested": 5000,
+    "bootstrap_defined": 4812,
+    "status": "ci_undefined_in_some_resamples"
+  },
+  {
+    "seed": 2024,
+    "first_return_session": "2024-02-02",
+    "last_return_session": "2024-03-29",
+    "matched_return_sessions": 33,
+    "stocks": [
+      "2330",
+      "2603",
+      "2881"
+    ],
+    "control_net_return": 0.03858616649133961,
+    "treatment_net_return": 0.03845710397807034,
+    "delta_net_return": -0.00012906251326927354,
+    "control_sharpe": 1.6766443898224637,
+    "treatment_sharpe": 1.6726773610320669,
+    "delta_sharpe": -0.003967028790396787,
+    "delta_sharpe_ci95": [
+      -1.6965827160700602,
+      2.611707881055991
+    ],
+    "block_length": 5,
+    "bootstrap_seed": 42,
+    "bootstrap_requested": 5000,
+    "bootstrap_defined": 5000,
+    "status": "descriptive_interval"
+  }
+]

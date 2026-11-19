@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PHASES = ("train", "validation", "test")
 
 
-def prepare_inputs(protocol, manifest, timing_events=None, *, include_event_text=False):
+def prepare_inputs(protocol, manifest, timing_events=None, *, include_event_text=False, omit_institutional=False):
     inputs = {phase: {} for phase in PHASES}
     calendar = pd.DatetimeIndex(pd.read_csv(
         Path(DATA_DIR) / "taiex.csv", usecols=["date"], parse_dates=["date"]
@@ -50,6 +50,10 @@ def prepare_inputs(protocol, manifest, timing_events=None, *, include_event_text
                 raise ValueError(f"{stock}: insufficient {phase} sessions")
             decisions = sessions.index.normalize() + pd.Timedelta(hours=protocol["decision_hour"])
             batches = [builder.build_snapshot(timestamp) for timestamp in decisions]
+            if omit_institutional:
+                for batch in batches:
+                    batch.institutional.zero_()
+                    batch.institutional_missing_mask.fill_(True)
             if timing_events is not None:
                 from stock_rl.evaluation.news_input_pilot import mask_event_inputs
                 timing_batches = [mask_event_inputs(batch, "M1") for batch in batches]
@@ -155,6 +159,7 @@ def fit_seed(seed, protocol, inputs):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoints", type=Path, required=True)
+    parser.add_argument("--omit-institutional", action="store_true", help="ablate the entire I01-I08 block before fitting")
     args = parser.parse_args()
     args.checkpoints.mkdir(parents=True, exist_ok=True)
     protocol = json.loads((ROOT / "configs/v8_22_study.json").read_text())
@@ -173,7 +178,8 @@ def main():
         "twse-cached-v8.22", CURRENT_ACTIVE_SCHEMA_VERSION, *boundaries,
         raw_dataset_content_hash=input_hash,
     )
-    inputs, normalizer = prepare_inputs(protocol, manifest)
+    inputs, normalizer = prepare_inputs(protocol, manifest, omit_institutional=args.omit_institutional)
+    method = "without_institutional" if args.omit_institutional else "m0"
     results = []
     baselines = {
         stock: {
@@ -193,14 +199,15 @@ def main():
             "selected_epoch": epoch,
             "protocol": protocol,
             "raw_dataset_content_hash": input_hash,
-        }, args.checkpoints / f"m0-seed-{seed}.pt")
+            **({"omitted_features": "I01-I08"} if args.omit_institutional else {}),
+        }, args.checkpoints / f"{method}-seed-{seed}.pt")
         results.append({
             "seed": seed, "selected_epoch": epoch, "training": trace,
             "test": {stock: evaluate(sample, lambda obs, _: agent.select_action(obs, evaluate=True))
                      for stock, sample in inputs["test"].items()},
         })
     print(json.dumps({
-        "status": "M0_ESTIMATED_MARKET_DATA_PILOT",
+        "status": "NO_INSTITUTIONAL_ESTIMATED_PILOT" if args.omit_institutional else "M0_ESTIMATED_MARKET_DATA_PILOT",
         "protocol": protocol,
         "schema_version": manifest.schema_version,
         "raw_dataset_content_hash": input_hash,
@@ -211,7 +218,7 @@ def main():
         "trading_config": asdict(TradingConfig()),
         "sessions": {phase: {stock: len(sample[0]) for stock, sample in items.items()}
                      for phase, items in inputs.items()},
-        "baselines": baselines, "m0_runs": results,
+        "baselines": baselines, f"{method}_runs": results,
     }, indent=2, allow_nan=False))
 
 
