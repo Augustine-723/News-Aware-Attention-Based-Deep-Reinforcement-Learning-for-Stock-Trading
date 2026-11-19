@@ -14,6 +14,7 @@
 | 趨勢門檻架構實作 | 比較動作硬截斷、進場過濾與特徵動態遮罩三種 Trend Gate 策略架構 | [趨勢門檻實驗報告](docs/reports/v8_42_trend_gated_architecture.md)、[四月留出期結果](docs/results/v8_42_trend_gated_holdout.json) |
 | 端到端趨勢門檻訓練 | 將動態特徵遮罩直接納入 DQN 訓練迴圈，在跌破 20MA 時主動抑制恐慌籌碼信號 | [端到端實驗報告](docs/reports/v8_43_end_to_end_trend_gated_flow.md)、[雙期評估結果](docs/results/v8_43_trend_gated_flow.json) |
 | 籌碼拆解與遲滯帶 | 拆解外資與投信異質動態，並引入交易摩擦遲滯帶 ($\theta_{\text{exit}}=0.015$) 消除換手震盪 | [籌碼拆解與遲滯帶報告](docs/reports/v8_44_flow_decomposition_and_hysteresis.md)、[參數掃描結果](docs/results/v8_44_hysteresis_sweep.json) |
+| 籌碼與趨勢交互門檻完結 | 彙整 52 天雙體制動力學、多尺度均線頻譜、端到端 DRL 與遲滯帶全期基準評分表 | [完結總結報告](docs/reports/v8_45_institutional_trend_interaction_master_report.md)、[綜合基準結果](docs/results/v8_45_master_benchmark.json) |
 | 官方公告 | 2024 Q1 三檔各一筆 MOPS 樣本，可核對申報時間與來源；台積電熊本案另有 SEC 申報證據。同一事件跨來源核對時須去重 | [MOPS 證據](docs/evidence/mops_three_stock_q1_sample.json)、[SEC 證據](data/official_disclosures/sec_2330_20240206_evidence.json) |
 | 探索性新聞 | 16 筆候選事件，訓練／驗證／測試為 10／3／3。文字實驗使用事後撰寫的摘要，替換成相同句子後，三個種子的測試動作皆相同 | [文字與時間敏感度](docs/reports/v8_37_text_sensitivity.md) |
 
@@ -26,6 +27,8 @@
 **端到端趨勢門檻訓練（V8.43）。** [端到端趨勢門檻實驗報告](docs/reports/v8_43_end_to_end_trend_gated_flow.md)：將動態特徵遮罩直接嵌入神經網路的 DQN 訓練迴圈與經驗回放池。在 2–3 月測試期，種子 42 淨報酬達 **+12.38%**（超額法人組 +3.81 pp）、種子 2024 達 **+10.10%**（超額法人組 +4.11 pp）；在四月獨立留出期，種子 42 成功抑制台積電在 4/19 破線低點的恐慌殺跌，全月持股至反彈，全月僅交易 4 筆、摩擦成本僅 0.28%，取得 **+5.16%** 淨報酬（超額法人組 +2.39 pp，對照無籌碼組超額 Sharpe 為 +1.11，Bootstrap 95% CI 為 [+0.31, +2.03] 顯著為正）。
 
 **籌碼拆解與交易摩擦遲滯帶（V8.44）。** [籌碼拆解與遲滯帶報告](docs/reports/v8_44_flow_decomposition_and_hysteresis.md)：異質法人拆解證實「外資」是破線時恐慌拋售的唯一載體（4/19 外資單日賣超台積電達 55,140 張／413 億元，投信僅賣 200 張），且站上 20MA 時外資買賣超與 5 日前瞻報酬呈現 +0.1199 正相關，破線時轉為 −0.0848 負相關。同時針對 RL 模型在持股與現金狀態間的換手振盪陷阱（Ping-Pong Trap），引入交易摩擦遲滯保護帶 $\theta_{\text{exit}} = 0.015$。在四月留出期，種子 2024 的台積電交易次數從 10 筆驟降至 2 筆，省下 \$21,403 摩擦損耗，淨報酬由 +0.47% 大幅提升至 **+2.31%**；在 2–3 月測試期，種子 42 淨報酬更推升至 **+13.23%**。
+
+**籌碼與技術趨勢交互門檻研究正式完結（V8.45）。** [完結總結報告](docs/reports/v8_45_institutional_trend_interaction_master_report.md)：彙整 V8.41 至 V8.44 全系列實證成果。研究確立法人籌碼在 $C_t \ge \text{MA20}_t$（+4.89 pp 超額）與 $C_t < \text{MA20}_t$（−2.91 pp 拖累）的雙體制分化；論證了輸入特徵動態遮罩優於硬截斷；並結合 $\theta_{\text{exit}} = 0.015$ 遲滯保護帶消除強化學習換手陷阱。在 [綜合對照評分表](docs/results/v8_45_master_benchmark.json) 中，端到端門檻模型在測試期取得 +13.23%（超越純技術規則 +9.07%），在四月留出期取得 +4.96% ～ +5.16%（大幅超越純技術規則之 −2.16% 達 +7.1 pp 以上），宣告本專題正式結案並確立生產規範。
 
 ---
 

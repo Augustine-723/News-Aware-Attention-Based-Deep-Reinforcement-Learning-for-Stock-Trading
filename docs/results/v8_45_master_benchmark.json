@@ -1,0 +1,670 @@
+{
+  "metadata": {
+    "title": "Master Benchmark: Interaction Threshold & Trend-Gated Architectures",
+    "schema_version": "v8.0-original",
+    "formal_pit": false,
+    "stocks": [
+      "2330",
+      "2603",
+      "2881"
+    ]
+  },
+  "baselines": {
+    "buy_and_hold": {
+      "test_window": {
+        "mean_net_return": 0.13950485383620337,
+        "stocks": {
+          "2330": {
+            "net_return": 0.22898191343821842,
+            "trades": 1,
+            "costs": 1353.5928030909186
+          },
+          "2603": {
+            "net_return": 0.11537131193421013,
+            "trades": 1,
+            "costs": 1353.5928030908767
+          },
+          "2881": {
+            "net_return": 0.0741613361361816,
+            "trades": 1,
+            "costs": 1353.5928030908196
+          }
+        }
+      },
+      "april_holdout": {
+        "mean_net_return": 0.04347683554681154,
+        "stocks": {
+          "2330": {
+            "net_return": 0.006289109292803914,
+            "trades": 1,
+            "costs": 1353.592803090811
+          },
+          "2603": {
+            "net_return": 0.1298119054556077,
+            "trades": 1,
+            "costs": 1353.592803090773
+          },
+          "2881": {
+            "net_return": -0.005670508107976988,
+            "trades": 1,
+            "costs": 1353.5928030909004
+          }
+        }
+      }
+    },
+    "pure_sma20_rule": {
+      "test_window": {
+        "mean_net_return": 0.09066516752775979,
+        "stocks": {
+          "2330": {
+            "net_return": 0.22898191343821842,
+            "trades": 1,
+            "costs": 1353.5928030909186
+          },
+          "2603": {
+            "net_return": -0.031147746991120627,
+            "trades": 9,
+            "costs": 24415.689690473147
+          },
+          "2881": {
+            "net_return": 0.0741613361361816,
+            "trades": 1,
+            "costs": 1353.5928030908196
+          }
+        }
+      },
+      "april_holdout": {
+        "mean_net_return": -0.021608709775417304,
+        "stocks": {
+          "2330": {
+            "net_return": -0.07100522235300927,
+            "trades": 3,
+            "costs": 6727.141020841762
+          },
+          "2603": {
+            "net_return": 0.05679417185096675,
+            "trades": 3,
+            "costs": 6949.054039131295
+          },
+          "2881": {
+            "net_return": -0.050615078824209396,
+            "trades": 5,
+            "costs": 12375.062495660866
+          }
+        }
+      }
+    }
+  },
+  "drl_models": {
+    "42": {
+      "no_institutional_control": {
+        "test_window": {
+          "mean_net_return": 0.11478440845747617,
+          "stocks": {
+            "2330": {
+              "net_return": 0.22898191343821842,
+              "trades": 1,
+              "costs": 1353.5928030909186
+            },
+            "2603": {
+              "net_return": 0.11537131193421013,
+              "trades": 1,
+              "costs": 1353.5928030908767
+            },
+            "2881": {
+              "net_return": 0.0,
+              "trades": 0,
+              "costs": 0.0
+            }
+          }
+        },
+        "april_holdout": {
+          "mean_net_return": 0.039881711424429395,
+          "stocks": {
+            "2330": {
+              "net_return": 0.006289109292803914,
+              "trades": 1,
+              "costs": 1353.592803090811
+            },
+            "2603": {
+              "net_return": 0.1298119054556077,
+              "trades": 1,
+              "costs": 1353.592803090773
+            },
+            "2881": {
+              "net_return": -0.016455880475123412,
+              "trades": 7,
+              "costs": 18027.70067676669
+            }
+          }
+        }
+      },
+      "flow_only": {
+        "test_window": {
+          "mean_net_return": 0.08570625935560644,
+          "stocks": {
+            "2330": {
+              "net_return": 0.22898191343821842,
+              "trades": 1,
+              "costs": 1353.5928030909186
+            },
+            "2603": {
+              "net_return": 0.012543249497993849,
+              "trades": 2,
+              "costs": 5780.537790022821
+            },
+            "2881": {
+              "net_return": 0.015593615130607039,
+              "trades": 4,
+              "costs": 11590.44091576151
+            }
+          }
+        },
+        "april_holdout": {
+          "mean_net_return": 0.027732856910428306,
+          "stocks": {
+            "2330": {
+              "net_return": -0.046613334724322775,
+              "trades": 2,
+              "costs": 5521.899016719215
+            },
+            "2603": {
+              "net_return": 0.1298119054556077,
+              "trades": 1,
+              "costs": 1353.592803090773
+            },
+            "2881": {
+              "net_return": 0.0,
+              "trades": 0,
+              "costs": 0.0
+            }
+          }
+        }
+      },
+      "trend_gated_flow_e2e": {
+        "test_window": {
+          "mean_net_return": 0.12379407409746405,
+          "total_trades": 8,
+          "total_costs": 20568.31792631014,
+          "stocks": {
+            "2330": {
+              "net_return": 0.22898191343821842,
+              "sharpe": 4.711008140136006,
+              "trades": 1,
+              "costs": 1353.5928030909186
+            },
+            "2603": {
+              "net_return": 0.134442735942594,
+              "sharpe": 2.315244378289888,
+              "trades": 3,
+              "costs": 7649.887067040076
+            },
+            "2881": {
+              "net_return": 0.007957572911579744,
+              "sharpe": 0.5533268873233385,
+              "trades": 4,
+              "costs": 11564.838056179145
+            }
+          }
+        },
+        "april_holdout": {
+          "mean_net_return": 0.05158761892973674,
+          "total_trades": 4,
+          "total_costs": 8514.47452273436,
+          "stocks": {
+            "2330": {
+              "net_return": 0.006289109292803914,
+              "sharpe": 0.36979121182411734,
+              "trades": 1,
+              "costs": 1353.592803090811
+            },
+            "2603": {
+              "net_return": 0.1298119054556077,
+              "sharpe": 5.220627598184221,
+              "trades": 1,
+              "costs": 1353.592803090773
+            },
+            "2881": {
+              "net_return": 0.018661842040798626,
+              "sharpe": 5.003506033641626,
+              "trades": 2,
+              "costs": 5807.288916552774
+            }
+          }
+        }
+      },
+      "trend_gated_flow_hysteresis_015": {
+        "test_window": {
+          "mean_net_return": 0.13225681317548402,
+          "total_trades": 6,
+          "total_costs": 14497.936167960233,
+          "stocks": {
+            "2330": {
+              "net_return": 0.22898191343821842,
+              "sharpe": 4.711008140136006,
+              "trades": 1,
+              "costs": 1353.5928030909186
+            },
+            "2603": {
+              "net_return": 0.1375310068733003,
+              "sharpe": 2.290449846672299,
+              "trades": 1,
+              "costs": 1353.592803090923
+            },
+            "2881": {
+              "net_return": 0.030257519214933387,
+              "sharpe": 2.259052223302917,
+              "trades": 4,
+              "costs": 11790.750561778392
+            }
+          }
+        },
+        "april_holdout": {
+          "mean_net_return": 0.049557401008379916,
+          "total_trades": 4,
+          "total_costs": 8487.84554746692,
+          "stocks": {
+            "2330": {
+              "net_return": 0.006289109292803914,
+              "sharpe": 0.36979121182411734,
+              "trades": 1,
+              "costs": 1353.592803090811
+            },
+            "2603": {
+              "net_return": 0.1298119054556077,
+              "sharpe": 5.220627598184221,
+              "trades": 1,
+              "costs": 1353.592803090773
+            },
+            "2881": {
+              "net_return": 0.01257118827672815,
+              "sharpe": 2.4808015442536084,
+              "trades": 2,
+              "costs": 5780.659941285336
+            }
+          }
+        }
+      }
+    },
+    "100": {
+      "no_institutional_control": {
+        "test_window": {
+          "mean_net_return": 0.0185452892033949,
+          "stocks": {
+            "2330": {
+              "net_return": 0.0,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2603": {
+              "net_return": 0.05563586761018471,
+              "trades": 2,
+              "costs": 5968.943223390881
+            },
+            "2881": {
+              "net_return": 0.0,
+              "trades": 0,
+              "costs": 0.0
+            }
+          }
+        },
+        "april_holdout": {
+          "mean_net_return": 0.0,
+          "stocks": {
+            "2330": {
+              "net_return": 0.0,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2603": {
+              "net_return": 0.0,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2881": {
+              "net_return": 0.0,
+              "trades": 0,
+              "costs": 0.0
+            }
+          }
+        }
+      },
+      "flow_only": {
+        "test_window": {
+          "mean_net_return": 0.06489225661099415,
+          "stocks": {
+            "2330": {
+              "net_return": 0.19467676983298246,
+              "trades": 5,
+              "costs": 14252.058632901428
+            },
+            "2603": {
+              "net_return": 0.0,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2881": {
+              "net_return": 0.0,
+              "trades": 0,
+              "costs": 0.0
+            }
+          }
+        },
+        "april_holdout": {
+          "mean_net_return": 0.03394269862942972,
+          "stocks": {
+            "2330": {
+              "net_return": 0.0,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2603": {
+              "net_return": 0.10749860399626615,
+              "trades": 4,
+              "costs": 11888.749021261192
+            },
+            "2881": {
+              "net_return": -0.005670508107976988,
+              "trades": 1,
+              "costs": 1353.5928030909004
+            }
+          }
+        }
+      },
+      "trend_gated_flow_e2e": {
+        "test_window": {
+          "mean_net_return": 0.0,
+          "total_trades": 0,
+          "total_costs": 0.0,
+          "stocks": {
+            "2330": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2603": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2881": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            }
+          }
+        },
+        "april_holdout": {
+          "mean_net_return": 0.0,
+          "total_trades": 0,
+          "total_costs": 0.0,
+          "stocks": {
+            "2330": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2603": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2881": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            }
+          }
+        }
+      },
+      "trend_gated_flow_hysteresis_015": {
+        "test_window": {
+          "mean_net_return": 0.0,
+          "total_trades": 0,
+          "total_costs": 0.0,
+          "stocks": {
+            "2330": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2603": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2881": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            }
+          }
+        },
+        "april_holdout": {
+          "mean_net_return": 0.0,
+          "total_trades": 0,
+          "total_costs": 0.0,
+          "stocks": {
+            "2330": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2603": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2881": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            }
+          }
+        }
+      }
+    },
+    "2024": {
+      "no_institutional_control": {
+        "test_window": {
+          "mean_net_return": 0.0385861664913398,
+          "stocks": {
+            "2330": {
+              "net_return": 0.0,
+              "trades": 0,
+              "costs": 0.0
+            },
+            "2603": {
+              "net_return": 0.03701394144115655,
+              "trades": 13,
+              "costs": 36669.16745929412
+            },
+            "2881": {
+              "net_return": 0.07874455803286284,
+              "trades": 9,
+              "costs": 26183.558065324574
+            }
+          }
+        },
+        "april_holdout": {
+          "mean_net_return": 0.03782717531439899,
+          "stocks": {
+            "2330": {
+              "net_return": -0.01065987140443374,
+              "trades": 2,
+              "costs": 5679.091318663586
+            },
+            "2603": {
+              "net_return": 0.1298119054556077,
+              "trades": 1,
+              "costs": 1353.592803090773
+            },
+            "2881": {
+              "net_return": -0.005670508107976988,
+              "trades": 1,
+              "costs": 1353.5928030909004
+            }
+          }
+        }
+      },
+      "flow_only": {
+        "test_window": {
+          "mean_net_return": 0.059874415770029187,
+          "stocks": {
+            "2330": {
+              "net_return": 0.10574949770630128,
+              "trades": 4,
+              "costs": 12564.62827524951
+            },
+            "2603": {
+              "net_return": 0.002810585006040288,
+              "trades": 11,
+              "costs": 30028.73971826823
+            },
+            "2881": {
+              "net_return": 0.07106316459774599,
+              "trades": 4,
+              "costs": 12142.371776648608
+            }
+          }
+        },
+        "april_holdout": {
+          "mean_net_return": 0.013667786663085262,
+          "stocks": {
+            "2330": {
+              "net_return": -0.08160125847058872,
+              "trades": 8,
+              "costs": 22039.718614939848
+            },
+            "2603": {
+              "net_return": 0.1298119054556077,
+              "trades": 1,
+              "costs": 1353.592803090773
+            },
+            "2881": {
+              "net_return": -0.007207286995763192,
+              "trades": 2,
+              "costs": 5694.186378798126
+            }
+          }
+        }
+      },
+      "trend_gated_flow_e2e": {
+        "test_window": {
+          "mean_net_return": 0.10095951239103723,
+          "total_trades": 17,
+          "total_costs": 53468.517139332296,
+          "stocks": {
+            "2330": {
+              "net_return": 0.18750722523890156,
+              "sharpe": 4.698456792499611,
+              "trades": 16,
+              "costs": 52114.92433624142
+            },
+            "2603": {
+              "net_return": 0.11537131193421013,
+              "sharpe": 1.9449872176320215,
+              "trades": 1,
+              "costs": 1353.5928030908767
+            },
+            "2881": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            }
+          }
+        },
+        "april_holdout": {
+          "mean_net_return": 0.004675861313262568,
+          "total_trades": 11,
+          "total_costs": 28217.346971011684,
+          "stocks": {
+            "2330": {
+              "net_return": -0.11578432151582,
+              "sharpe": -5.8848386815304785,
+              "trades": 10,
+              "costs": 26863.75416792091
+            },
+            "2603": {
+              "net_return": 0.1298119054556077,
+              "sharpe": 5.220627598184221,
+              "trades": 1,
+              "costs": 1353.592803090773
+            },
+            "2881": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            }
+          }
+        }
+      },
+      "trend_gated_flow_hysteresis_015": {
+        "test_window": {
+          "mean_net_return": 0.09689191559231196,
+          "total_trades": 5,
+          "total_costs": 14456.160561422446,
+          "stocks": {
+            "2330": {
+              "net_return": 0.17530443484272576,
+              "sharpe": 3.951060274830756,
+              "trades": 4,
+              "costs": 13102.56775833157
+            },
+            "2603": {
+              "net_return": 0.11537131193421013,
+              "sharpe": 1.9449872176320215,
+              "trades": 1,
+              "costs": 1353.5928030908767
+            },
+            "2881": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            }
+          }
+        },
+        "april_holdout": {
+          "mean_net_return": 0.023070391707320236,
+          "total_trades": 3,
+          "total_costs": 6814.337463288726,
+          "stocks": {
+            "2330": {
+              "net_return": -0.06060073033364699,
+              "sharpe": -2.791751837180717,
+              "trades": 2,
+              "costs": 5460.744660197954
+            },
+            "2603": {
+              "net_return": 0.1298119054556077,
+              "sharpe": 5.220627598184221,
+              "trades": 1,
+              "costs": 1353.592803090773
+            },
+            "2881": {
+              "net_return": 0.0,
+              "sharpe": null,
+              "trades": 0,
+              "costs": 0.0
+            }
+          }
+        }
+      }
+    }
+  }
+}
