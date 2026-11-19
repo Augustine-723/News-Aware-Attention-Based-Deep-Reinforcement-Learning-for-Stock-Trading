@@ -2,7 +2,7 @@
 
 目前的研究問題是：在相同價量資訊、交易成本與執行規則下，加入法人買賣超，會如何改變模型的持股決策與淨報酬？V8.45 彙整了三檔台股的籌碼與趨勢門檻實驗。V8.46 新增 404 筆官方重大訊息主旨與申報時間；V8.47 完成四月時序修正與首輪四組 News-Aware 對照實驗。
 
-## 研究進度與資料索引（截至 V8.50）
+## 研究進度與資料索引（截至 V8.51）
 
 目前可執行三檔台股的歷史市場與籌碼實驗。每日台北時間 20:00 決策，下一交易日開盤執行，各股獨立選擇持股或現金。
 
@@ -17,6 +17,7 @@
 | 籌碼與趨勢交互門檻完結 | 彙整 52 天雙體制動力學、多尺度均線頻譜、端到端 DRL 與遲滯帶全期基準評分表 | [完結總結報告](docs/reports/v8_45_institutional_trend_interaction_master_report.md)、[綜合基準結果](docs/results/v8_45_master_benchmark.json) |
 | 官方重大訊息資料集 | 2023-09 至 2024-04 涵蓋三檔標的（2330、2603、2881）共 404 筆真實法定重大訊息，含秒級申報時戳、20:00 截斷與休市遞延欄位 | [404 筆法定訊息資料](data/official_disclosures/mops_official_disclosures_2023_2024.json)、[審計清冊](data/official_disclosures/mops_disclosures_manifest.json)、[建置與時序報告](docs/reports/v8_46_compliant_historical_disclosure_dataset.md) |
 | MOPS 重大訊息對照實驗 | 固定法人籌碼基準，比較無公告(A)、公告時間時效(B)、真實主旨BGE(C)與固定安慰劑(D)四組對照 | [404 筆法定訊息](data/official_disclosures/mops_official_disclosures_2023_2024.json)、[實驗結果](docs/results/v8_47_mops_news_aware_experiment.json)、[對照報告](docs/reports/v8_47_mops_news_aware_experiment.md) |
+| 未檢視期間重測 (V8.51) | 凍結 B 組模型重測 2024 年 1 月（樣本外 42 次配對）與 2023 年 9–12 月（樣本內 297 次配對）。1 月翻轉 0 次（1–4 月全樣本外累計 261 次翻轉 0 次） | [未檢視期間報告](docs/reports/v8_51_unexamined_period_evaluation.md)、[逐筆決策與指標](docs/results/v8_51_unexamined_evaluation.json) |
 | 探索性新聞 | 16 筆候選事件，訓練／驗證／測試為 10／3／3。文字實驗使用事後撰寫的摘要，替換成相同句子後，三個種子的測試動作皆相同 | [文字與時間敏感度](docs/reports/v8_37_text_sensitivity.md) |
 
 **重現範圍。** 四月的 GitHub 紀錄提供來源雜湊、模型雜湊、逐股結果與重跑指令。重跑需要取得相符的原始回應，並備妥或依報告重新訓練模型權重。公告申報時間與資料商首次可得時間屬於不同欄位；歷史供應商可得時間憑證仍為 0，正式新聞 PIT 回測尚待補足。
@@ -40,6 +41,8 @@
 **V8.49 固定模型的公告時間實驗。** 固定只讀取公告槽與年齡的 B 組模型，清空公告使 468 次配對中的 4 次動作翻轉，保留公告並將年齡歸零則有 13 次。扣成本效果隨期間與種子而異。[逐期實驗與重現指令](docs/reports/v8_49_fixed_timing.md)
 
 **V8.50 新公告的增量效果。** 固定 V8.49 B 組權重，只隱藏前一個交易日決策後新增的公告。73 個有新公告的股票日、三個種子共 219 次比較，持股／現金動作翻轉 0 次。恢復前一交易日的公告歷史也得到相同動作。[公告日配對結果](docs/reports/v8_50_new_arrivals.md)
+
+**V8.51 尚未檢視期間重測。** 凍結模型與比較規則重測未曾檢視的 2024 年 1 月驗證期（42 次配對）與 2023 年 9–12 月訓練期（297 次配對）。1 月樣本外再度取得嚴格的 0 次動作翻轉，使 1–4 月全樣本外 261 次配對翻轉率為 0.00%；訓練期 297 次配對僅 4 次微幅翻轉（皆落在 |Q| <= 0.0016 刀鋒邊界）。徹底確立當期公告對既有策略短期增量翻轉效果有限的結論。[未檢視期間評估報告](docs/reports/v8_51_unexamined_period_evaluation.md)
 
 ---
 
