@@ -1,6 +1,6 @@
-# Event-Driven Stock RL — Point-in-Time Research System V8.3
+# 台股 News-Aware 深度強化學習研究
 
-A point-in-time, event-driven, multimodal deep reinforcement learning research framework for Taiwan Stock Exchange (TWSE) listed common stocks, built in compliance with Specification V8.0 / V8.3.
+目前的研究問題是：在相同價量資訊、交易成本與執行規則下，加入法人買賣超，會如何改變模型的持股決策與淨報酬？V8.40 已完成三檔台股的四月留出期測試。新聞分支另保留公告查證、事件時間與文字對照實驗。
 
 ## 研究進度與資料索引（截至 V8.40）
 
@@ -9,7 +9,7 @@ A point-in-time, event-driven, multimodal deep reinforcement learning research f
 | 資料或實驗 | 現有範圍與用途 | 檔案與結果 |
 |---|---|---|
 | 市場與籌碼 | 2330、2603、2881；2023-06 至 2024-03 共 202 個交易日。含價量、法人、融資融券、產業與總體資料 | [市場資料](data/poc_real_data/)、[法人與融資融券消融實驗](docs/reports/v8_39_flow_margin_ablation.md) |
-| 2024-04 留出期 | 20 個交易日、19 個已實現報酬日。三個種子使用凍結模型；加入法人買賣超的淨報酬差依序為 −2.65、+0.27、+4.46 個百分點 | [實驗報告與重現指令](docs/reports/v8_40_april_holdout.md)、[逐股動作與權益](docs/results/v8_40_april_holdout.json)、[22 份來源回應的網址與雜湊](docs/evidence/april_market_sources.json) |
+| 2024-04 留出期 | 20 個交易日、19 個已實現報酬日。4 月 1 日首次決策，4 月 2–30 日評估凍結模型 | [實驗報告與重現指令](docs/reports/v8_40_april_holdout.md)、[逐股動作與權益](docs/results/v8_40_april_holdout.json)、[22 份來源回應的網址與雜湊](docs/evidence/april_market_sources.json) |
 | 官方公告 | 2024 Q1 三檔各一筆 MOPS 樣本，可核對申報時間與來源；台積電熊本案另有 SEC 申報證據。同一事件跨來源核對時須去重 | [MOPS 證據](docs/evidence/mops_three_stock_q1_sample.json)、[SEC 證據](data/official_disclosures/sec_2330_20240206_evidence.json) |
 | 探索性新聞 | 16 筆候選事件，訓練／驗證／測試為 10／3／3。文字實驗使用事後撰寫的摘要，替換成相同句子後，三個種子的測試動作皆相同 | [文字與時間敏感度](docs/reports/v8_37_text_sensitivity.md) |
 
@@ -18,6 +18,31 @@ A point-in-time, event-driven, multimodal deep reinforcement learning research f
 **待實驗。** 用決策日收盤與過去 20 個交易日均價（含當日）分組，檢查有無法人籌碼時的持股差異、交易成本及長榮對組合差額的貢獻。這是看過四月結果後提出的探索性分析。
 
 ---
+
+## 重現四月籌碼實驗
+
+從 repository 根目錄執行。前兩次訓練分別產生對照組與法人買賣超組的模型權重；若已保存相符權重，可直接執行最後一行。四月資料若未快取，需要網路連線取得原始回應。
+
+```bash
+python -m pip install -r requirements.txt
+python -m stock_rl.evaluation.market_drl_pilot --omit-institutional --checkpoints checkpoints/v8_38 > no_institutional.json
+python -m stock_rl.evaluation.market_drl_pilot --institutional-only flow --checkpoints checkpoints/v8_39_flow > flow.json
+python -m stock_rl.evaluation.april_holdout april_source_cache checkpoints/v8_38 checkpoints/v8_39_flow > april_holdout.json
+```
+
+三組模型使用同一批股票、同一段四月行情，差異反映訓練種子帶來的策略變動。下表是三檔股票以相同初始資金配置後的淨報酬。
+
+| 訓練種子 | 移除全部籌碼特徵 | 僅加入法人買賣超 | 差額（百分點） |
+|---|---:|---:|---:|
+| 42 | 4.54% | 1.89% | −2.65 |
+| 100 | 0.00% | 0.27% | +0.27 |
+| 2024 | −0.87% | 3.59% | +4.46 |
+
+不同種子的差額方向仍有分歧。種子 2024 的法人組只交易長榮，這也是下一輪要逐股拆解損益的原因。
+
+## 技術規格
+
+以下為 V8.0／V8.3 架構規格，現行實驗沿用原始特徵定義。
 
 ## 1. Schema Activation & Dual-Version Architecture
 
