@@ -1,0 +1,95 @@
+{
+  "2330_inst.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInstitutionalInvestorsBuySell&data_id=2330&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "beff405cd563162102e91e38325a1085113268dd5fe2d99407e074208620f8f5"
+  },
+  "2330_margin.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockMarginPurchaseShortSale&data_id=2330&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "e585f0ac7f62c50c9f6dfde5eea3bb6b0b7717de59ae1e50e25a8925343b39a3"
+  },
+  "2330_ohlcv.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=2330&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "2b38c5371659972ac37eafc671ee1d795abe7f04c18e163b066db246388f6f99"
+  },
+  "2330_shareholding.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockShareholding&data_id=2330&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "188da6f5e5fd2e0c2685a95bc7df6fc8fea2a07d866f15dc2de597e165667472"
+  },
+  "2603_inst.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInstitutionalInvestorsBuySell&data_id=2603&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "571854717a2430b51ae1852d4e0651ad90460895d4f345b2af8736daa89481b7"
+  },
+  "2603_margin.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockMarginPurchaseShortSale&data_id=2603&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "0ee61fb62ff08b9af6a37cd2c6deab5c219bc673a8984d5a1740e89760040a82"
+  },
+  "2603_ohlcv.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=2603&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "b80c458a6fa87ec05ce862cd40fbab194b9ea64e083a0e38c99ec40a524727c7"
+  },
+  "2603_shareholding.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockShareholding&data_id=2603&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "7c6ac9c0fc9edb12d95ce86617ef76d35c4e22085cc945f71d1f2205e00cc615"
+  },
+  "2881_inst.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockInstitutionalInvestorsBuySell&data_id=2881&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "cef5421075af42252e99b25231bc38d929b2c7b6149d81cb87f644650f5973e1"
+  },
+  "2881_margin.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockMarginPurchaseShortSale&data_id=2881&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "6599bd3ce2852dad74676772af5acea9f7101974bc7d2d0634840ff3ea2f2893"
+  },
+  "2881_ohlcv.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=2881&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "3b445ed2f39960fe131bf5d60febeebe543ea0a99ffd3c2bdd4fe28a0f63a8a0"
+  },
+  "2881_shareholding.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockShareholding&data_id=2881&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "5b4d3cc06bad5d248a164a4a006026141854862acc73ac43b7a377968eb58895"
+  },
+  "financial_sector.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=FinancialInsurance&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "7c8eba5b2d3ae3a9f919ccd42cb8ddb049ab65b00fa3177d9903714255221637"
+  },
+  "fx_usdtwd.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanExchangeRate&data_id=USD&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "dca92ca06ae79ef59d94adb0b46e9fe9716d4e015f669b9bff1965d89364931c"
+  },
+  "semiconductor_sector.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=Semiconductor&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "d711895e88d2e42fa15121e79b3c77600c21149df8190f010a64883c1bb9888d"
+  },
+  "shipping_sector.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=ShippingTransportation&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "e3112a8b145c9c69924fc3698a6fa953283478426c6b5bf30eeb28f88313dea8"
+  },
+  "taiex.json": {
+    "url": "https://api.finmindtrade.com/api/v4/data?dataset=TaiwanStockPrice&data_id=TAIEX&start_date=2024-04-01&end_date=2024-04-30",
+    "sha256": "352da76dd1ad2367b86854805bd6b61951f5669ffb5d663e0b663a229dd6c90a"
+  },
+  "SP500.csv": {
+    "column": "sp500",
+    "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=SP500&cosd=2024-04-01&coed=2024-04-30",
+    "sha256": "ff27427c22701ed1c093a8ad29d45d13ec708a2b80f0ec0097d1004389b20a02"
+  },
+  "NASDAQSOX.csv": {
+    "column": "sox",
+    "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=NASDAQSOX&cosd=2024-04-01&coed=2024-04-30",
+    "sha256": "76c0a758db6330eb10a897d7bd63a3560a95c2c58431001fd30ee4583746cfca"
+  },
+  "NASDAQCOM.csv": {
+    "column": "nasdaq",
+    "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=NASDAQCOM&cosd=2024-04-01&coed=2024-04-30",
+    "sha256": "cbf715fa4929a684a870391b598adddba5cbf24d8de0e83d7c9d7d905c11ca5a"
+  },
+  "DGS10.csv": {
+    "column": "us_10y_yield",
+    "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10&cosd=2024-04-01&coed=2024-04-30",
+    "sha256": "3003eb01cf6824e632087540a94ab995eb3970e8d58a7cebd0d0f95faa7bfb24"
+  },
+  "VIXCLS.csv": {
+    "column": "vix",
+    "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=VIXCLS&cosd=2024-04-01&coed=2024-04-30",
+    "sha256": "1a57db307308ac2e86260c59f58c6bd99c0feed61c0340486fc33bcf215a2b15"
+  }
+}
