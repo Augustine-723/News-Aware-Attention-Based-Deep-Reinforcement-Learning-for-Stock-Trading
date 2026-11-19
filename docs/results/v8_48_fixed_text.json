@@ -1,0 +1,3926 @@
+[
+  {
+    "seed": 42,
+    "phase": "test",
+    "stock": "2330",
+    "epoch": 1,
+    "weights_sha256": "37b8600de842369362863f8938c4e5931141d4f7208f725fda2d217ea079937b",
+    "reproduces_v847": false,
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "events": 32,
+        "real_gap": 0.11628063023090363,
+        "constant_gap": 0.11584454774856567,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-02",
+        "events": 32,
+        "real_gap": 0.12404690682888031,
+        "constant_gap": 0.12354380637407303,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-05",
+        "events": 32,
+        "real_gap": 0.12633955478668213,
+        "constant_gap": 0.12592469155788422,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-15",
+        "events": 32,
+        "real_gap": 0.13621854782104492,
+        "constant_gap": 0.13627243041992188,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-16",
+        "events": 32,
+        "real_gap": 0.13638463616371155,
+        "constant_gap": 0.13630717992782593,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-19",
+        "events": 32,
+        "real_gap": 0.13202384114265442,
+        "constant_gap": 0.13187885284423828,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-20",
+        "events": 32,
+        "real_gap": 0.1296379566192627,
+        "constant_gap": 0.1294751614332199,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-21",
+        "events": 32,
+        "real_gap": 0.12203267216682434,
+        "constant_gap": 0.12191558629274368,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-22",
+        "events": 32,
+        "real_gap": 0.11406753957271576,
+        "constant_gap": 0.1137554869055748,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-23",
+        "events": 32,
+        "real_gap": 0.11369790136814117,
+        "constant_gap": 0.11344218254089355,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-26",
+        "events": 32,
+        "real_gap": 0.11627427488565445,
+        "constant_gap": 0.11629632115364075,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-27",
+        "events": 32,
+        "real_gap": 0.11554010957479477,
+        "constant_gap": 0.11544208973646164,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-29",
+        "events": 32,
+        "real_gap": 0.11361698806285858,
+        "constant_gap": 0.1141374483704567,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-01",
+        "events": 32,
+        "real_gap": 0.10474978387355804,
+        "constant_gap": 0.10525576770305634,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-04",
+        "events": 32,
+        "real_gap": 0.11878107488155365,
+        "constant_gap": 0.11906076967716217,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-05",
+        "events": 32,
+        "real_gap": 0.12160775065422058,
+        "constant_gap": 0.1216481477022171,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-06",
+        "events": 32,
+        "real_gap": 0.12184659391641617,
+        "constant_gap": 0.12231743335723877,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-07",
+        "events": 32,
+        "real_gap": 0.12310938537120819,
+        "constant_gap": 0.12321482598781586,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-08",
+        "events": 32,
+        "real_gap": 0.13180677592754364,
+        "constant_gap": 0.13237707316875458,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-11",
+        "events": 32,
+        "real_gap": 0.1274903565645218,
+        "constant_gap": 0.12735824286937714,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-12",
+        "events": 32,
+        "real_gap": 0.1224590390920639,
+        "constant_gap": 0.12232005596160889,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-13",
+        "events": 32,
+        "real_gap": 0.11773693561553955,
+        "constant_gap": 0.11768227815628052,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-14",
+        "events": 32,
+        "real_gap": 0.11624442040920258,
+        "constant_gap": 0.11630802601575851,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-15",
+        "events": 32,
+        "real_gap": 0.09462613612413406,
+        "constant_gap": 0.09454222023487091,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-18",
+        "events": 32,
+        "real_gap": 0.08174240589141846,
+        "constant_gap": 0.08179113268852234,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-19",
+        "events": 32,
+        "real_gap": 0.07206380367279053,
+        "constant_gap": 0.07213793694972992,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-20",
+        "events": 32,
+        "real_gap": 0.06269150972366333,
+        "constant_gap": 0.06277009844779968,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-21",
+        "events": 32,
+        "real_gap": 0.06902788579463959,
+        "constant_gap": 0.06910593807697296,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-22",
+        "events": 32,
+        "real_gap": 0.07964809238910675,
+        "constant_gap": 0.07970871031284332,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-25",
+        "events": 32,
+        "real_gap": 0.07824777066707611,
+        "constant_gap": 0.07836233079433441,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-26",
+        "events": 32,
+        "real_gap": 0.07464858889579773,
+        "constant_gap": 0.07475762069225311,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-27",
+        "events": 32,
+        "real_gap": 0.0737811028957367,
+        "constant_gap": 0.07367546856403351,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-28",
+        "events": 32,
+        "real_gap": 0.06436170637607574,
+        "constant_gap": 0.06423528492450714,
+        "real_action": 1,
+        "constant_action": 1
+      }
+    ]
+  },
+  {
+    "seed": 42,
+    "phase": "test",
+    "stock": "2603",
+    "epoch": 1,
+    "weights_sha256": "37b8600de842369362863f8938c4e5931141d4f7208f725fda2d217ea079937b",
+    "reproduces_v847": false,
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "events": 29,
+        "real_gap": -0.008213460445404053,
+        "constant_gap": -0.007959142327308655,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "events": 29,
+        "real_gap": -0.01091475784778595,
+        "constant_gap": -0.01066802442073822,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-05",
+        "events": 29,
+        "real_gap": -0.01702296733856201,
+        "constant_gap": -0.01689659059047699,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "events": 29,
+        "real_gap": -0.01956614851951599,
+        "constant_gap": -0.019490405917167664,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "events": 29,
+        "real_gap": -0.01592382788658142,
+        "constant_gap": -0.015838131308555603,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "events": 29,
+        "real_gap": -0.01940588653087616,
+        "constant_gap": -0.019326090812683105,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "events": 29,
+        "real_gap": -0.015255346894264221,
+        "constant_gap": -0.01517738401889801,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "events": 29,
+        "real_gap": -0.006889045238494873,
+        "constant_gap": -0.0068059563636779785,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-22",
+        "events": 29,
+        "real_gap": 0.015853136777877808,
+        "constant_gap": 0.015932485461235046,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-23",
+        "events": 30,
+        "real_gap": 0.045357596129179,
+        "constant_gap": 0.04525786265730858,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-26",
+        "events": 31,
+        "real_gap": 0.043747227638959885,
+        "constant_gap": 0.04390386864542961,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-27",
+        "events": 31,
+        "real_gap": 0.03975946828722954,
+        "constant_gap": 0.03988717123866081,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-29",
+        "events": 31,
+        "real_gap": 0.04275026544928551,
+        "constant_gap": 0.04277637228369713,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-01",
+        "events": 32,
+        "real_gap": 0.03845750913023949,
+        "constant_gap": 0.03854348883032799,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-04",
+        "events": 32,
+        "real_gap": 0.0651509016752243,
+        "constant_gap": 0.06514322757720947,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-05",
+        "events": 32,
+        "real_gap": 0.07174484431743622,
+        "constant_gap": 0.07180602848529816,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-06",
+        "events": 32,
+        "real_gap": 0.06391647458076477,
+        "constant_gap": 0.06298087537288666,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-07",
+        "events": 32,
+        "real_gap": 0.05525578185915947,
+        "constant_gap": 0.054246898740530014,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-08",
+        "events": 32,
+        "real_gap": 0.049515824764966965,
+        "constant_gap": 0.049083396792411804,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-11",
+        "events": 32,
+        "real_gap": 0.03449906408786774,
+        "constant_gap": 0.03461678326129913,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-12",
+        "events": 32,
+        "real_gap": 0.03086008131504059,
+        "constant_gap": 0.030925080180168152,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-13",
+        "events": 32,
+        "real_gap": 0.024482280015945435,
+        "constant_gap": 0.024560242891311646,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-14",
+        "events": 32,
+        "real_gap": 0.013100624084472656,
+        "constant_gap": 0.014004334807395935,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-15",
+        "events": 32,
+        "real_gap": 0.0006949491798877716,
+        "constant_gap": 0.0012603700160980225,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-18",
+        "events": 32,
+        "real_gap": -0.021438080817461014,
+        "constant_gap": -0.02103957161307335,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "events": 32,
+        "real_gap": -0.016318753361701965,
+        "constant_gap": -0.015789702534675598,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-20",
+        "events": 32,
+        "real_gap": -0.017742037773132324,
+        "constant_gap": -0.017190024256706238,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-21",
+        "events": 32,
+        "real_gap": -0.030107468366622925,
+        "constant_gap": -0.029591575264930725,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "events": 32,
+        "real_gap": -0.03395976126194,
+        "constant_gap": -0.033501893281936646,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "events": 32,
+        "real_gap": -0.03484185039997101,
+        "constant_gap": -0.03441821038722992,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "events": 32,
+        "real_gap": -0.030263245105743408,
+        "constant_gap": -0.02988898754119873,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "events": 32,
+        "real_gap": -0.030277639627456665,
+        "constant_gap": -0.0299643874168396,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "events": 32,
+        "real_gap": -0.018803536891937256,
+        "constant_gap": -0.01846805214881897,
+        "real_action": 0,
+        "constant_action": 0
+      }
+    ]
+  },
+  {
+    "seed": 42,
+    "phase": "test",
+    "stock": "2881",
+    "epoch": 1,
+    "weights_sha256": "37b8600de842369362863f8938c4e5931141d4f7208f725fda2d217ea079937b",
+    "reproduces_v847": true,
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "events": 32,
+        "real_gap": -0.07780896127223969,
+        "constant_gap": -0.07773205637931824,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "events": 32,
+        "real_gap": -0.07939241826534271,
+        "constant_gap": -0.07926206290721893,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-05",
+        "events": 32,
+        "real_gap": -0.07936529815196991,
+        "constant_gap": -0.07930351793766022,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "events": 32,
+        "real_gap": -0.060532648116350174,
+        "constant_gap": -0.06051316484808922,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "events": 32,
+        "real_gap": -0.054796963930130005,
+        "constant_gap": -0.054755210876464844,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "events": 32,
+        "real_gap": -0.052495747804641724,
+        "constant_gap": -0.05253341794013977,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "events": 32,
+        "real_gap": -0.04941995441913605,
+        "constant_gap": -0.04910203814506531,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "events": 32,
+        "real_gap": -0.05974109470844269,
+        "constant_gap": -0.059531718492507935,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-22",
+        "events": 32,
+        "real_gap": -0.06584718823432922,
+        "constant_gap": -0.06549517810344696,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-23",
+        "events": 32,
+        "real_gap": -0.06097620725631714,
+        "constant_gap": -0.06089097261428833,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-26",
+        "events": 32,
+        "real_gap": -0.06950868666172028,
+        "constant_gap": -0.06948785483837128,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-27",
+        "events": 32,
+        "real_gap": -0.0711178183555603,
+        "constant_gap": -0.07035629451274872,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-29",
+        "events": 32,
+        "real_gap": -0.0661235898733139,
+        "constant_gap": -0.06609484553337097,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-01",
+        "events": 32,
+        "real_gap": -0.07279409468173981,
+        "constant_gap": -0.0728672593832016,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-04",
+        "events": 32,
+        "real_gap": -0.08137653768062592,
+        "constant_gap": -0.08103819191455841,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-05",
+        "events": 32,
+        "real_gap": -0.07326026260852814,
+        "constant_gap": -0.07324279844760895,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-06",
+        "events": 32,
+        "real_gap": -0.06149173900485039,
+        "constant_gap": -0.06123674288392067,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-07",
+        "events": 32,
+        "real_gap": -0.061966028064489365,
+        "constant_gap": -0.06191248819231987,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-08",
+        "events": 32,
+        "real_gap": -0.073261559009552,
+        "constant_gap": -0.0718853771686554,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-11",
+        "events": 32,
+        "real_gap": -0.08125098049640656,
+        "constant_gap": -0.0811249166727066,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-12",
+        "events": 32,
+        "real_gap": -0.08439287543296814,
+        "constant_gap": -0.08359232544898987,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-13",
+        "events": 32,
+        "real_gap": -0.08811548352241516,
+        "constant_gap": -0.08560165762901306,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-14",
+        "events": 32,
+        "real_gap": -0.09257276356220245,
+        "constant_gap": -0.090441033244133,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-15",
+        "events": 32,
+        "real_gap": -0.08898822963237762,
+        "constant_gap": -0.08920373022556305,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-18",
+        "events": 32,
+        "real_gap": -0.09303756058216095,
+        "constant_gap": -0.09384572505950928,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "events": 32,
+        "real_gap": -0.09747354686260223,
+        "constant_gap": -0.09798286855220795,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-20",
+        "events": 32,
+        "real_gap": -0.10364827513694763,
+        "constant_gap": -0.10429112613201141,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-21",
+        "events": 32,
+        "real_gap": -0.09556280076503754,
+        "constant_gap": -0.0953722894191742,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "events": 32,
+        "real_gap": -0.09670184552669525,
+        "constant_gap": -0.09724649786949158,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "events": 32,
+        "real_gap": -0.09770242869853973,
+        "constant_gap": -0.09850788116455078,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "events": 32,
+        "real_gap": -0.0924907773733139,
+        "constant_gap": -0.09320670366287231,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "events": 32,
+        "real_gap": -0.0891069620847702,
+        "constant_gap": -0.08934988081455231,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "events": 32,
+        "real_gap": -0.09401072561740875,
+        "constant_gap": -0.0944051593542099,
+        "real_action": 0,
+        "constant_action": 0
+      }
+    ]
+  },
+  {
+    "seed": 42,
+    "phase": "holdout",
+    "stock": "2330",
+    "epoch": 1,
+    "weights_sha256": "37b8600de842369362863f8938c4e5931141d4f7208f725fda2d217ea079937b",
+    "reproduces_v847": false,
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "events": 32,
+        "real_gap": 0.054173022508621216,
+        "constant_gap": 0.054238900542259216,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-02",
+        "events": 32,
+        "real_gap": 0.07563360035419464,
+        "constant_gap": 0.07565967738628387,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-03",
+        "events": 32,
+        "real_gap": 0.07511663436889648,
+        "constant_gap": 0.07506297528743744,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-08",
+        "events": 32,
+        "real_gap": 0.07085935771465302,
+        "constant_gap": 0.07104334235191345,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-09",
+        "events": 32,
+        "real_gap": 0.07509277760982513,
+        "constant_gap": 0.07523469626903534,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-10",
+        "events": 32,
+        "real_gap": 0.07325880229473114,
+        "constant_gap": 0.07376427948474884,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-11",
+        "events": 32,
+        "real_gap": 0.07927325367927551,
+        "constant_gap": 0.07941445708274841,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-12",
+        "events": 32,
+        "real_gap": 0.07453243434429169,
+        "constant_gap": 0.07472234964370728,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-15",
+        "events": 32,
+        "real_gap": 0.061963777989149094,
+        "constant_gap": 0.061999913305044174,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-16",
+        "events": 32,
+        "real_gap": 0.04261926934123039,
+        "constant_gap": 0.04257623478770256,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-17",
+        "events": 32,
+        "real_gap": 0.03852028772234917,
+        "constant_gap": 0.03846290335059166,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-18",
+        "events": 32,
+        "real_gap": 0.034272655844688416,
+        "constant_gap": 0.034677594900131226,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-19",
+        "events": 32,
+        "real_gap": 0.00919148325920105,
+        "constant_gap": 0.009406015276908875,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-22",
+        "events": 32,
+        "real_gap": -0.00442253053188324,
+        "constant_gap": -0.004255309700965881,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-23",
+        "events": 32,
+        "real_gap": -0.01024867594242096,
+        "constant_gap": -0.010064765810966492,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-24",
+        "events": 32,
+        "real_gap": -0.0015779584646224976,
+        "constant_gap": -0.0011896491050720215,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-25",
+        "events": 32,
+        "real_gap": 0.004393130540847778,
+        "constant_gap": 0.004738256335258484,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-26",
+        "events": 32,
+        "real_gap": 0.023810401558876038,
+        "constant_gap": 0.024175822734832764,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-29",
+        "events": 32,
+        "real_gap": 0.045092180371284485,
+        "constant_gap": 0.045324429869651794,
+        "real_action": 1,
+        "constant_action": 1
+      }
+    ]
+  },
+  {
+    "seed": 42,
+    "phase": "holdout",
+    "stock": "2603",
+    "epoch": 1,
+    "weights_sha256": "37b8600de842369362863f8938c4e5931141d4f7208f725fda2d217ea079937b",
+    "reproduces_v847": false,
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "events": 32,
+        "real_gap": -0.006296053528785706,
+        "constant_gap": -0.005932852625846863,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-02",
+        "events": 32,
+        "real_gap": -0.0071870796382427216,
+        "constant_gap": -0.006841700524091721,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-03",
+        "events": 32,
+        "real_gap": -0.01270715519785881,
+        "constant_gap": -0.012399386614561081,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-08",
+        "events": 32,
+        "real_gap": -0.022550370544195175,
+        "constant_gap": -0.02235044166445732,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-09",
+        "events": 32,
+        "real_gap": -0.02576933428645134,
+        "constant_gap": -0.02562515065073967,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-10",
+        "events": 32,
+        "real_gap": -0.022446971386671066,
+        "constant_gap": -0.022318940609693527,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-11",
+        "events": 32,
+        "real_gap": -0.009434860199689865,
+        "constant_gap": -0.009343516081571579,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-12",
+        "events": 32,
+        "real_gap": -0.009459301829338074,
+        "constant_gap": -0.009394839406013489,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-15",
+        "events": 32,
+        "real_gap": -0.006958335638046265,
+        "constant_gap": -0.006822168827056885,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-16",
+        "events": 32,
+        "real_gap": -0.012206345796585083,
+        "constant_gap": -0.012221068143844604,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-17",
+        "events": 32,
+        "real_gap": -0.014787957072257996,
+        "constant_gap": -0.014825418591499329,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-18",
+        "events": 32,
+        "real_gap": -0.01467151939868927,
+        "constant_gap": -0.014645695686340332,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-19",
+        "events": 32,
+        "real_gap": 0.0005471706390380859,
+        "constant_gap": 0.0006811618804931641,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-22",
+        "events": 32,
+        "real_gap": 0.03906498849391937,
+        "constant_gap": 0.03922063112258911,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-23",
+        "events": 32,
+        "real_gap": 0.03989182040095329,
+        "constant_gap": 0.04004338011145592,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-24",
+        "events": 32,
+        "real_gap": 0.05291442200541496,
+        "constant_gap": 0.05294876918196678,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-25",
+        "events": 32,
+        "real_gap": 0.05789152905344963,
+        "constant_gap": 0.05795462056994438,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-26",
+        "events": 32,
+        "real_gap": 0.0727599710226059,
+        "constant_gap": 0.07285323739051819,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-29",
+        "events": 32,
+        "real_gap": 0.0841953307390213,
+        "constant_gap": 0.0842972993850708,
+        "real_action": 1,
+        "constant_action": 1
+      }
+    ]
+  },
+  {
+    "seed": 42,
+    "phase": "holdout",
+    "stock": "2881",
+    "epoch": 1,
+    "weights_sha256": "37b8600de842369362863f8938c4e5931141d4f7208f725fda2d217ea079937b",
+    "reproduces_v847": true,
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "events": 32,
+        "real_gap": -0.0856916755437851,
+        "constant_gap": -0.08642083406448364,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-02",
+        "events": 32,
+        "real_gap": -0.08780781924724579,
+        "constant_gap": -0.08807820081710815,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-03",
+        "events": 32,
+        "real_gap": -0.09347999095916748,
+        "constant_gap": -0.09366762638092041,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-08",
+        "events": 32,
+        "real_gap": -0.10170981287956238,
+        "constant_gap": -0.10213588178157806,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-09",
+        "events": 32,
+        "real_gap": -0.09335994720458984,
+        "constant_gap": -0.09369011223316193,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-10",
+        "events": 32,
+        "real_gap": -0.09694084525108337,
+        "constant_gap": -0.0970723032951355,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-11",
+        "events": 32,
+        "real_gap": -0.10883305966854095,
+        "constant_gap": -0.10823030769824982,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-12",
+        "events": 32,
+        "real_gap": -0.10356834530830383,
+        "constant_gap": -0.10362647473812103,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-15",
+        "events": 32,
+        "real_gap": -0.11879312992095947,
+        "constant_gap": -0.11940386891365051,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-16",
+        "events": 32,
+        "real_gap": -0.14602939784526825,
+        "constant_gap": -0.14656855165958405,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-17",
+        "events": 32,
+        "real_gap": -0.1382669359445572,
+        "constant_gap": -0.13892564177513123,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-18",
+        "events": 32,
+        "real_gap": -0.13173502683639526,
+        "constant_gap": -0.13191364705562592,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-19",
+        "events": 32,
+        "real_gap": -0.14035271108150482,
+        "constant_gap": -0.1405647248029709,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-22",
+        "events": 32,
+        "real_gap": -0.14195455610752106,
+        "constant_gap": -0.14188110828399658,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-23",
+        "events": 32,
+        "real_gap": -0.1481354981660843,
+        "constant_gap": -0.14763692021369934,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-24",
+        "events": 32,
+        "real_gap": -0.140304297208786,
+        "constant_gap": -0.14093197882175446,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-25",
+        "events": 32,
+        "real_gap": -0.13507120311260223,
+        "constant_gap": -0.134055495262146,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-26",
+        "events": 32,
+        "real_gap": -0.09829337894916534,
+        "constant_gap": -0.09771580994129181,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-29",
+        "events": 32,
+        "real_gap": -0.06953796744346619,
+        "constant_gap": -0.06919160485267639,
+        "real_action": 0,
+        "constant_action": 0
+      }
+    ]
+  },
+  {
+    "seed": 100,
+    "phase": "test",
+    "stock": "2330",
+    "epoch": 1,
+    "weights_sha256": "909e77da859eaad917c94fce8af9cb3176859966417a7714f00074d440e93353",
+    "reproduces_v847": true,
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "events": 32,
+        "real_gap": -0.012702330946922302,
+        "constant_gap": -0.012233313173055649,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "events": 32,
+        "real_gap": -0.017489701509475708,
+        "constant_gap": -0.01693633198738098,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-05",
+        "events": 32,
+        "real_gap": -0.01978326588869095,
+        "constant_gap": -0.01899676024913788,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "events": 32,
+        "real_gap": -0.06448116898536682,
+        "constant_gap": -0.06381534039974213,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "events": 32,
+        "real_gap": -0.0696377232670784,
+        "constant_gap": -0.06896482408046722,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "events": 32,
+        "real_gap": -0.06274576485157013,
+        "constant_gap": -0.06208302825689316,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "events": 32,
+        "real_gap": -0.05718546360731125,
+        "constant_gap": -0.05660945177078247,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "events": 32,
+        "real_gap": -0.0502416267991066,
+        "constant_gap": -0.0494152307510376,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-22",
+        "events": 32,
+        "real_gap": -0.04731760174036026,
+        "constant_gap": -0.04644811898469925,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-23",
+        "events": 32,
+        "real_gap": -0.05154639482498169,
+        "constant_gap": -0.05071166902780533,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-26",
+        "events": 32,
+        "real_gap": -0.046234212815761566,
+        "constant_gap": -0.045633748173713684,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-27",
+        "events": 32,
+        "real_gap": -0.03870625048875809,
+        "constant_gap": -0.037802793085575104,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-29",
+        "events": 32,
+        "real_gap": -0.0334719680249691,
+        "constant_gap": -0.031974948942661285,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-01",
+        "events": 32,
+        "real_gap": -0.02508896216750145,
+        "constant_gap": -0.02358909696340561,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-04",
+        "events": 32,
+        "real_gap": -0.05579005181789398,
+        "constant_gap": -0.0549548864364624,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-05",
+        "events": 32,
+        "real_gap": -0.06325508654117584,
+        "constant_gap": -0.06243138015270233,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-06",
+        "events": 32,
+        "real_gap": -0.05774211883544922,
+        "constant_gap": -0.05692245066165924,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-07",
+        "events": 32,
+        "real_gap": -0.06384801864624023,
+        "constant_gap": -0.06316709518432617,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-08",
+        "events": 32,
+        "real_gap": -0.06649596989154816,
+        "constant_gap": -0.06575866043567657,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-11",
+        "events": 32,
+        "real_gap": -0.05268174409866333,
+        "constant_gap": -0.05180126428604126,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-12",
+        "events": 32,
+        "real_gap": -0.044249698519706726,
+        "constant_gap": -0.043427906930446625,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-13",
+        "events": 32,
+        "real_gap": -0.043173231184482574,
+        "constant_gap": -0.04248795658349991,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-14",
+        "events": 32,
+        "real_gap": -0.040355123579502106,
+        "constant_gap": -0.039749182760715485,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-15",
+        "events": 32,
+        "real_gap": -0.030384927988052368,
+        "constant_gap": -0.029707439243793488,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-18",
+        "events": 32,
+        "real_gap": -0.03662841022014618,
+        "constant_gap": -0.036137692630290985,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "events": 32,
+        "real_gap": -0.037248991429805756,
+        "constant_gap": -0.0368361622095108,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-20",
+        "events": 32,
+        "real_gap": -0.0318424329161644,
+        "constant_gap": -0.031454820185899734,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-21",
+        "events": 32,
+        "real_gap": -0.03672008216381073,
+        "constant_gap": -0.03637057542800903,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "events": 32,
+        "real_gap": -0.040829338133335114,
+        "constant_gap": -0.04028400778770447,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "events": 32,
+        "real_gap": -0.03939983248710632,
+        "constant_gap": -0.03891827166080475,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "events": 32,
+        "real_gap": -0.04280710965394974,
+        "constant_gap": -0.042377546429634094,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "events": 32,
+        "real_gap": -0.04360446333885193,
+        "constant_gap": -0.043143101036548615,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "events": 32,
+        "real_gap": -0.03255145251750946,
+        "constant_gap": -0.03210055083036423,
+        "real_action": 0,
+        "constant_action": 0
+      }
+    ]
+  },
+  {
+    "seed": 100,
+    "phase": "test",
+    "stock": "2603",
+    "epoch": 1,
+    "weights_sha256": "909e77da859eaad917c94fce8af9cb3176859966417a7714f00074d440e93353",
+    "reproduces_v847": true,
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "events": 29,
+        "real_gap": -0.06453964859247208,
+        "constant_gap": -0.06484527885913849,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "events": 29,
+        "real_gap": -0.05040888488292694,
+        "constant_gap": -0.05063231289386749,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-05",
+        "events": 29,
+        "real_gap": -0.07460759580135345,
+        "constant_gap": -0.07426096498966217,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "events": 29,
+        "real_gap": -0.08418165147304535,
+        "constant_gap": -0.08394958078861237,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "events": 29,
+        "real_gap": -0.08495663106441498,
+        "constant_gap": -0.08474025875329971,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "events": 29,
+        "real_gap": -0.07126559317111969,
+        "constant_gap": -0.0710771232843399,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "events": 29,
+        "real_gap": -0.06331630051136017,
+        "constant_gap": -0.06313551962375641,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "events": 29,
+        "real_gap": -0.06249634176492691,
+        "constant_gap": -0.062331750988960266,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-22",
+        "events": 29,
+        "real_gap": -0.07395030558109283,
+        "constant_gap": -0.0738009586930275,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-23",
+        "events": 30,
+        "real_gap": -0.08250750601291656,
+        "constant_gap": -0.08274410665035248,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-26",
+        "events": 31,
+        "real_gap": -0.11215268820524216,
+        "constant_gap": -0.11219154298305511,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-27",
+        "events": 31,
+        "real_gap": -0.12545543909072876,
+        "constant_gap": -0.1254318505525589,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-29",
+        "events": 31,
+        "real_gap": -0.13733890652656555,
+        "constant_gap": -0.13728158175945282,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-01",
+        "events": 32,
+        "real_gap": -0.1337854117155075,
+        "constant_gap": -0.13392415642738342,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-04",
+        "events": 32,
+        "real_gap": -0.2351735234260559,
+        "constant_gap": -0.23512133955955505,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-05",
+        "events": 32,
+        "real_gap": -0.25288325548171997,
+        "constant_gap": -0.25281864404678345,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-06",
+        "events": 32,
+        "real_gap": -0.24325841665267944,
+        "constant_gap": -0.24357211589813232,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-07",
+        "events": 32,
+        "real_gap": -0.20423036813735962,
+        "constant_gap": -0.2045304775238037,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-08",
+        "events": 32,
+        "real_gap": -0.2275547981262207,
+        "constant_gap": -0.22773559391498566,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-11",
+        "events": 32,
+        "real_gap": -0.21300417184829712,
+        "constant_gap": -0.21301963925361633,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-12",
+        "events": 32,
+        "real_gap": -0.19160397350788116,
+        "constant_gap": -0.19162094593048096,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-13",
+        "events": 32,
+        "real_gap": -0.16429534554481506,
+        "constant_gap": -0.16428633034229279,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-14",
+        "events": 32,
+        "real_gap": -0.23204877972602844,
+        "constant_gap": -0.23268243670463562,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-15",
+        "events": 32,
+        "real_gap": -0.22681085765361786,
+        "constant_gap": -0.2274598777294159,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-18",
+        "events": 32,
+        "real_gap": -0.20054081082344055,
+        "constant_gap": -0.2006155550479889,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "events": 32,
+        "real_gap": -0.20593994855880737,
+        "constant_gap": -0.20581656694412231,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-20",
+        "events": 32,
+        "real_gap": -0.23784935474395752,
+        "constant_gap": -0.23763510584831238,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-21",
+        "events": 32,
+        "real_gap": -0.23994824290275574,
+        "constant_gap": -0.23982903361320496,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "events": 32,
+        "real_gap": -0.2673088312149048,
+        "constant_gap": -0.26722702383995056,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "events": 32,
+        "real_gap": -0.2664170265197754,
+        "constant_gap": -0.2664758861064911,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "events": 32,
+        "real_gap": -0.2582552134990692,
+        "constant_gap": -0.25829389691352844,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "events": 32,
+        "real_gap": -0.21646547317504883,
+        "constant_gap": -0.21642786264419556,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "events": 32,
+        "real_gap": -0.2527918815612793,
+        "constant_gap": -0.252593457698822,
+        "real_action": 0,
+        "constant_action": 0
+      }
+    ]
+  },
+  {
+    "seed": 100,
+    "phase": "test",
+    "stock": "2881",
+    "epoch": 1,
+    "weights_sha256": "909e77da859eaad917c94fce8af9cb3176859966417a7714f00074d440e93353",
+    "reproduces_v847": true,
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "events": 32,
+        "real_gap": -0.08483797311782837,
+        "constant_gap": -0.08422724902629852,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "events": 32,
+        "real_gap": -0.09253901243209839,
+        "constant_gap": -0.09211589395999908,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-05",
+        "events": 32,
+        "real_gap": -0.09963472187519073,
+        "constant_gap": -0.09928029030561447,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "events": 32,
+        "real_gap": -0.10432623326778412,
+        "constant_gap": -0.10315436869859695,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "events": 32,
+        "real_gap": -0.10966479033231735,
+        "constant_gap": -0.10868311673402786,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "events": 32,
+        "real_gap": -0.09542013704776764,
+        "constant_gap": -0.0949840396642685,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "events": 32,
+        "real_gap": -0.0879327803850174,
+        "constant_gap": -0.08706203103065491,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "events": 32,
+        "real_gap": -0.08059871196746826,
+        "constant_gap": -0.07899287343025208,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-22",
+        "events": 32,
+        "real_gap": -0.07638652622699738,
+        "constant_gap": -0.07515570521354675,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-23",
+        "events": 32,
+        "real_gap": -0.07189606130123138,
+        "constant_gap": -0.07123413681983948,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-26",
+        "events": 32,
+        "real_gap": -0.08853696286678314,
+        "constant_gap": -0.08818142116069794,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-27",
+        "events": 32,
+        "real_gap": -0.0944112241268158,
+        "constant_gap": -0.09332944452762604,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-29",
+        "events": 32,
+        "real_gap": -0.0773468166589737,
+        "constant_gap": -0.0768711119890213,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-01",
+        "events": 32,
+        "real_gap": -0.058793455362319946,
+        "constant_gap": -0.05843418836593628,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-04",
+        "events": 32,
+        "real_gap": -0.07556001842021942,
+        "constant_gap": -0.07442902028560638,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-05",
+        "events": 32,
+        "real_gap": -0.0843377560377121,
+        "constant_gap": -0.08375032246112823,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-06",
+        "events": 32,
+        "real_gap": -0.0961526408791542,
+        "constant_gap": -0.0950358435511589,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-07",
+        "events": 32,
+        "real_gap": -0.09352324157953262,
+        "constant_gap": -0.09248127043247223,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-08",
+        "events": 32,
+        "real_gap": -0.08773992955684662,
+        "constant_gap": -0.08471647650003433,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-11",
+        "events": 32,
+        "real_gap": -0.0691317468881607,
+        "constant_gap": -0.06745792925357819,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-12",
+        "events": 32,
+        "real_gap": -0.07136772572994232,
+        "constant_gap": -0.06815633177757263,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-13",
+        "events": 32,
+        "real_gap": -0.07354676723480225,
+        "constant_gap": -0.06916648149490356,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-14",
+        "events": 32,
+        "real_gap": -0.07476508617401123,
+        "constant_gap": -0.07092700153589249,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-15",
+        "events": 32,
+        "real_gap": -0.05902516096830368,
+        "constant_gap": -0.0560515820980072,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-18",
+        "events": 32,
+        "real_gap": -0.05586040019989014,
+        "constant_gap": -0.05412229150533676,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "events": 32,
+        "real_gap": -0.07157325744628906,
+        "constant_gap": -0.06970681995153427,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-20",
+        "events": 32,
+        "real_gap": -0.06760338693857193,
+        "constant_gap": -0.06621049344539642,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-21",
+        "events": 32,
+        "real_gap": -0.07011792808771133,
+        "constant_gap": -0.06801057606935501,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "events": 32,
+        "real_gap": -0.05767463892698288,
+        "constant_gap": -0.05629292130470276,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "events": 32,
+        "real_gap": -0.05847284942865372,
+        "constant_gap": -0.057702891528606415,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "events": 32,
+        "real_gap": -0.0685892179608345,
+        "constant_gap": -0.06786859780550003,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "events": 32,
+        "real_gap": -0.08426445722579956,
+        "constant_gap": -0.08307664096355438,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "events": 32,
+        "real_gap": -0.08555901050567627,
+        "constant_gap": -0.08481547236442566,
+        "real_action": 0,
+        "constant_action": 0
+      }
+    ]
+  },
+  {
+    "seed": 100,
+    "phase": "holdout",
+    "stock": "2330",
+    "epoch": 1,
+    "weights_sha256": "909e77da859eaad917c94fce8af9cb3176859966417a7714f00074d440e93353",
+    "reproduces_v847": true,
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "events": 32,
+        "real_gap": -0.021335318684577942,
+        "constant_gap": -0.02084501087665558,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-02",
+        "events": 32,
+        "real_gap": -0.0357145294547081,
+        "constant_gap": -0.03530992567539215,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-03",
+        "events": 32,
+        "real_gap": -0.0398402065038681,
+        "constant_gap": -0.03925715386867523,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-08",
+        "events": 32,
+        "real_gap": -0.04700625687837601,
+        "constant_gap": -0.046131350100040436,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-09",
+        "events": 32,
+        "real_gap": -0.06744460761547089,
+        "constant_gap": -0.06667925417423248,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-10",
+        "events": 32,
+        "real_gap": -0.06839139759540558,
+        "constant_gap": -0.06749031692743301,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-11",
+        "events": 32,
+        "real_gap": -0.0677938237786293,
+        "constant_gap": -0.06682676076889038,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-12",
+        "events": 32,
+        "real_gap": -0.07314968854188919,
+        "constant_gap": -0.07204031944274902,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-15",
+        "events": 32,
+        "real_gap": -0.06507998704910278,
+        "constant_gap": -0.06435156613588333,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-16",
+        "events": 32,
+        "real_gap": -0.04667779803276062,
+        "constant_gap": -0.04591868817806244,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-17",
+        "events": 32,
+        "real_gap": -0.05794087052345276,
+        "constant_gap": -0.057228922843933105,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-18",
+        "events": 32,
+        "real_gap": -0.059879496693611145,
+        "constant_gap": -0.058811433613300323,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-19",
+        "events": 32,
+        "real_gap": -0.06048429012298584,
+        "constant_gap": -0.059187889099121094,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-22",
+        "events": 32,
+        "real_gap": -0.056770309805870056,
+        "constant_gap": -0.05590023100376129,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-23",
+        "events": 32,
+        "real_gap": -0.0621400885283947,
+        "constant_gap": -0.06138322129845619,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-24",
+        "events": 32,
+        "real_gap": -0.060807064175605774,
+        "constant_gap": -0.060038935393095016,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-25",
+        "events": 32,
+        "real_gap": -0.050470516085624695,
+        "constant_gap": -0.04950608313083649,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-26",
+        "events": 32,
+        "real_gap": -0.06388749182224274,
+        "constant_gap": -0.06300783157348633,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-29",
+        "events": 32,
+        "real_gap": -0.07313968241214752,
+        "constant_gap": -0.07245895266532898,
+        "real_action": 0,
+        "constant_action": 0
+      }
+    ]
+  },
+  {
+    "seed": 100,
+    "phase": "holdout",
+    "stock": "2603",
+    "epoch": 1,
+    "weights_sha256": "909e77da859eaad917c94fce8af9cb3176859966417a7714f00074d440e93353",
+    "reproduces_v847": true,
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "events": 32,
+        "real_gap": -0.3121546506881714,
+        "constant_gap": -0.3117296099662781,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-02",
+        "events": 32,
+        "real_gap": -0.2919257581233978,
+        "constant_gap": -0.2915753722190857,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-03",
+        "events": 32,
+        "real_gap": -0.2694196105003357,
+        "constant_gap": -0.269090473651886,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-08",
+        "events": 32,
+        "real_gap": -0.20108702778816223,
+        "constant_gap": -0.20090648531913757,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-09",
+        "events": 32,
+        "real_gap": -0.15176695585250854,
+        "constant_gap": -0.15163540840148926,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-10",
+        "events": 32,
+        "real_gap": -0.1403784453868866,
+        "constant_gap": -0.1402815878391266,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-11",
+        "events": 32,
+        "real_gap": -0.12746119499206543,
+        "constant_gap": -0.12735533714294434,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-12",
+        "events": 32,
+        "real_gap": -0.1094980388879776,
+        "constant_gap": -0.1093718558549881,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-15",
+        "events": 32,
+        "real_gap": -0.1050049215555191,
+        "constant_gap": -0.1051609069108963,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-16",
+        "events": 32,
+        "real_gap": -0.12196220457553864,
+        "constant_gap": -0.12199302017688751,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-17",
+        "events": 32,
+        "real_gap": -0.11110778152942657,
+        "constant_gap": -0.11108114570379257,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-18",
+        "events": 32,
+        "real_gap": -0.12050311267375946,
+        "constant_gap": -0.12044383585453033,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-19",
+        "events": 32,
+        "real_gap": -0.057156533002853394,
+        "constant_gap": -0.057077884674072266,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-22",
+        "events": 32,
+        "real_gap": -0.04608757793903351,
+        "constant_gap": -0.045995403081178665,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-23",
+        "events": 32,
+        "real_gap": -0.047231148928403854,
+        "constant_gap": -0.04723710939288139,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-24",
+        "events": 32,
+        "real_gap": -0.08860531449317932,
+        "constant_gap": -0.08862660825252533,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-25",
+        "events": 32,
+        "real_gap": -0.0834997296333313,
+        "constant_gap": -0.08351604640483856,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-26",
+        "events": 32,
+        "real_gap": -0.11708981543779373,
+        "constant_gap": -0.11708514392375946,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-29",
+        "events": 32,
+        "real_gap": -0.14611920714378357,
+        "constant_gap": -0.14608854055404663,
+        "real_action": 0,
+        "constant_action": 0
+      }
+    ]
+  },
+  {
+    "seed": 100,
+    "phase": "holdout",
+    "stock": "2881",
+    "epoch": 1,
+    "weights_sha256": "909e77da859eaad917c94fce8af9cb3176859966417a7714f00074d440e93353",
+    "reproduces_v847": true,
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "events": 32,
+        "real_gap": -0.07828272879123688,
+        "constant_gap": -0.07770168781280518,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-02",
+        "events": 32,
+        "real_gap": -0.07806254923343658,
+        "constant_gap": -0.07704959809780121,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-03",
+        "events": 32,
+        "real_gap": -0.07963687181472778,
+        "constant_gap": -0.07876500487327576,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-08",
+        "events": 32,
+        "real_gap": -0.07686544209718704,
+        "constant_gap": -0.07652268558740616,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-09",
+        "events": 32,
+        "real_gap": -0.08565327525138855,
+        "constant_gap": -0.08480072766542435,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-10",
+        "events": 32,
+        "real_gap": -0.08926929533481598,
+        "constant_gap": -0.08852441608905792,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-11",
+        "events": 32,
+        "real_gap": -0.09445977210998535,
+        "constant_gap": -0.0926942229270935,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-12",
+        "events": 32,
+        "real_gap": -0.09287130832672119,
+        "constant_gap": -0.09157148003578186,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-15",
+        "events": 32,
+        "real_gap": -0.08750768005847931,
+        "constant_gap": -0.08689078688621521,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-16",
+        "events": 32,
+        "real_gap": -0.07430874556303024,
+        "constant_gap": -0.07357877492904663,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-17",
+        "events": 32,
+        "real_gap": -0.08317162841558456,
+        "constant_gap": -0.08253390341997147,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-18",
+        "events": 32,
+        "real_gap": -0.08731318265199661,
+        "constant_gap": -0.08637049794197083,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-19",
+        "events": 32,
+        "real_gap": -0.07769802957773209,
+        "constant_gap": -0.07670997828245163,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-22",
+        "events": 32,
+        "real_gap": -0.07977259159088135,
+        "constant_gap": -0.07827261835336685,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-23",
+        "events": 32,
+        "real_gap": -0.0861460268497467,
+        "constant_gap": -0.08331922441720963,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-24",
+        "events": 32,
+        "real_gap": -0.09089265763759613,
+        "constant_gap": -0.08601593971252441,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-25",
+        "events": 32,
+        "real_gap": -0.09127012640237808,
+        "constant_gap": -0.08576592057943344,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-26",
+        "events": 32,
+        "real_gap": -0.11647829413414001,
+        "constant_gap": -0.11167803406715393,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-29",
+        "events": 32,
+        "real_gap": -0.12579958140850067,
+        "constant_gap": -0.1231905072927475,
+        "real_action": 0,
+        "constant_action": 0
+      }
+    ]
+  },
+  {
+    "seed": 2024,
+    "phase": "test",
+    "stock": "2330",
+    "epoch": 1,
+    "weights_sha256": "780e6ab8d0a47eea38c0173c88a8a09f6793ab1a5cea4702ae434236de70d912",
+    "reproduces_v847": false,
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "events": 32,
+        "real_gap": -0.007974475622177124,
+        "constant_gap": -0.007629871368408203,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "events": 32,
+        "real_gap": 0.006670713424682617,
+        "constant_gap": 0.007094144821166992,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-05",
+        "events": 32,
+        "real_gap": -0.03736254572868347,
+        "constant_gap": -0.03676006197929382,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "events": 32,
+        "real_gap": -0.040236711502075195,
+        "constant_gap": -0.03963442146778107,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "events": 32,
+        "real_gap": -0.04135671257972717,
+        "constant_gap": -0.0407804399728775,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "events": 32,
+        "real_gap": -0.03669184446334839,
+        "constant_gap": -0.036241427063941956,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "events": 32,
+        "real_gap": -0.034977078437805176,
+        "constant_gap": -0.0344952791929245,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "events": 32,
+        "real_gap": -0.0325591117143631,
+        "constant_gap": -0.03197567164897919,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-22",
+        "events": 32,
+        "real_gap": -0.02955472841858864,
+        "constant_gap": -0.029029492288827896,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-23",
+        "events": 32,
+        "real_gap": -0.03144651651382446,
+        "constant_gap": -0.030958399176597595,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-26",
+        "events": 32,
+        "real_gap": -0.040287796407938004,
+        "constant_gap": -0.039938267320394516,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-27",
+        "events": 32,
+        "real_gap": -0.04297186806797981,
+        "constant_gap": -0.04237201437354088,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-29",
+        "events": 32,
+        "real_gap": -0.04410857334733009,
+        "constant_gap": -0.04339611530303955,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-01",
+        "events": 32,
+        "real_gap": -0.042188167572021484,
+        "constant_gap": -0.041537582874298096,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-04",
+        "events": 32,
+        "real_gap": -0.05217708647251129,
+        "constant_gap": -0.051641687750816345,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-05",
+        "events": 32,
+        "real_gap": -0.051628172397613525,
+        "constant_gap": -0.051063358783721924,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-06",
+        "events": 32,
+        "real_gap": -0.047349944710731506,
+        "constant_gap": -0.046559810638427734,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-07",
+        "events": 32,
+        "real_gap": -0.03788173198699951,
+        "constant_gap": -0.03716680407524109,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-08",
+        "events": 32,
+        "real_gap": -0.033805862069129944,
+        "constant_gap": -0.03258439898490906,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-11",
+        "events": 32,
+        "real_gap": -0.02797722816467285,
+        "constant_gap": -0.027038201689720154,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-12",
+        "events": 32,
+        "real_gap": -0.02397714927792549,
+        "constant_gap": -0.02324780821800232,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-13",
+        "events": 32,
+        "real_gap": -0.02515431120991707,
+        "constant_gap": -0.024547938257455826,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-14",
+        "events": 32,
+        "real_gap": -0.03218793869018555,
+        "constant_gap": -0.03166654706001282,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-15",
+        "events": 32,
+        "real_gap": -0.039737045764923096,
+        "constant_gap": -0.03923270106315613,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-18",
+        "events": 32,
+        "real_gap": -0.0436585396528244,
+        "constant_gap": -0.04330892860889435,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "events": 32,
+        "real_gap": -0.045283496379852295,
+        "constant_gap": -0.04498368501663208,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-20",
+        "events": 32,
+        "real_gap": -0.050345778465270996,
+        "constant_gap": -0.05008181929588318,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-21",
+        "events": 32,
+        "real_gap": -0.05779581516981125,
+        "constant_gap": -0.05756480246782303,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "events": 32,
+        "real_gap": -0.06476479768753052,
+        "constant_gap": -0.06425480544567108,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "events": 32,
+        "real_gap": -0.05923549830913544,
+        "constant_gap": -0.05896066129207611,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "events": 32,
+        "real_gap": -0.05491151288151741,
+        "constant_gap": -0.054653942584991455,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "events": 32,
+        "real_gap": -0.05218086019158363,
+        "constant_gap": -0.05192679539322853,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "events": 32,
+        "real_gap": -0.04640556871891022,
+        "constant_gap": -0.04617219790816307,
+        "real_action": 0,
+        "constant_action": 0
+      }
+    ]
+  },
+  {
+    "seed": 2024,
+    "phase": "test",
+    "stock": "2603",
+    "epoch": 1,
+    "weights_sha256": "780e6ab8d0a47eea38c0173c88a8a09f6793ab1a5cea4702ae434236de70d912",
+    "reproduces_v847": false,
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "events": 29,
+        "real_gap": 0.02352645993232727,
+        "constant_gap": 0.0246429443359375,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-02",
+        "events": 29,
+        "real_gap": 0.02975761890411377,
+        "constant_gap": 0.030399814248085022,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-05",
+        "events": 29,
+        "real_gap": 0.02200286090373993,
+        "constant_gap": 0.02225707471370697,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-15",
+        "events": 29,
+        "real_gap": 0.029133588075637817,
+        "constant_gap": 0.029208317399024963,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-16",
+        "events": 29,
+        "real_gap": 0.023784294724464417,
+        "constant_gap": 0.023856207728385925,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-19",
+        "events": 29,
+        "real_gap": 0.01557043194770813,
+        "constant_gap": 0.01563340425491333,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-20",
+        "events": 29,
+        "real_gap": 0.022473931312561035,
+        "constant_gap": 0.022541925311088562,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-21",
+        "events": 29,
+        "real_gap": 0.03732529282569885,
+        "constant_gap": 0.037399351596832275,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-22",
+        "events": 29,
+        "real_gap": 0.05179116129875183,
+        "constant_gap": 0.05187426507472992,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-23",
+        "events": 30,
+        "real_gap": 0.06290727853775024,
+        "constant_gap": 0.06285238265991211,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-26",
+        "events": 31,
+        "real_gap": 0.05232091248035431,
+        "constant_gap": 0.05272510647773743,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-27",
+        "events": 31,
+        "real_gap": 0.04846265912055969,
+        "constant_gap": 0.04886920750141144,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-02-29",
+        "events": 31,
+        "real_gap": 0.03911386430263519,
+        "constant_gap": 0.03932957351207733,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-01",
+        "events": 32,
+        "real_gap": 0.04431895911693573,
+        "constant_gap": 0.04466263949871063,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-04",
+        "events": 32,
+        "real_gap": 0.04060852527618408,
+        "constant_gap": 0.04076111316680908,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-05",
+        "events": 32,
+        "real_gap": 0.03984937071800232,
+        "constant_gap": 0.03998979926109314,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-06",
+        "events": 32,
+        "real_gap": 0.05288572609424591,
+        "constant_gap": 0.05343663692474365,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-07",
+        "events": 32,
+        "real_gap": 0.06334167718887329,
+        "constant_gap": 0.0635678768157959,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-08",
+        "events": 32,
+        "real_gap": 0.06340630352497101,
+        "constant_gap": 0.06351178884506226,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-11",
+        "events": 32,
+        "real_gap": 0.05773565173149109,
+        "constant_gap": 0.05785463750362396,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-12",
+        "events": 32,
+        "real_gap": 0.05449700355529785,
+        "constant_gap": 0.054588183760643005,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-13",
+        "events": 32,
+        "real_gap": 0.05060255527496338,
+        "constant_gap": 0.0506795197725296,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-14",
+        "events": 32,
+        "real_gap": 0.044302478432655334,
+        "constant_gap": 0.04479469358921051,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-15",
+        "events": 32,
+        "real_gap": 0.02831515669822693,
+        "constant_gap": 0.028928935527801514,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-18",
+        "events": 32,
+        "real_gap": 0.030087530612945557,
+        "constant_gap": 0.03043261170387268,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-19",
+        "events": 32,
+        "real_gap": 0.016521230340003967,
+        "constant_gap": 0.01673448085784912,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-20",
+        "events": 32,
+        "real_gap": 0.007559254765510559,
+        "constant_gap": 0.007756903767585754,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-21",
+        "events": 32,
+        "real_gap": 0.016585499048233032,
+        "constant_gap": 0.01679469645023346,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-22",
+        "events": 32,
+        "real_gap": 0.015712708234786987,
+        "constant_gap": 0.015894412994384766,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-25",
+        "events": 32,
+        "real_gap": 0.026531502604484558,
+        "constant_gap": 0.02664344012737274,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-26",
+        "events": 32,
+        "real_gap": 0.03584964573383331,
+        "constant_gap": 0.03604474663734436,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-27",
+        "events": 32,
+        "real_gap": 0.03691631555557251,
+        "constant_gap": 0.03703700006008148,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-03-28",
+        "events": 32,
+        "real_gap": 0.050579994916915894,
+        "constant_gap": 0.05107779800891876,
+        "real_action": 1,
+        "constant_action": 1
+      }
+    ]
+  },
+  {
+    "seed": 2024,
+    "phase": "test",
+    "stock": "2881",
+    "epoch": 1,
+    "weights_sha256": "780e6ab8d0a47eea38c0173c88a8a09f6793ab1a5cea4702ae434236de70d912",
+    "reproduces_v847": false,
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "events": 32,
+        "real_gap": -0.12533411383628845,
+        "constant_gap": -0.1252809762954712,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "events": 32,
+        "real_gap": -0.10622449964284897,
+        "constant_gap": -0.10623395442962646,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-05",
+        "events": 32,
+        "real_gap": -0.09189449995756149,
+        "constant_gap": -0.09177538752555847,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "events": 32,
+        "real_gap": -0.0725804939866066,
+        "constant_gap": -0.07254310697317123,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "events": 32,
+        "real_gap": -0.06862752139568329,
+        "constant_gap": -0.06814581155776978,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "events": 32,
+        "real_gap": -0.06525280326604843,
+        "constant_gap": -0.06482452154159546,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "events": 32,
+        "real_gap": -0.07148277759552002,
+        "constant_gap": -0.07143713533878326,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "events": 32,
+        "real_gap": -0.07012194395065308,
+        "constant_gap": -0.07079678773880005,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-22",
+        "events": 32,
+        "real_gap": -0.060991376638412476,
+        "constant_gap": -0.060885414481163025,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-23",
+        "events": 32,
+        "real_gap": -0.05200374126434326,
+        "constant_gap": -0.05131702125072479,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-26",
+        "events": 32,
+        "real_gap": -0.06054788827896118,
+        "constant_gap": -0.059918761253356934,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-27",
+        "events": 32,
+        "real_gap": -0.059891849756240845,
+        "constant_gap": -0.05925385653972626,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-02-29",
+        "events": 32,
+        "real_gap": -0.08667221665382385,
+        "constant_gap": -0.0859103873372078,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-01",
+        "events": 32,
+        "real_gap": -0.07557937502861023,
+        "constant_gap": -0.07490891218185425,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-04",
+        "events": 32,
+        "real_gap": -0.0693376213312149,
+        "constant_gap": -0.06937767565250397,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-05",
+        "events": 32,
+        "real_gap": -0.06133781373500824,
+        "constant_gap": -0.06068992614746094,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-06",
+        "events": 32,
+        "real_gap": -0.04444386065006256,
+        "constant_gap": -0.043755948543548584,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-07",
+        "events": 32,
+        "real_gap": -0.053690582513809204,
+        "constant_gap": -0.052431583404541016,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-08",
+        "events": 32,
+        "real_gap": -0.07625898718833923,
+        "constant_gap": -0.07543385028839111,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-11",
+        "events": 32,
+        "real_gap": -0.07011270523071289,
+        "constant_gap": -0.06850278377532959,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-12",
+        "events": 32,
+        "real_gap": -0.06812997162342072,
+        "constant_gap": -0.0677613765001297,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-13",
+        "events": 32,
+        "real_gap": -0.08314736187458038,
+        "constant_gap": -0.08191534876823425,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-14",
+        "events": 32,
+        "real_gap": -0.11883024126291275,
+        "constant_gap": -0.11595260351896286,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-15",
+        "events": 32,
+        "real_gap": -0.14412938058376312,
+        "constant_gap": -0.14186504483222961,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-18",
+        "events": 32,
+        "real_gap": -0.14320512115955353,
+        "constant_gap": -0.14133891463279724,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "events": 32,
+        "real_gap": -0.14656072854995728,
+        "constant_gap": -0.1457587480545044,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-20",
+        "events": 32,
+        "real_gap": -0.1407996118068695,
+        "constant_gap": -0.14005997776985168,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-21",
+        "events": 32,
+        "real_gap": -0.13627725839614868,
+        "constant_gap": -0.1361151933670044,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "events": 32,
+        "real_gap": -0.12861821055412292,
+        "constant_gap": -0.12772202491760254,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "events": 32,
+        "real_gap": -0.10522717237472534,
+        "constant_gap": -0.10417100787162781,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "events": 32,
+        "real_gap": -0.11324174702167511,
+        "constant_gap": -0.11225254088640213,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "events": 32,
+        "real_gap": -0.11572901159524918,
+        "constant_gap": -0.11494696885347366,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "events": 32,
+        "real_gap": -0.09607525914907455,
+        "constant_gap": -0.095132976770401,
+        "real_action": 0,
+        "constant_action": 0
+      }
+    ]
+  },
+  {
+    "seed": 2024,
+    "phase": "holdout",
+    "stock": "2330",
+    "epoch": 1,
+    "weights_sha256": "780e6ab8d0a47eea38c0173c88a8a09f6793ab1a5cea4702ae434236de70d912",
+    "reproduces_v847": true,
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "events": 32,
+        "real_gap": -0.04531102627515793,
+        "constant_gap": -0.045148491859436035,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-02",
+        "events": 32,
+        "real_gap": -0.04872409999370575,
+        "constant_gap": -0.04857681691646576,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-03",
+        "events": 32,
+        "real_gap": -0.04478602111339569,
+        "constant_gap": -0.04465147852897644,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-08",
+        "events": 32,
+        "real_gap": -0.04144293814897537,
+        "constant_gap": -0.041181087493896484,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-09",
+        "events": 32,
+        "real_gap": -0.04149436950683594,
+        "constant_gap": -0.04123631864786148,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-10",
+        "events": 32,
+        "real_gap": -0.03383329510688782,
+        "constant_gap": -0.03314468264579773,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-11",
+        "events": 32,
+        "real_gap": -0.03577651083469391,
+        "constant_gap": -0.035475775599479675,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-12",
+        "events": 32,
+        "real_gap": -0.03928143158555031,
+        "constant_gap": -0.039015185087919235,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-15",
+        "events": 32,
+        "real_gap": -0.033152490854263306,
+        "constant_gap": -0.03287354111671448,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-16",
+        "events": 32,
+        "real_gap": -0.02805393934249878,
+        "constant_gap": -0.02782866358757019,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-17",
+        "events": 32,
+        "real_gap": -0.02381940186023712,
+        "constant_gap": -0.0237109512090683,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-18",
+        "events": 32,
+        "real_gap": -0.019436776638031006,
+        "constant_gap": -0.019361257553100586,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-19",
+        "events": 32,
+        "real_gap": -0.019485533237457275,
+        "constant_gap": -0.019497036933898926,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-22",
+        "events": 32,
+        "real_gap": -0.028160110116004944,
+        "constant_gap": -0.028174951672554016,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-23",
+        "events": 32,
+        "real_gap": -0.03913004696369171,
+        "constant_gap": -0.039227455854415894,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-24",
+        "events": 32,
+        "real_gap": -0.04600727558135986,
+        "constant_gap": -0.046112120151519775,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-25",
+        "events": 32,
+        "real_gap": -0.05348940193653107,
+        "constant_gap": -0.05350513756275177,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-26",
+        "events": 32,
+        "real_gap": -0.0628139078617096,
+        "constant_gap": -0.06289614737033844,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-29",
+        "events": 32,
+        "real_gap": -0.0626799464225769,
+        "constant_gap": -0.06257519125938416,
+        "real_action": 0,
+        "constant_action": 0
+      }
+    ]
+  },
+  {
+    "seed": 2024,
+    "phase": "holdout",
+    "stock": "2603",
+    "epoch": 1,
+    "weights_sha256": "780e6ab8d0a47eea38c0173c88a8a09f6793ab1a5cea4702ae434236de70d912",
+    "reproduces_v847": false,
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "events": 32,
+        "real_gap": 0.06612955033779144,
+        "constant_gap": 0.06646668910980225,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-02",
+        "events": 32,
+        "real_gap": 0.048780590295791626,
+        "constant_gap": 0.04896622896194458,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-03",
+        "events": 32,
+        "real_gap": 0.041544124484062195,
+        "constant_gap": 0.04167391359806061,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-08",
+        "events": 32,
+        "real_gap": 0.03300495445728302,
+        "constant_gap": 0.03307487070560455,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-09",
+        "events": 32,
+        "real_gap": 0.030205845832824707,
+        "constant_gap": 0.03022618591785431,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-10",
+        "events": 32,
+        "real_gap": 0.037891849875450134,
+        "constant_gap": 0.037902310490608215,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-11",
+        "events": 32,
+        "real_gap": 0.032484784722328186,
+        "constant_gap": 0.032474830746650696,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-12",
+        "events": 32,
+        "real_gap": 0.040058329701423645,
+        "constant_gap": 0.04004031419754028,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-15",
+        "events": 32,
+        "real_gap": 0.05069313943386078,
+        "constant_gap": 0.050706565380096436,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-16",
+        "events": 32,
+        "real_gap": 0.047064512968063354,
+        "constant_gap": 0.04706059396266937,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-17",
+        "events": 32,
+        "real_gap": 0.04926225543022156,
+        "constant_gap": 0.04919591546058655,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-18",
+        "events": 32,
+        "real_gap": 0.05117318779230118,
+        "constant_gap": 0.051092974841594696,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-19",
+        "events": 32,
+        "real_gap": 0.0733894556760788,
+        "constant_gap": 0.07334668934345245,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-22",
+        "events": 32,
+        "real_gap": 0.07174110412597656,
+        "constant_gap": 0.07172635197639465,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-23",
+        "events": 32,
+        "real_gap": 0.054610028862953186,
+        "constant_gap": 0.05450326204299927,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-24",
+        "events": 32,
+        "real_gap": 0.03629511594772339,
+        "constant_gap": 0.036269158124923706,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-25",
+        "events": 32,
+        "real_gap": 0.024475157260894775,
+        "constant_gap": 0.024491548538208008,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-26",
+        "events": 32,
+        "real_gap": 0.019740864634513855,
+        "constant_gap": 0.019796103239059448,
+        "real_action": 1,
+        "constant_action": 1
+      },
+      {
+        "date": "2024-04-29",
+        "events": 32,
+        "real_gap": 0.014610916376113892,
+        "constant_gap": 0.01466970145702362,
+        "real_action": 1,
+        "constant_action": 1
+      }
+    ]
+  },
+  {
+    "seed": 2024,
+    "phase": "holdout",
+    "stock": "2881",
+    "epoch": 1,
+    "weights_sha256": "780e6ab8d0a47eea38c0173c88a8a09f6793ab1a5cea4702ae434236de70d912",
+    "reproduces_v847": false,
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "events": 32,
+        "real_gap": -0.08931253850460052,
+        "constant_gap": -0.08791358023881912,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-02",
+        "events": 32,
+        "real_gap": -0.08255021274089813,
+        "constant_gap": -0.08137546479701996,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-03",
+        "events": 32,
+        "real_gap": -0.06731733679771423,
+        "constant_gap": -0.0660366415977478,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-08",
+        "events": 32,
+        "real_gap": -0.077687568962574,
+        "constant_gap": -0.07695078104734421,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-09",
+        "events": 32,
+        "real_gap": -0.09438195824623108,
+        "constant_gap": -0.09420187026262283,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-10",
+        "events": 32,
+        "real_gap": -0.07801423966884613,
+        "constant_gap": -0.07748913764953613,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-11",
+        "events": 32,
+        "real_gap": -0.07393554598093033,
+        "constant_gap": -0.07355733215808868,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-12",
+        "events": 32,
+        "real_gap": -0.05979689955711365,
+        "constant_gap": -0.059244170784950256,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-15",
+        "events": 32,
+        "real_gap": -0.04774793982505798,
+        "constant_gap": -0.04709997773170471,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-16",
+        "events": 32,
+        "real_gap": -0.02443268895149231,
+        "constant_gap": -0.02404320240020752,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-17",
+        "events": 32,
+        "real_gap": -0.01252146065235138,
+        "constant_gap": -0.012192577123641968,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-18",
+        "events": 32,
+        "real_gap": -0.012548103928565979,
+        "constant_gap": -0.012696713209152222,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-19",
+        "events": 32,
+        "real_gap": -0.0117969810962677,
+        "constant_gap": -0.01183927059173584,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-22",
+        "events": 32,
+        "real_gap": -0.023532375693321228,
+        "constant_gap": -0.023919515311717987,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-23",
+        "events": 32,
+        "real_gap": -0.03360246866941452,
+        "constant_gap": -0.03442838788032532,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-24",
+        "events": 32,
+        "real_gap": -0.04669034481048584,
+        "constant_gap": -0.04729115962982178,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-25",
+        "events": 32,
+        "real_gap": -0.05765131115913391,
+        "constant_gap": -0.057625070214271545,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-26",
+        "events": 32,
+        "real_gap": -0.07092912495136261,
+        "constant_gap": -0.07034747302532196,
+        "real_action": 0,
+        "constant_action": 0
+      },
+      {
+        "date": "2024-04-29",
+        "events": 32,
+        "real_gap": -0.09367908537387848,
+        "constant_gap": -0.09259767085313797,
+        "real_action": 0,
+        "constant_action": 0
+      }
+    ]
+  }
+]
