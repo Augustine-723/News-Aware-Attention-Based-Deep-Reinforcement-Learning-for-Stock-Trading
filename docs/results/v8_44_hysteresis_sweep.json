@@ -1,0 +1,775 @@
+{
+  "thetas": [
+    0.0,
+    0.005,
+    0.01,
+    0.015,
+    0.02
+  ],
+  "test_window": {
+    "42": {
+      "0.000": {
+        "mean_net_return": 0.12379407409746405,
+        "total_trades": 8,
+        "total_costs": 20568.31792631014,
+        "stocks": {
+          "2330": {
+            "net_return": 0.22898191343821842,
+            "sharpe": 4.711008140136006,
+            "trades": 1,
+            "costs": 1353.5928030909186
+          },
+          "2603": {
+            "net_return": 0.134442735942594,
+            "sharpe": 2.315244378289888,
+            "trades": 3,
+            "costs": 7649.887067040076
+          },
+          "2881": {
+            "net_return": 0.007957572911579744,
+            "sharpe": 0.5533268873233385,
+            "trades": 4,
+            "costs": 11564.838056179145
+          }
+        }
+      },
+      "0.005": {
+        "mean_net_return": 0.12379407409746405,
+        "total_trades": 8,
+        "total_costs": 20568.31792631014,
+        "stocks": {
+          "2330": {
+            "net_return": 0.22898191343821842,
+            "sharpe": 4.711008140136006,
+            "trades": 1,
+            "costs": 1353.5928030909186
+          },
+          "2603": {
+            "net_return": 0.134442735942594,
+            "sharpe": 2.315244378289888,
+            "trades": 3,
+            "costs": 7649.887067040076
+          },
+          "2881": {
+            "net_return": 0.007957572911579744,
+            "sharpe": 0.5533268873233385,
+            "trades": 4,
+            "costs": 11564.838056179145
+          }
+        }
+      },
+      "0.010": {
+        "mean_net_return": 0.12482349774103281,
+        "total_trades": 6,
+        "total_costs": 14272.023662360987,
+        "stocks": {
+          "2330": {
+            "net_return": 0.22898191343821842,
+            "sharpe": 4.711008140136006,
+            "trades": 1,
+            "costs": 1353.5928030909186
+          },
+          "2603": {
+            "net_return": 0.1375310068733003,
+            "sharpe": 2.290449846672299,
+            "trades": 1,
+            "costs": 1353.592803090923
+          },
+          "2881": {
+            "net_return": 0.007957572911579744,
+            "sharpe": 0.5533268873233385,
+            "trades": 4,
+            "costs": 11564.838056179145
+          }
+        }
+      },
+      "0.015": {
+        "mean_net_return": 0.13225681317548402,
+        "total_trades": 6,
+        "total_costs": 14497.936167960233,
+        "stocks": {
+          "2330": {
+            "net_return": 0.22898191343821842,
+            "sharpe": 4.711008140136006,
+            "trades": 1,
+            "costs": 1353.5928030909186
+          },
+          "2603": {
+            "net_return": 0.1375310068733003,
+            "sharpe": 2.290449846672299,
+            "trades": 1,
+            "costs": 1353.592803090923
+          },
+          "2881": {
+            "net_return": 0.030257519214933387,
+            "sharpe": 2.259052223302917,
+            "trades": 4,
+            "costs": 11790.750561778392
+          }
+        }
+      },
+      "0.020": {
+        "mean_net_return": 0.13522258384030014,
+        "total_trades": 4,
+        "total_costs": 8604.072014705635,
+        "stocks": {
+          "2330": {
+            "net_return": 0.22898191343821842,
+            "sharpe": 4.711008140136006,
+            "trades": 1,
+            "costs": 1353.5928030909186
+          },
+          "2603": {
+            "net_return": 0.1375310068733003,
+            "sharpe": 2.290449846672299,
+            "trades": 1,
+            "costs": 1353.592803090923
+          },
+          "2881": {
+            "net_return": 0.039154831209381694,
+            "sharpe": 2.9155946243266184,
+            "trades": 2,
+            "costs": 5896.886408523793
+          }
+        }
+      }
+    },
+    "100": {
+      "0.000": {
+        "mean_net_return": 0.0,
+        "total_trades": 0,
+        "total_costs": 0.0,
+        "stocks": {
+          "2330": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2603": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.005": {
+        "mean_net_return": 0.0,
+        "total_trades": 0,
+        "total_costs": 0.0,
+        "stocks": {
+          "2330": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2603": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.010": {
+        "mean_net_return": 0.0,
+        "total_trades": 0,
+        "total_costs": 0.0,
+        "stocks": {
+          "2330": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2603": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.015": {
+        "mean_net_return": 0.0,
+        "total_trades": 0,
+        "total_costs": 0.0,
+        "stocks": {
+          "2330": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2603": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.020": {
+        "mean_net_return": 0.0,
+        "total_trades": 0,
+        "total_costs": 0.0,
+        "stocks": {
+          "2330": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2603": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      }
+    },
+    "2024": {
+      "0.000": {
+        "mean_net_return": 0.10095951239103723,
+        "total_trades": 17,
+        "total_costs": 53468.517139332296,
+        "stocks": {
+          "2330": {
+            "net_return": 0.18750722523890156,
+            "sharpe": 4.698456792499611,
+            "trades": 16,
+            "costs": 52114.92433624142
+          },
+          "2603": {
+            "net_return": 0.11537131193421013,
+            "sharpe": 1.9449872176320215,
+            "trades": 1,
+            "costs": 1353.5928030908767
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.005": {
+        "mean_net_return": 0.09436759481985395,
+        "total_trades": 11,
+        "total_costs": 33692.19105998601,
+        "stocks": {
+          "2330": {
+            "net_return": 0.16773147252535167,
+            "sharpe": 4.310563631459811,
+            "trades": 10,
+            "costs": 32338.598256895133
+          },
+          "2603": {
+            "net_return": 0.11537131193421013,
+            "sharpe": 1.9449872176320215,
+            "trades": 1,
+            "costs": 1353.5928030908767
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.010": {
+        "mean_net_return": 0.09086170213811612,
+        "total_trades": 9,
+        "total_costs": 26934.106344841697,
+        "stocks": {
+          "2330": {
+            "net_return": 0.15721379448013822,
+            "sharpe": 3.8300459543557217,
+            "trades": 8,
+            "costs": 25580.51354175082
+          },
+          "2603": {
+            "net_return": 0.11537131193421013,
+            "sharpe": 1.9449872176320215,
+            "trades": 1,
+            "costs": 1353.5928030908767
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.015": {
+        "mean_net_return": 0.09689191559231196,
+        "total_trades": 5,
+        "total_costs": 14456.160561422446,
+        "stocks": {
+          "2330": {
+            "net_return": 0.17530443484272576,
+            "sharpe": 3.951060274830756,
+            "trades": 4,
+            "costs": 13102.56775833157
+          },
+          "2603": {
+            "net_return": 0.11537131193421013,
+            "sharpe": 1.9449872176320215,
+            "trades": 1,
+            "costs": 1353.5928030908767
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.020": {
+        "mean_net_return": 0.09689191559231196,
+        "total_trades": 5,
+        "total_costs": 14456.160561422446,
+        "stocks": {
+          "2330": {
+            "net_return": 0.17530443484272576,
+            "sharpe": 3.951060274830756,
+            "trades": 4,
+            "costs": 13102.56775833157
+          },
+          "2603": {
+            "net_return": 0.11537131193421013,
+            "sharpe": 1.9449872176320215,
+            "trades": 1,
+            "costs": 1353.5928030908767
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      }
+    }
+  },
+  "april_holdout": {
+    "42": {
+      "0.000": {
+        "mean_net_return": 0.05158761892973674,
+        "total_trades": 4,
+        "total_costs": 8514.47452273436,
+        "stocks": {
+          "2330": {
+            "net_return": 0.006289109292803914,
+            "sharpe": 0.36979121182411734,
+            "trades": 1,
+            "costs": 1353.592803090811
+          },
+          "2603": {
+            "net_return": 0.1298119054556077,
+            "sharpe": 5.220627598184221,
+            "trades": 1,
+            "costs": 1353.592803090773
+          },
+          "2881": {
+            "net_return": 0.018661842040798626,
+            "sharpe": 5.003506033641626,
+            "trades": 2,
+            "costs": 5807.288916552774
+          }
+        }
+      },
+      "0.005": {
+        "mean_net_return": 0.05158761892973674,
+        "total_trades": 4,
+        "total_costs": 8514.47452273436,
+        "stocks": {
+          "2330": {
+            "net_return": 0.006289109292803914,
+            "sharpe": 0.36979121182411734,
+            "trades": 1,
+            "costs": 1353.592803090811
+          },
+          "2603": {
+            "net_return": 0.1298119054556077,
+            "sharpe": 5.220627598184221,
+            "trades": 1,
+            "costs": 1353.592803090773
+          },
+          "2881": {
+            "net_return": 0.018661842040798626,
+            "sharpe": 5.003506033641626,
+            "trades": 2,
+            "costs": 5807.288916552774
+          }
+        }
+      },
+      "0.010": {
+        "mean_net_return": 0.049557401008379916,
+        "total_trades": 4,
+        "total_costs": 8487.84554746692,
+        "stocks": {
+          "2330": {
+            "net_return": 0.006289109292803914,
+            "sharpe": 0.36979121182411734,
+            "trades": 1,
+            "costs": 1353.592803090811
+          },
+          "2603": {
+            "net_return": 0.1298119054556077,
+            "sharpe": 5.220627598184221,
+            "trades": 1,
+            "costs": 1353.592803090773
+          },
+          "2881": {
+            "net_return": 0.01257118827672815,
+            "sharpe": 2.4808015442536084,
+            "trades": 2,
+            "costs": 5780.659941285336
+          }
+        }
+      },
+      "0.015": {
+        "mean_net_return": 0.049557401008379916,
+        "total_trades": 4,
+        "total_costs": 8487.84554746692,
+        "stocks": {
+          "2330": {
+            "net_return": 0.006289109292803914,
+            "sharpe": 0.36979121182411734,
+            "trades": 1,
+            "costs": 1353.592803090811
+          },
+          "2603": {
+            "net_return": 0.1298119054556077,
+            "sharpe": 5.220627598184221,
+            "trades": 1,
+            "costs": 1353.592803090773
+          },
+          "2881": {
+            "net_return": 0.01257118827672815,
+            "sharpe": 2.4808015442536084,
+            "trades": 2,
+            "costs": 5780.659941285336
+          }
+        }
+      },
+      "0.020": {
+        "mean_net_return": 0.049557401008379916,
+        "total_trades": 4,
+        "total_costs": 8487.84554746692,
+        "stocks": {
+          "2330": {
+            "net_return": 0.006289109292803914,
+            "sharpe": 0.36979121182411734,
+            "trades": 1,
+            "costs": 1353.592803090811
+          },
+          "2603": {
+            "net_return": 0.1298119054556077,
+            "sharpe": 5.220627598184221,
+            "trades": 1,
+            "costs": 1353.592803090773
+          },
+          "2881": {
+            "net_return": 0.01257118827672815,
+            "sharpe": 2.4808015442536084,
+            "trades": 2,
+            "costs": 5780.659941285336
+          }
+        }
+      }
+    },
+    "100": {
+      "0.000": {
+        "mean_net_return": 0.0,
+        "total_trades": 0,
+        "total_costs": 0.0,
+        "stocks": {
+          "2330": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2603": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.005": {
+        "mean_net_return": 0.0,
+        "total_trades": 0,
+        "total_costs": 0.0,
+        "stocks": {
+          "2330": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2603": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.010": {
+        "mean_net_return": 0.0,
+        "total_trades": 0,
+        "total_costs": 0.0,
+        "stocks": {
+          "2330": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2603": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.015": {
+        "mean_net_return": 0.0,
+        "total_trades": 0,
+        "total_costs": 0.0,
+        "stocks": {
+          "2330": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2603": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.020": {
+        "mean_net_return": 0.0,
+        "total_trades": 0,
+        "total_costs": 0.0,
+        "stocks": {
+          "2330": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2603": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      }
+    },
+    "2024": {
+      "0.000": {
+        "mean_net_return": 0.004675861313262568,
+        "total_trades": 11,
+        "total_costs": 28217.346971011684,
+        "stocks": {
+          "2330": {
+            "net_return": -0.11578432151582,
+            "sharpe": -5.8848386815304785,
+            "trades": 10,
+            "costs": 26863.75416792091
+          },
+          "2603": {
+            "net_return": 0.1298119054556077,
+            "sharpe": 5.220627598184221,
+            "trades": 1,
+            "costs": 1353.592803090773
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.005": {
+        "mean_net_return": 0.005628348356028129,
+        "total_trades": 9,
+        "total_costs": 22760.917143826708,
+        "stocks": {
+          "2330": {
+            "net_return": -0.11292686038752331,
+            "sharpe": -5.75990122938976,
+            "trades": 8,
+            "costs": 21407.324340735933
+          },
+          "2603": {
+            "net_return": 0.1298119054556077,
+            "sharpe": 5.220627598184221,
+            "trades": 1,
+            "costs": 1353.592803090773
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.010": {
+        "mean_net_return": 0.019410394552775972,
+        "total_trades": 3,
+        "total_costs": 6766.33179223162,
+        "stocks": {
+          "2330": {
+            "net_return": -0.07158072179727978,
+            "sharpe": -3.386620377497581,
+            "trades": 2,
+            "costs": 5412.7389891408475
+          },
+          "2603": {
+            "net_return": 0.1298119054556077,
+            "sharpe": 5.220627598184221,
+            "trades": 1,
+            "costs": 1353.592803090773
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.015": {
+        "mean_net_return": 0.023070391707320236,
+        "total_trades": 3,
+        "total_costs": 6814.337463288726,
+        "stocks": {
+          "2330": {
+            "net_return": -0.06060073033364699,
+            "sharpe": -2.791751837180717,
+            "trades": 2,
+            "costs": 5460.744660197954
+          },
+          "2603": {
+            "net_return": 0.1298119054556077,
+            "sharpe": 5.220627598184221,
+            "trades": 1,
+            "costs": 1353.592803090773
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      },
+      "0.020": {
+        "mean_net_return": 0.023070391707320236,
+        "total_trades": 3,
+        "total_costs": 6814.337463288726,
+        "stocks": {
+          "2330": {
+            "net_return": -0.06060073033364699,
+            "sharpe": -2.791751837180717,
+            "trades": 2,
+            "costs": 5460.744660197954
+          },
+          "2603": {
+            "net_return": 0.1298119054556077,
+            "sharpe": 5.220627598184221,
+            "trades": 1,
+            "costs": 1353.592803090773
+          },
+          "2881": {
+            "net_return": 0.0,
+            "sharpe": null,
+            "trades": 0,
+            "costs": 0.0
+          }
+        }
+      }
+    }
+  }
+}
