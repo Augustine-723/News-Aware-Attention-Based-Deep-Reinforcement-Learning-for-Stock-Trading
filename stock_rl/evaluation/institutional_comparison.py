@@ -13,17 +13,21 @@ def compare_runs(ablated, full):
     for key in ("protocol", "input_sha256", "trading_config", "sessions"):
         if ablated[key] != full[key]:
             raise ValueError(f"mismatched {key}")
+    run_key = {"FLOW_ONLY_ESTIMATED_PILOT": "flow_only_runs",
+               "MARGIN_ONLY_ESTIMATED_PILOT": "margin_only_runs",
+               "M0_ESTIMATED_MARKET_DATA_PILOT": "m0_runs"}[full["status"]]
     controls = {r["seed"]: r for r in ablated["without_institutional_runs"]}
-    if set(controls) != {r["seed"] for r in full["m0_runs"]}:
+    if set(controls) != {r["seed"] for r in full[run_key]}:
         raise ValueError("mismatched seeds")
     return [dict(seed=r["seed"], **compare(controls[r["seed"]]["test"], r["test"]))
-            for r in full["m0_runs"]]
+            for r in full[run_key]]
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("ablated", type=Path)
+    parser.add_argument("--treatment", type=Path, default=ROOT / "docs/results/v8_22_market_drl_pilot.json")
     args = parser.parse_args()
-    baseline = ROOT / "docs/results/v8_22_market_drl_pilot.json"
+    baseline = args.treatment
     print(json.dumps(compare_runs(json.loads(args.ablated.read_text()),
                                   json.loads(baseline.read_text())), indent=2, allow_nan=False))

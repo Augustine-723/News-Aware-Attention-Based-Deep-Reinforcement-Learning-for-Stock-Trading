@@ -1,0 +1,77 @@
+[
+  {
+    "seed": 42,
+    "first_return_session": "2024-02-02",
+    "last_return_session": "2024-03-29",
+    "matched_return_sessions": 33,
+    "stocks": [
+      "2330",
+      "2603",
+      "2881"
+    ],
+    "control_net_return": 0.1147844084574765,
+    "treatment_net_return": 0.08570625935560616,
+    "delta_net_return": -0.029078149101870343,
+    "control_sharpe": 3.752569922265906,
+    "treatment_sharpe": 3.04220922661167,
+    "delta_sharpe": -0.7103606956542361,
+    "delta_sharpe_ci95": [
+      -2.9719571673297507,
+      1.5854963555288204
+    ],
+    "block_length": 5,
+    "bootstrap_seed": 42,
+    "bootstrap_requested": 5000,
+    "bootstrap_defined": 5000,
+    "status": "descriptive_interval"
+  },
+  {
+    "seed": 100,
+    "first_return_session": "2024-02-02",
+    "last_return_session": "2024-03-29",
+    "matched_return_sessions": 33,
+    "stocks": [
+      "2330",
+      "2603",
+      "2881"
+    ],
+    "control_net_return": 0.01854528920339482,
+    "treatment_net_return": 0.0648922566109944,
+    "delta_net_return": 0.04634696740759958,
+    "control_sharpe": 2.0241579286474094,
+    "treatment_sharpe": 4.861046598263358,
+    "delta_sharpe": 2.8368886696159485,
+    "delta_sharpe_ci95": null,
+    "block_length": 5,
+    "bootstrap_seed": 42,
+    "bootstrap_requested": 5000,
+    "bootstrap_defined": 4812,
+    "status": "ci_undefined_in_some_resamples"
+  },
+  {
+    "seed": 2024,
+    "first_return_session": "2024-02-02",
+    "last_return_session": "2024-03-29",
+    "matched_return_sessions": 33,
+    "stocks": [
+      "2330",
+      "2603",
+      "2881"
+    ],
+    "control_net_return": 0.03858616649133961,
+    "treatment_net_return": 0.059874415770029055,
+    "delta_net_return": 0.02128824927868944,
+    "control_sharpe": 1.6766443898224637,
+    "treatment_sharpe": 2.9789224714307228,
+    "delta_sharpe": 1.302278081608259,
+    "delta_sharpe_ci95": [
+      -2.036429812193595,
+      5.697465262249701
+    ],
+    "block_length": 5,
+    "bootstrap_seed": 42,
+    "bootstrap_requested": 5000,
+    "bootstrap_defined": 5000,
+    "status": "descriptive_interval"
+  }
+]

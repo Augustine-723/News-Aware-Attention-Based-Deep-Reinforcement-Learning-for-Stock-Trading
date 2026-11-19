@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PHASES = ("train", "validation", "test")
 
 
-def prepare_inputs(protocol, manifest, timing_events=None, *, include_event_text=False, omit_institutional=False):
+def prepare_inputs(protocol, manifest, timing_events=None, *, include_event_text=False, omit_institutional=False, institutional_only=None):
     inputs = {phase: {} for phase in PHASES}
     calendar = pd.DatetimeIndex(pd.read_csv(
         Path(DATA_DIR) / "taiex.csv", usecols=["date"], parse_dates=["date"]
@@ -50,10 +50,13 @@ def prepare_inputs(protocol, manifest, timing_events=None, *, include_event_text
                 raise ValueError(f"{stock}: insufficient {phase} sessions")
             decisions = sessions.index.normalize() + pd.Timedelta(hours=protocol["decision_hour"])
             batches = [builder.build_snapshot(timestamp) for timestamp in decisions]
-            if omit_institutional:
+            if institutional_only and builder.schema_version != "v8.0-original":
+                raise ValueError("split blocks require v8.0-original feature ordering")
+            if omit_institutional or institutional_only:
+                omitted = {None: slice(None), "flow": slice(5, 8), "margin": slice(0, 5)}[institutional_only]
                 for batch in batches:
-                    batch.institutional.zero_()
-                    batch.institutional_missing_mask.fill_(True)
+                    batch.institutional[..., omitted].zero_()
+                    batch.institutional_missing_mask[..., omitted].fill_(True)
             if timing_events is not None:
                 from stock_rl.evaluation.news_input_pilot import mask_event_inputs
                 timing_batches = [mask_event_inputs(batch, "M1") for batch in batches]
@@ -159,7 +162,9 @@ def fit_seed(seed, protocol, inputs):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoints", type=Path, required=True)
-    parser.add_argument("--omit-institutional", action="store_true", help="ablate the entire I01-I08 block before fitting")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--institutional-only", choices=["flow", "margin"])
+    group.add_argument("--omit-institutional", action="store_true", help="ablate the entire I01-I08 block before fitting")
     args = parser.parse_args()
     args.checkpoints.mkdir(parents=True, exist_ok=True)
     protocol = json.loads((ROOT / "configs/v8_22_study.json").read_text())
@@ -178,8 +183,11 @@ def main():
         "twse-cached-v8.22", CURRENT_ACTIVE_SCHEMA_VERSION, *boundaries,
         raw_dataset_content_hash=input_hash,
     )
-    inputs, normalizer = prepare_inputs(protocol, manifest, omit_institutional=args.omit_institutional)
+    inputs, normalizer = prepare_inputs(protocol, manifest, omit_institutional=args.omit_institutional,
+                                        institutional_only=args.institutional_only)
     method = "without_institutional" if args.omit_institutional else "m0"
+    if args.institutional_only:
+        method = f"{args.institutional_only}_only"
     results = []
     baselines = {
         stock: {
@@ -199,6 +207,7 @@ def main():
             "selected_epoch": epoch,
             "protocol": protocol,
             "raw_dataset_content_hash": input_hash,
+            **({"institutional_only": args.institutional_only} if args.institutional_only else {}),
             **({"omitted_features": "I01-I08"} if args.omit_institutional else {}),
         }, args.checkpoints / f"{method}-seed-{seed}.pt")
         results.append({
@@ -207,7 +216,8 @@ def main():
                      for stock, sample in inputs["test"].items()},
         })
     print(json.dumps({
-        "status": "NO_INSTITUTIONAL_ESTIMATED_PILOT" if args.omit_institutional else "M0_ESTIMATED_MARKET_DATA_PILOT",
+        "status": f"{method.upper()}_ESTIMATED_PILOT" if args.institutional_only else (
+            "NO_INSTITUTIONAL_ESTIMATED_PILOT" if args.omit_institutional else "M0_ESTIMATED_MARKET_DATA_PILOT"),
         "protocol": protocol,
         "schema_version": manifest.schema_version,
         "raw_dataset_content_hash": input_hash,
