@@ -1,0 +1,5348 @@
+[
+  {
+    "seed": 42,
+    "phase": "test",
+    "stock": "2330",
+    "weights_sha256": "72d16f3231ea018125e37f490924e951aced4c066e973e38ebee1b532eed72ea",
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "new_announcements": 0,
+        "real_gap": 0.10208705067634583,
+        "hidden_gap": 0.10208705067634583,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.10208705067634583,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-02",
+        "new_announcements": 1,
+        "real_gap": 0.11110342293977737,
+        "hidden_gap": 0.11076901853084564,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.11075986921787262,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-05",
+        "new_announcements": 2,
+        "real_gap": 0.11366189271211624,
+        "hidden_gap": 0.11291395127773285,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.11289484798908234,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-15",
+        "new_announcements": 17,
+        "real_gap": 0.1124764010310173,
+        "hidden_gap": 0.11197960376739502,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.11190126091241837,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-16",
+        "new_announcements": 0,
+        "real_gap": 0.11485295742750168,
+        "hidden_gap": 0.11485295742750168,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.11485295742750168,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-19",
+        "new_announcements": 1,
+        "real_gap": 0.115996353328228,
+        "hidden_gap": 0.11554013937711716,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.11552689224481583,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-20",
+        "new_announcements": 0,
+        "real_gap": 0.1159658133983612,
+        "hidden_gap": 0.1159658133983612,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.1159658133983612,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-21",
+        "new_announcements": 2,
+        "real_gap": 0.11134257912635803,
+        "hidden_gap": 0.11052186787128448,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.11048955470323563,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-22",
+        "new_announcements": 1,
+        "real_gap": 0.10312866419553757,
+        "hidden_gap": 0.10261380672454834,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.10259579867124557,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-23",
+        "new_announcements": 1,
+        "real_gap": 0.10141461342573166,
+        "hidden_gap": 0.10095499455928802,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.10093791037797928,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-26",
+        "new_announcements": 0,
+        "real_gap": 0.10409312695264816,
+        "hidden_gap": 0.10409312695264816,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.10409312695264816,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-27",
+        "new_announcements": 2,
+        "real_gap": 0.10100262612104416,
+        "hidden_gap": 0.10017800331115723,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.10014855116605759,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-29",
+        "new_announcements": 5,
+        "real_gap": 0.09894821792840958,
+        "hidden_gap": 0.09761089086532593,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.09753187745809555,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-01",
+        "new_announcements": 2,
+        "real_gap": 0.09146511554718018,
+        "hidden_gap": 0.09095922857522964,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.09092447906732559,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-04",
+        "new_announcements": 0,
+        "real_gap": 0.09553651511669159,
+        "hidden_gap": 0.09553651511669159,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.09553651511669159,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-05",
+        "new_announcements": 1,
+        "real_gap": 0.09564726799726486,
+        "hidden_gap": 0.09515931457281113,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.09514567255973816,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-06",
+        "new_announcements": 1,
+        "real_gap": 0.09605009108781815,
+        "hidden_gap": 0.09556657075881958,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.09555204957723618,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-07",
+        "new_announcements": 0,
+        "real_gap": 0.09526225924491882,
+        "hidden_gap": 0.09526225924491882,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.09526225924491882,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-08",
+        "new_announcements": 1,
+        "real_gap": 0.10057825595140457,
+        "hidden_gap": 0.10022879391908646,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.10021594911813736,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-11",
+        "new_announcements": 2,
+        "real_gap": 0.10292364656925201,
+        "hidden_gap": 0.10178373754024506,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.10175449401140213,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-12",
+        "new_announcements": 0,
+        "real_gap": 0.10280486196279526,
+        "hidden_gap": 0.10280486196279526,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.10280486196279526,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-13",
+        "new_announcements": 0,
+        "real_gap": 0.10176662355661392,
+        "hidden_gap": 0.10176662355661392,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.10176662355661392,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-14",
+        "new_announcements": 0,
+        "real_gap": 0.10252001136541367,
+        "hidden_gap": 0.10252001136541367,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.10252001136541367,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-15",
+        "new_announcements": 1,
+        "real_gap": 0.08681429177522659,
+        "hidden_gap": 0.08647975325584412,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.086467444896698,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-18",
+        "new_announcements": 0,
+        "real_gap": 0.07505515962839127,
+        "hidden_gap": 0.07505515962839127,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.07505515962839127,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-19",
+        "new_announcements": 0,
+        "real_gap": 0.06694388389587402,
+        "hidden_gap": 0.06694388389587402,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06694388389587402,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-20",
+        "new_announcements": 0,
+        "real_gap": 0.059233471751213074,
+        "hidden_gap": 0.059233471751213074,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.059233471751213074,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-21",
+        "new_announcements": 0,
+        "real_gap": 0.05952811986207962,
+        "hidden_gap": 0.05952811986207962,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.05952811986207962,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-22",
+        "new_announcements": 2,
+        "real_gap": 0.06696847826242447,
+        "hidden_gap": 0.06655751168727875,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.0665479302406311,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-25",
+        "new_announcements": 0,
+        "real_gap": 0.06645705550909042,
+        "hidden_gap": 0.06645705550909042,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06645705550909042,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-26",
+        "new_announcements": 0,
+        "real_gap": 0.06356426328420639,
+        "hidden_gap": 0.06356426328420639,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06356426328420639,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-27",
+        "new_announcements": 1,
+        "real_gap": 0.06320399045944214,
+        "hidden_gap": 0.06283824145793915,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06282874941825867,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-28",
+        "new_announcements": 0,
+        "real_gap": 0.05724328011274338,
+        "hidden_gap": 0.05724328011274338,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.05724328011274338,
+        "restored_action": 1
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.22898191343821842,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924339,
+          "tax": 0.0,
+          "slippage": 499.32320359848467
+        }
+      },
+      "hidden": {
+        "net_return": 0.22898191343821842,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924339,
+          "tax": 0.0,
+          "slippage": 499.32320359848467
+        }
+      },
+      "restored": {
+        "net_return": 0.22898191343821842,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924339,
+          "tax": 0.0,
+          "slippage": 499.32320359848467
+        }
+      }
+    }
+  },
+  {
+    "seed": 42,
+    "phase": "test",
+    "stock": "2603",
+    "weights_sha256": "72d16f3231ea018125e37f490924e951aced4c066e973e38ebee1b532eed72ea",
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "new_announcements": 0,
+        "real_gap": -0.006693065166473389,
+        "hidden_gap": -0.006693065166473389,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.006693065166473389,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "new_announcements": 0,
+        "real_gap": -0.003712475299835205,
+        "hidden_gap": -0.003712475299835205,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.003712475299835205,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-05",
+        "new_announcements": 0,
+        "real_gap": -0.011894792318344116,
+        "hidden_gap": -0.011894792318344116,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.011894792318344116,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "new_announcements": 0,
+        "real_gap": -0.012097775936126709,
+        "hidden_gap": -0.012097775936126709,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.012097775936126709,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "new_announcements": 0,
+        "real_gap": -0.009208261966705322,
+        "hidden_gap": -0.009208261966705322,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.009208261966705322,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "new_announcements": 0,
+        "real_gap": -0.010447904467582703,
+        "hidden_gap": -0.010447904467582703,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.010447904467582703,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "new_announcements": 0,
+        "real_gap": -0.006688609719276428,
+        "hidden_gap": -0.006688609719276428,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.006688609719276428,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "new_announcements": 0,
+        "real_gap": 4.7579407691955566e-05,
+        "hidden_gap": 4.7579407691955566e-05,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 4.7579407691955566e-05,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-22",
+        "new_announcements": 0,
+        "real_gap": 0.04034063220024109,
+        "hidden_gap": 0.04034063220024109,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.04034063220024109,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-23",
+        "new_announcements": 1,
+        "real_gap": 0.04490254819393158,
+        "hidden_gap": 0.044578298926353455,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.04457826912403107,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-26",
+        "new_announcements": 1,
+        "real_gap": 0.0375327467918396,
+        "hidden_gap": 0.03720064461231232,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.03720062971115112,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-27",
+        "new_announcements": 0,
+        "real_gap": 0.034096330404281616,
+        "hidden_gap": 0.034096330404281616,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.034096330404281616,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-29",
+        "new_announcements": 0,
+        "real_gap": 0.032316580414772034,
+        "hidden_gap": 0.032316580414772034,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.032316580414772034,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-01",
+        "new_announcements": 1,
+        "real_gap": 0.03083173930644989,
+        "hidden_gap": 0.03054492175579071,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.030544936656951904,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-04",
+        "new_announcements": 0,
+        "real_gap": 0.05142924189567566,
+        "hidden_gap": 0.05142924189567566,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.05142924189567566,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-05",
+        "new_announcements": 0,
+        "real_gap": 0.059987589716911316,
+        "hidden_gap": 0.059987589716911316,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.059987589716911316,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-06",
+        "new_announcements": 3,
+        "real_gap": 0.056023746728897095,
+        "hidden_gap": 0.05468267202377319,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.05462583899497986,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-07",
+        "new_announcements": 0,
+        "real_gap": 0.04782973229885101,
+        "hidden_gap": 0.04782973229885101,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.04782973229885101,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-08",
+        "new_announcements": 0,
+        "real_gap": 0.042605429887771606,
+        "hidden_gap": 0.042605429887771606,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.042605429887771606,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-11",
+        "new_announcements": 0,
+        "real_gap": 0.031430572271347046,
+        "hidden_gap": 0.031430572271347046,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.031430572271347046,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-12",
+        "new_announcements": 0,
+        "real_gap": 0.02419295907020569,
+        "hidden_gap": 0.02419295907020569,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.02419295907020569,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-13",
+        "new_announcements": 0,
+        "real_gap": 0.022160425782203674,
+        "hidden_gap": 0.022160425782203674,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.022160425782203674,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-14",
+        "new_announcements": 12,
+        "real_gap": 0.01771511137485504,
+        "hidden_gap": 0.014481350779533386,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.014370948076248169,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-15",
+        "new_announcements": 0,
+        "real_gap": 0.012953370809555054,
+        "hidden_gap": 0.012953370809555054,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.012953370809555054,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-18",
+        "new_announcements": 0,
+        "real_gap": -0.0019505470991134644,
+        "hidden_gap": -0.0019505470991134644,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0019505470991134644,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "new_announcements": 0,
+        "real_gap": 0.008369430899620056,
+        "hidden_gap": 0.008369430899620056,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.008369430899620056,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-20",
+        "new_announcements": 0,
+        "real_gap": 0.00762176513671875,
+        "hidden_gap": 0.00762176513671875,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.00762176513671875,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-21",
+        "new_announcements": 0,
+        "real_gap": -0.005986198782920837,
+        "hidden_gap": -0.005986198782920837,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.005986198782920837,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "new_announcements": 0,
+        "real_gap": -0.008236199617385864,
+        "hidden_gap": -0.008236199617385864,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.008236199617385864,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "new_announcements": 1,
+        "real_gap": -0.013736143708229065,
+        "hidden_gap": -0.013894975185394287,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.013913571834564209,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "new_announcements": 0,
+        "real_gap": -0.008866563439369202,
+        "hidden_gap": -0.008866563439369202,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.008866563439369202,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "new_announcements": 0,
+        "real_gap": -0.01035529375076294,
+        "hidden_gap": -0.01035529375076294,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.01035529375076294,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "new_announcements": 1,
+        "real_gap": -0.004263937473297119,
+        "hidden_gap": -0.004467800259590149,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.004486933350563049,
+        "restored_action": 0
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.040436361808589075,
+        "executed_position_changes": 4,
+        "costs": {
+          "commission": 3564.713195707902,
+          "tax": 6329.378479713563,
+          "slippage": 2084.640703602551
+        }
+      },
+      "hidden": {
+        "net_return": 0.040436361808589075,
+        "executed_position_changes": 4,
+        "costs": {
+          "commission": 3564.713195707902,
+          "tax": 6329.378479713563,
+          "slippage": 2084.640703602551
+        }
+      },
+      "restored": {
+        "net_return": 0.040436361808589075,
+        "executed_position_changes": 4,
+        "costs": {
+          "commission": 3564.713195707902,
+          "tax": 6329.378479713563,
+          "slippage": 2084.640703602551
+        }
+      }
+    }
+  },
+  {
+    "seed": 42,
+    "phase": "test",
+    "stock": "2881",
+    "weights_sha256": "72d16f3231ea018125e37f490924e951aced4c066e973e38ebee1b532eed72ea",
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "new_announcements": 0,
+        "real_gap": -0.05124214291572571,
+        "hidden_gap": -0.05124214291572571,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05124214291572571,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "new_announcements": 0,
+        "real_gap": -0.047562554478645325,
+        "hidden_gap": -0.047562554478645325,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.047562554478645325,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-05",
+        "new_announcements": 0,
+        "real_gap": -0.04738938808441162,
+        "hidden_gap": -0.04738938808441162,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04738938808441162,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "new_announcements": 3,
+        "real_gap": -0.03686489164829254,
+        "hidden_gap": -0.03700675070285797,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03697793185710907,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "new_announcements": 1,
+        "real_gap": -0.033508867025375366,
+        "hidden_gap": -0.033676862716674805,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03366881608963013,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "new_announcements": 0,
+        "real_gap": -0.029036879539489746,
+        "hidden_gap": -0.029036879539489746,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.029036879539489746,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "new_announcements": 1,
+        "real_gap": -0.024219989776611328,
+        "hidden_gap": -0.024423465132713318,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.024418845772743225,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "new_announcements": 1,
+        "real_gap": -0.02904929220676422,
+        "hidden_gap": -0.02931426465511322,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.029307633638381958,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-22",
+        "new_announcements": 1,
+        "real_gap": -0.033589884638786316,
+        "hidden_gap": -0.033838286995887756,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03382989764213562,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-23",
+        "new_announcements": 0,
+        "real_gap": -0.02835097908973694,
+        "hidden_gap": -0.02835097908973694,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.02835097908973694,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-26",
+        "new_announcements": 0,
+        "real_gap": -0.03789280354976654,
+        "hidden_gap": -0.03789280354976654,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03789280354976654,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-27",
+        "new_announcements": 2,
+        "real_gap": -0.04050584137439728,
+        "hidden_gap": -0.0408831387758255,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04086177051067352,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-29",
+        "new_announcements": 0,
+        "real_gap": -0.04199105501174927,
+        "hidden_gap": -0.04199105501174927,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04199105501174927,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-01",
+        "new_announcements": 0,
+        "real_gap": -0.045226261019706726,
+        "hidden_gap": -0.045226261019706726,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.045226261019706726,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-04",
+        "new_announcements": 2,
+        "real_gap": -0.0570669025182724,
+        "hidden_gap": -0.05718579888343811,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.057154327630996704,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-05",
+        "new_announcements": 0,
+        "real_gap": -0.048520639538764954,
+        "hidden_gap": -0.048520639538764954,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.048520639538764954,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-06",
+        "new_announcements": 3,
+        "real_gap": -0.0370979905128479,
+        "hidden_gap": -0.037788763642311096,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03773774206638336,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-07",
+        "new_announcements": 2,
+        "real_gap": -0.04278916120529175,
+        "hidden_gap": -0.04342910647392273,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04340974986553192,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-08",
+        "new_announcements": 6,
+        "real_gap": -0.05805233120918274,
+        "hidden_gap": -0.06011874973773956,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06011812388896942,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-11",
+        "new_announcements": 1,
+        "real_gap": -0.058477967977523804,
+        "hidden_gap": -0.058737918734550476,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05873793363571167,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-12",
+        "new_announcements": 6,
+        "real_gap": -0.05554330348968506,
+        "hidden_gap": -0.056967779994010925,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05691632628440857,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-13",
+        "new_announcements": 10,
+        "real_gap": -0.055343836545944214,
+        "hidden_gap": -0.058005839586257935,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05782504379749298,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-14",
+        "new_announcements": 6,
+        "real_gap": -0.064557746052742,
+        "hidden_gap": -0.0659717321395874,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06580263376235962,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-15",
+        "new_announcements": 1,
+        "real_gap": -0.0635615885257721,
+        "hidden_gap": -0.06374698877334595,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06372977793216705,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-18",
+        "new_announcements": 1,
+        "real_gap": -0.06010355055332184,
+        "hidden_gap": -0.06018775701522827,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06015962362289429,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "new_announcements": 1,
+        "real_gap": -0.06415495276451111,
+        "hidden_gap": -0.06422926485538483,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06419256329536438,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-20",
+        "new_announcements": 0,
+        "real_gap": -0.0712677538394928,
+        "hidden_gap": -0.0712677538394928,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0712677538394928,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-21",
+        "new_announcements": 3,
+        "real_gap": -0.06303729116916656,
+        "hidden_gap": -0.06293314695358276,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0628206729888916,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "new_announcements": 0,
+        "real_gap": -0.06430810689926147,
+        "hidden_gap": -0.06430810689926147,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06430810689926147,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "new_announcements": 0,
+        "real_gap": -0.06431891024112701,
+        "hidden_gap": -0.06431891024112701,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06431891024112701,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "new_announcements": 0,
+        "real_gap": -0.059764549136161804,
+        "hidden_gap": -0.059764549136161804,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.059764549136161804,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "new_announcements": 1,
+        "real_gap": -0.055069491267204285,
+        "hidden_gap": -0.055139899253845215,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05511052906513214,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "new_announcements": 0,
+        "real_gap": -0.06068730354309082,
+        "hidden_gap": -0.06068730354309082,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06068730354309082,
+        "restored_action": 0
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "hidden": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "restored": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      }
+    }
+  },
+  {
+    "seed": 42,
+    "phase": "holdout",
+    "stock": "2330",
+    "weights_sha256": "72d16f3231ea018125e37f490924e951aced4c066e973e38ebee1b532eed72ea",
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "new_announcements": 0,
+        "real_gap": 0.04846484959125519,
+        "hidden_gap": 0.04846484959125519,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.04846484959125519,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-02",
+        "new_announcements": 0,
+        "real_gap": 0.06607009470462799,
+        "hidden_gap": 0.06607009470462799,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06607009470462799,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-03",
+        "new_announcements": 2,
+        "real_gap": 0.06485573202371597,
+        "hidden_gap": 0.06427841633558273,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06426510214805603,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-08",
+        "new_announcements": 5,
+        "real_gap": 0.06084611266851425,
+        "hidden_gap": 0.060388289391994476,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.0603603795170784,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-09",
+        "new_announcements": 0,
+        "real_gap": 0.056020162999629974,
+        "hidden_gap": 0.056020162999629974,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.056020162999629974,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-10",
+        "new_announcements": 1,
+        "real_gap": 0.05348137021064758,
+        "hidden_gap": 0.053324997425079346,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.053322359919548035,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-11",
+        "new_announcements": 1,
+        "real_gap": 0.0642867311835289,
+        "hidden_gap": 0.06398893892765045,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06398701667785645,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-12",
+        "new_announcements": 2,
+        "real_gap": 0.0643448680639267,
+        "hidden_gap": 0.06395585834980011,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06395035982131958,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-15",
+        "new_announcements": 0,
+        "real_gap": 0.05948077142238617,
+        "hidden_gap": 0.05948077142238617,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.05948077142238617,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-16",
+        "new_announcements": 1,
+        "real_gap": 0.04373905062675476,
+        "hidden_gap": 0.043564602732658386,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.043559491634368896,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-17",
+        "new_announcements": 1,
+        "real_gap": 0.036501944065093994,
+        "hidden_gap": 0.03635135293006897,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.03635011613368988,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-18",
+        "new_announcements": 4,
+        "real_gap": 0.030397355556488037,
+        "hidden_gap": 0.02996903657913208,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.029979407787322998,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-19",
+        "new_announcements": 1,
+        "real_gap": 0.014814957976341248,
+        "hidden_gap": 0.014713212847709656,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.014716461300849915,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-22",
+        "new_announcements": 1,
+        "real_gap": 0.007243916392326355,
+        "hidden_gap": 0.007168427109718323,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.007173001766204834,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-23",
+        "new_announcements": 1,
+        "real_gap": 0.0022923946380615234,
+        "hidden_gap": 0.0022349953651428223,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.002240225672721863,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-24",
+        "new_announcements": 2,
+        "real_gap": 0.007382482290267944,
+        "hidden_gap": 0.007275193929672241,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.007292702794075012,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-25",
+        "new_announcements": 0,
+        "real_gap": 0.013655528426170349,
+        "hidden_gap": 0.013655528426170349,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.013655528426170349,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-26",
+        "new_announcements": 1,
+        "real_gap": 0.023933902382850647,
+        "hidden_gap": 0.023785054683685303,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.023785844445228577,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-29",
+        "new_announcements": 0,
+        "real_gap": 0.03444642573595047,
+        "hidden_gap": 0.03444642573595047,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.03444642573595047,
+        "restored_action": 1
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.006289109292803914,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924339,
+          "tax": 0.0,
+          "slippage": 499.323203598377
+        }
+      },
+      "hidden": {
+        "net_return": 0.006289109292803914,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924339,
+          "tax": 0.0,
+          "slippage": 499.323203598377
+        }
+      },
+      "restored": {
+        "net_return": 0.006289109292803914,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924339,
+          "tax": 0.0,
+          "slippage": 499.323203598377
+        }
+      }
+    }
+  },
+  {
+    "seed": 42,
+    "phase": "holdout",
+    "stock": "2603",
+    "weights_sha256": "72d16f3231ea018125e37f490924e951aced4c066e973e38ebee1b532eed72ea",
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "new_announcements": 0,
+        "real_gap": 0.007715389132499695,
+        "hidden_gap": 0.007715389132499695,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.007715389132499695,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-02",
+        "new_announcements": 0,
+        "real_gap": 0.03133724629878998,
+        "hidden_gap": 0.03133724629878998,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.03133724629878998,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-03",
+        "new_announcements": 0,
+        "real_gap": 0.027780681848526,
+        "hidden_gap": 0.027780681848526,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.027780681848526,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-08",
+        "new_announcements": 0,
+        "real_gap": 0.017622485756874084,
+        "hidden_gap": 0.017622485756874084,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.017622485756874084,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-09",
+        "new_announcements": 0,
+        "real_gap": 0.009016573429107666,
+        "hidden_gap": 0.009016573429107666,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.009016573429107666,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-10",
+        "new_announcements": 0,
+        "real_gap": 0.006286248564720154,
+        "hidden_gap": 0.006286248564720154,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.006286248564720154,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-11",
+        "new_announcements": 0,
+        "real_gap": 0.012684792280197144,
+        "hidden_gap": 0.012684792280197144,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.012684792280197144,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-12",
+        "new_announcements": 0,
+        "real_gap": 0.011640772223472595,
+        "hidden_gap": 0.011640772223472595,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.011640772223472595,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-15",
+        "new_announcements": 1,
+        "real_gap": 0.019038736820220947,
+        "hidden_gap": 0.018824443221092224,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.018809929490089417,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-16",
+        "new_announcements": 0,
+        "real_gap": 0.018728628754615784,
+        "hidden_gap": 0.018728628754615784,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.018728628754615784,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-17",
+        "new_announcements": 0,
+        "real_gap": 0.01749017834663391,
+        "hidden_gap": 0.01749017834663391,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.01749017834663391,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-18",
+        "new_announcements": 0,
+        "real_gap": 0.015105322003364563,
+        "hidden_gap": 0.015105322003364563,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.015105322003364563,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-19",
+        "new_announcements": 0,
+        "real_gap": 0.034289032220840454,
+        "hidden_gap": 0.034289032220840454,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.034289032220840454,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-22",
+        "new_announcements": 0,
+        "real_gap": 0.047096699476242065,
+        "hidden_gap": 0.047096699476242065,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.047096699476242065,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-23",
+        "new_announcements": 1,
+        "real_gap": 0.04605528712272644,
+        "hidden_gap": 0.04582671821117401,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.0458109974861145,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-24",
+        "new_announcements": 0,
+        "real_gap": 0.0520683228969574,
+        "hidden_gap": 0.0520683228969574,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.0520683228969574,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-25",
+        "new_announcements": 0,
+        "real_gap": 0.05209223926067352,
+        "hidden_gap": 0.05209223926067352,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.05209223926067352,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-26",
+        "new_announcements": 0,
+        "real_gap": 0.061643511056900024,
+        "hidden_gap": 0.061643511056900024,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.061643511056900024,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-29",
+        "new_announcements": 0,
+        "real_gap": 0.06782016158103943,
+        "hidden_gap": 0.06782016158103943,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06782016158103943,
+        "restored_action": 1
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.1298119054556077,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924338,
+          "tax": 0.0,
+          "slippage": 499.3232035983393
+        }
+      },
+      "hidden": {
+        "net_return": 0.1298119054556077,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924338,
+          "tax": 0.0,
+          "slippage": 499.3232035983393
+        }
+      },
+      "restored": {
+        "net_return": 0.1298119054556077,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924338,
+          "tax": 0.0,
+          "slippage": 499.3232035983393
+        }
+      }
+    }
+  },
+  {
+    "seed": 42,
+    "phase": "holdout",
+    "stock": "2881",
+    "weights_sha256": "72d16f3231ea018125e37f490924e951aced4c066e973e38ebee1b532eed72ea",
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "new_announcements": 0,
+        "real_gap": -0.06231839954853058,
+        "hidden_gap": -0.06231839954853058,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06231839954853058,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-02",
+        "new_announcements": 1,
+        "real_gap": -0.06622490286827087,
+        "hidden_gap": -0.06645667552947998,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06641942262649536,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-03",
+        "new_announcements": 1,
+        "real_gap": -0.0712701678276062,
+        "hidden_gap": -0.07140690088272095,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07136628031730652,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-08",
+        "new_announcements": 0,
+        "real_gap": -0.074822798371315,
+        "hidden_gap": -0.074822798371315,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.074822798371315,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-09",
+        "new_announcements": 1,
+        "real_gap": -0.06958223879337311,
+        "hidden_gap": -0.06965933740139008,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06962969899177551,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-10",
+        "new_announcements": 1,
+        "real_gap": -0.07241232693195343,
+        "hidden_gap": -0.07245731353759766,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07242327928543091,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-11",
+        "new_announcements": 5,
+        "real_gap": -0.08202335238456726,
+        "hidden_gap": -0.08200350403785706,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08180204033851624,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-12",
+        "new_announcements": 2,
+        "real_gap": -0.07664990425109863,
+        "hidden_gap": -0.07664051651954651,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07654716074466705,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-15",
+        "new_announcements": 0,
+        "real_gap": -0.09003713726997375,
+        "hidden_gap": -0.09003713726997375,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.09003713726997375,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-16",
+        "new_announcements": 1,
+        "real_gap": -0.11864854395389557,
+        "hidden_gap": -0.11850585043430328,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.11848175525665283,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-17",
+        "new_announcements": 0,
+        "real_gap": -0.11260145902633667,
+        "hidden_gap": -0.11260145902633667,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.11260145902633667,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-18",
+        "new_announcements": 2,
+        "real_gap": -0.10460591316223145,
+        "hidden_gap": -0.10492126643657684,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.10492280125617981,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-19",
+        "new_announcements": 2,
+        "real_gap": -0.1193319708108902,
+        "hidden_gap": -0.11960357427597046,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.11961057782173157,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-22",
+        "new_announcements": 5,
+        "real_gap": -0.12489022314548492,
+        "hidden_gap": -0.12636953592300415,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.12641575932502747,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-23",
+        "new_announcements": 9,
+        "real_gap": -0.13445255160331726,
+        "hidden_gap": -0.13755199313163757,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.13751694560050964,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-24",
+        "new_announcements": 12,
+        "real_gap": -0.13647575676441193,
+        "hidden_gap": -0.13903020322322845,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.13848206400871277,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-25",
+        "new_announcements": 12,
+        "real_gap": -0.13283537328243256,
+        "hidden_gap": -0.13590466976165771,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.13528208434581757,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-26",
+        "new_announcements": 2,
+        "real_gap": -0.10124173760414124,
+        "hidden_gap": -0.10215122997760773,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.10210426151752472,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-29",
+        "new_announcements": 1,
+        "real_gap": -0.0679084062576294,
+        "hidden_gap": -0.06820975244045258,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06819130480289459,
+        "restored_action": 0
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "hidden": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "restored": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      }
+    }
+  },
+  {
+    "seed": 100,
+    "phase": "test",
+    "stock": "2330",
+    "weights_sha256": "b19a6a41fa2c9c5a74b7c18f6fbc68c5b8907e8613b68c7d51b511c3f6637fbe",
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "new_announcements": 0,
+        "real_gap": -0.025232773274183273,
+        "hidden_gap": -0.025232773274183273,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.025232773274183273,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "new_announcements": 1,
+        "real_gap": -0.02945290133357048,
+        "hidden_gap": -0.029652968049049377,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.02965938299894333,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-05",
+        "new_announcements": 2,
+        "real_gap": -0.033374641090631485,
+        "hidden_gap": -0.03375737741589546,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03377602621912956,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "new_announcements": 17,
+        "real_gap": -0.07676336169242859,
+        "hidden_gap": -0.07724083960056305,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07725110650062561,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "new_announcements": 0,
+        "real_gap": -0.08250482380390167,
+        "hidden_gap": -0.08250482380390167,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08250482380390167,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "new_announcements": 1,
+        "real_gap": -0.07539431750774384,
+        "hidden_gap": -0.07552385330200195,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07553288340568542,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "new_announcements": 0,
+        "real_gap": -0.06982943415641785,
+        "hidden_gap": -0.06982943415641785,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06982943415641785,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "new_announcements": 2,
+        "real_gap": -0.062200382351875305,
+        "hidden_gap": -0.0625259280204773,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06254903972148895,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-22",
+        "new_announcements": 1,
+        "real_gap": -0.05912628769874573,
+        "hidden_gap": -0.05927671492099762,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.059294261038303375,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-23",
+        "new_announcements": 1,
+        "real_gap": -0.06320148706436157,
+        "hidden_gap": -0.06333661079406738,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06334757804870605,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-26",
+        "new_announcements": 0,
+        "real_gap": -0.05964750796556473,
+        "hidden_gap": -0.05964750796556473,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05964750796556473,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-27",
+        "new_announcements": 2,
+        "real_gap": -0.052324771881103516,
+        "hidden_gap": -0.05265626311302185,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.052670180797576904,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-29",
+        "new_announcements": 5,
+        "real_gap": -0.046464189887046814,
+        "hidden_gap": -0.04745945334434509,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04753388464450836,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-01",
+        "new_announcements": 2,
+        "real_gap": -0.03868265450000763,
+        "hidden_gap": -0.03905371204018593,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03912360221147537,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-04",
+        "new_announcements": 0,
+        "real_gap": -0.07060927152633667,
+        "hidden_gap": -0.07060927152633667,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07060927152633667,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-05",
+        "new_announcements": 1,
+        "real_gap": -0.07674238085746765,
+        "hidden_gap": -0.07688315212726593,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0768919587135315,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-06",
+        "new_announcements": 1,
+        "real_gap": -0.0703694075345993,
+        "hidden_gap": -0.0705004557967186,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07051162421703339,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-07",
+        "new_announcements": 0,
+        "real_gap": -0.07517658174037933,
+        "hidden_gap": -0.07517658174037933,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07517658174037933,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-08",
+        "new_announcements": 1,
+        "real_gap": -0.07734279334545135,
+        "hidden_gap": -0.07739545404911041,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07738983631134033,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-11",
+        "new_announcements": 2,
+        "real_gap": -0.06340181827545166,
+        "hidden_gap": -0.0635649710893631,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06356070935726166,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-12",
+        "new_announcements": 0,
+        "real_gap": -0.05534636229276657,
+        "hidden_gap": -0.05534636229276657,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05534636229276657,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-13",
+        "new_announcements": 0,
+        "real_gap": -0.05441872775554657,
+        "hidden_gap": -0.05441872775554657,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05441872775554657,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-14",
+        "new_announcements": 0,
+        "real_gap": -0.0521550178527832,
+        "hidden_gap": -0.0521550178527832,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0521550178527832,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-15",
+        "new_announcements": 1,
+        "real_gap": -0.04190060868859291,
+        "hidden_gap": -0.04208015277981758,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04209154471755028,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-18",
+        "new_announcements": 0,
+        "real_gap": -0.0474957637488842,
+        "hidden_gap": -0.0474957637488842,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0474957637488842,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "new_announcements": 0,
+        "real_gap": -0.04825142025947571,
+        "hidden_gap": -0.04825142025947571,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04825142025947571,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-20",
+        "new_announcements": 0,
+        "real_gap": -0.043446511030197144,
+        "hidden_gap": -0.043446511030197144,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.043446511030197144,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-21",
+        "new_announcements": 0,
+        "real_gap": -0.04888458177447319,
+        "hidden_gap": -0.04888458177447319,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04888458177447319,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "new_announcements": 2,
+        "real_gap": -0.05406410992145538,
+        "hidden_gap": -0.05451509356498718,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05452899634838104,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "new_announcements": 0,
+        "real_gap": -0.05381772667169571,
+        "hidden_gap": -0.05381772667169571,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05381772667169571,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "new_announcements": 0,
+        "real_gap": -0.057433195412158966,
+        "hidden_gap": -0.057433195412158966,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.057433195412158966,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "new_announcements": 1,
+        "real_gap": -0.057867929339408875,
+        "hidden_gap": -0.058054447174072266,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05806109309196472,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "new_announcements": 0,
+        "real_gap": -0.04619202762842178,
+        "hidden_gap": -0.04619202762842178,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04619202762842178,
+        "restored_action": 0
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "hidden": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "restored": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      }
+    }
+  },
+  {
+    "seed": 100,
+    "phase": "test",
+    "stock": "2603",
+    "weights_sha256": "b19a6a41fa2c9c5a74b7c18f6fbc68c5b8907e8613b68c7d51b511c3f6637fbe",
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "new_announcements": 0,
+        "real_gap": -0.0677981972694397,
+        "hidden_gap": -0.0677981972694397,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0677981972694397,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "new_announcements": 0,
+        "real_gap": -0.05144217610359192,
+        "hidden_gap": -0.05144217610359192,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05144217610359192,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-05",
+        "new_announcements": 0,
+        "real_gap": -0.07415743172168732,
+        "hidden_gap": -0.07415743172168732,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07415743172168732,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "new_announcements": 0,
+        "real_gap": -0.08118362724781036,
+        "hidden_gap": -0.08118362724781036,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08118362724781036,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "new_announcements": 0,
+        "real_gap": -0.08275528252124786,
+        "hidden_gap": -0.08275528252124786,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08275528252124786,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "new_announcements": 0,
+        "real_gap": -0.06794998794794083,
+        "hidden_gap": -0.06794998794794083,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06794998794794083,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "new_announcements": 0,
+        "real_gap": -0.06083749979734421,
+        "hidden_gap": -0.06083749979734421,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06083749979734421,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "new_announcements": 0,
+        "real_gap": -0.06288815289735794,
+        "hidden_gap": -0.06288815289735794,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06288815289735794,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-22",
+        "new_announcements": 0,
+        "real_gap": -0.07770103961229324,
+        "hidden_gap": -0.07770103961229324,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07770103961229324,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-23",
+        "new_announcements": 1,
+        "real_gap": -0.0919068306684494,
+        "hidden_gap": -0.08740035444498062,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0874003916978836,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-26",
+        "new_announcements": 1,
+        "real_gap": -0.12189461290836334,
+        "hidden_gap": -0.11654599010944366,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.11654596030712128,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-27",
+        "new_announcements": 0,
+        "real_gap": -0.13141882419586182,
+        "hidden_gap": -0.13141882419586182,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.13141882419586182,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-29",
+        "new_announcements": 0,
+        "real_gap": -0.14268815517425537,
+        "hidden_gap": -0.14268815517425537,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.14268815517425537,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-01",
+        "new_announcements": 1,
+        "real_gap": -0.14448893070220947,
+        "hidden_gap": -0.13898664712905884,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.13898666203022003,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-04",
+        "new_announcements": 0,
+        "real_gap": -0.24021749198436737,
+        "hidden_gap": -0.24021749198436737,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.24021749198436737,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-05",
+        "new_announcements": 0,
+        "real_gap": -0.2585226893424988,
+        "hidden_gap": -0.2585226893424988,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.2585226893424988,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-06",
+        "new_announcements": 3,
+        "real_gap": -0.26321274042129517,
+        "hidden_gap": -0.2448510080575943,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.244367778301239,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-07",
+        "new_announcements": 0,
+        "real_gap": -0.21104300022125244,
+        "hidden_gap": -0.21104300022125244,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.21104300022125244,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-08",
+        "new_announcements": 0,
+        "real_gap": -0.2330348789691925,
+        "hidden_gap": -0.2330348789691925,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.2330348789691925,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-11",
+        "new_announcements": 0,
+        "real_gap": -0.21868109703063965,
+        "hidden_gap": -0.21868109703063965,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.21868109703063965,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-12",
+        "new_announcements": 0,
+        "real_gap": -0.19601713120937347,
+        "hidden_gap": -0.19601713120937347,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.19601713120937347,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-13",
+        "new_announcements": 0,
+        "real_gap": -0.1695433408021927,
+        "hidden_gap": -0.1695433408021927,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.1695433408021927,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-14",
+        "new_announcements": 12,
+        "real_gap": -0.26211822032928467,
+        "hidden_gap": -0.22096598148345947,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.21822597086429596,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-15",
+        "new_announcements": 0,
+        "real_gap": -0.23859262466430664,
+        "hidden_gap": -0.23859262466430664,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.23859262466430664,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-18",
+        "new_announcements": 0,
+        "real_gap": -0.20899102091789246,
+        "hidden_gap": -0.20899102091789246,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.20899102091789246,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "new_announcements": 0,
+        "real_gap": -0.21278738975524902,
+        "hidden_gap": -0.21278738975524902,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.21278738975524902,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-20",
+        "new_announcements": 0,
+        "real_gap": -0.2431168407201767,
+        "hidden_gap": -0.2431168407201767,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.2431168407201767,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-21",
+        "new_announcements": 0,
+        "real_gap": -0.24279452860355377,
+        "hidden_gap": -0.24279452860355377,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.24279452860355377,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "new_announcements": 0,
+        "real_gap": -0.26812395453453064,
+        "hidden_gap": -0.26812395453453064,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.26812395453453064,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "new_announcements": 1,
+        "real_gap": -0.2690410017967224,
+        "hidden_gap": -0.26469582319259644,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.2645704746246338,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "new_announcements": 0,
+        "real_gap": -0.2572505474090576,
+        "hidden_gap": -0.2572505474090576,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.2572505474090576,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "new_announcements": 0,
+        "real_gap": -0.21516212821006775,
+        "hidden_gap": -0.21516212821006775,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.21516212821006775,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "new_announcements": 1,
+        "real_gap": -0.25658637285232544,
+        "hidden_gap": -0.25207364559173584,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.2519608736038208,
+        "restored_action": 0
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "hidden": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "restored": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      }
+    }
+  },
+  {
+    "seed": 100,
+    "phase": "test",
+    "stock": "2881",
+    "weights_sha256": "b19a6a41fa2c9c5a74b7c18f6fbc68c5b8907e8613b68c7d51b511c3f6637fbe",
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "new_announcements": 0,
+        "real_gap": -0.09312935173511505,
+        "hidden_gap": -0.09312935173511505,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.09312935173511505,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "new_announcements": 0,
+        "real_gap": -0.09745723009109497,
+        "hidden_gap": -0.09745723009109497,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.09745723009109497,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-05",
+        "new_announcements": 0,
+        "real_gap": -0.10539092123508453,
+        "hidden_gap": -0.10539092123508453,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.10539092123508453,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "new_announcements": 3,
+        "real_gap": -0.11021444946527481,
+        "hidden_gap": -0.10830237716436386,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.10801549255847931,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "new_announcements": 1,
+        "real_gap": -0.11688295751810074,
+        "hidden_gap": -0.1154387965798378,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.115321584045887,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "new_announcements": 0,
+        "real_gap": -0.1039590910077095,
+        "hidden_gap": -0.1039590910077095,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.1039590910077095,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "new_announcements": 1,
+        "real_gap": -0.0976991355419159,
+        "hidden_gap": -0.09635999798774719,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.09626759588718414,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "new_announcements": 1,
+        "real_gap": -0.09016524255275726,
+        "hidden_gap": -0.08830241858959198,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08819331228733063,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-22",
+        "new_announcements": 1,
+        "real_gap": -0.08470620214939117,
+        "hidden_gap": -0.08295835554599762,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08282841742038727,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-23",
+        "new_announcements": 0,
+        "real_gap": -0.07863964140415192,
+        "hidden_gap": -0.07863964140415192,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07863964140415192,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-26",
+        "new_announcements": 0,
+        "real_gap": -0.09531737864017487,
+        "hidden_gap": -0.09531737864017487,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.09531737864017487,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-27",
+        "new_announcements": 2,
+        "real_gap": -0.10117865353822708,
+        "hidden_gap": -0.09722086787223816,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.09699904918670654,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-29",
+        "new_announcements": 0,
+        "real_gap": -0.08415016531944275,
+        "hidden_gap": -0.08415016531944275,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08415016531944275,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-01",
+        "new_announcements": 0,
+        "real_gap": -0.06558394432067871,
+        "hidden_gap": -0.06558394432067871,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06558394432067871,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-04",
+        "new_announcements": 2,
+        "real_gap": -0.08173021674156189,
+        "hidden_gap": -0.07917480170726776,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07901632785797119,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-05",
+        "new_announcements": 0,
+        "real_gap": -0.0881270319223404,
+        "hidden_gap": -0.0881270319223404,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0881270319223404,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-06",
+        "new_announcements": 3,
+        "real_gap": -0.09963886439800262,
+        "hidden_gap": -0.09533949196338654,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.09499211609363556,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-07",
+        "new_announcements": 2,
+        "real_gap": -0.09633464366197586,
+        "hidden_gap": -0.09384329617023468,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.09355013817548752,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-08",
+        "new_announcements": 6,
+        "real_gap": -0.09068643301725388,
+        "hidden_gap": -0.08668603748083115,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08586238324642181,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-11",
+        "new_announcements": 1,
+        "real_gap": -0.07302437722682953,
+        "hidden_gap": -0.07261517643928528,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07250380516052246,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-12",
+        "new_announcements": 6,
+        "real_gap": -0.07444773614406586,
+        "hidden_gap": -0.07196272909641266,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07119570672512054,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-13",
+        "new_announcements": 10,
+        "real_gap": -0.07530957460403442,
+        "hidden_gap": -0.07282689213752747,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07082045078277588,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-14",
+        "new_announcements": 6,
+        "real_gap": -0.07583624124526978,
+        "hidden_gap": -0.07615117728710175,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0751219391822815,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-15",
+        "new_announcements": 1,
+        "real_gap": -0.06037047505378723,
+        "hidden_gap": -0.06080344319343567,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.060708895325660706,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-18",
+        "new_announcements": 1,
+        "real_gap": -0.0577051043510437,
+        "hidden_gap": -0.05827079713344574,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.058223724365234375,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "new_announcements": 1,
+        "real_gap": -0.07341109216213226,
+        "hidden_gap": -0.07354314625263214,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07348661124706268,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-20",
+        "new_announcements": 0,
+        "real_gap": -0.07124023139476776,
+        "hidden_gap": -0.07124023139476776,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07124023139476776,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-21",
+        "new_announcements": 3,
+        "real_gap": -0.0741807222366333,
+        "hidden_gap": -0.07282018661499023,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07262621819972992,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "new_announcements": 0,
+        "real_gap": -0.06317773461341858,
+        "hidden_gap": -0.06317773461341858,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06317773461341858,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "new_announcements": 0,
+        "real_gap": -0.06306600570678711,
+        "hidden_gap": -0.06306600570678711,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06306600570678711,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "new_announcements": 0,
+        "real_gap": -0.07210209965705872,
+        "hidden_gap": -0.07210209965705872,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07210209965705872,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "new_announcements": 1,
+        "real_gap": -0.08689919114112854,
+        "hidden_gap": -0.08575543761253357,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08570496737957001,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "new_announcements": 0,
+        "real_gap": -0.08543698489665985,
+        "hidden_gap": -0.08543698489665985,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08543698489665985,
+        "restored_action": 0
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "hidden": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "restored": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      }
+    }
+  },
+  {
+    "seed": 100,
+    "phase": "holdout",
+    "stock": "2330",
+    "weights_sha256": "b19a6a41fa2c9c5a74b7c18f6fbc68c5b8907e8613b68c7d51b511c3f6637fbe",
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "new_announcements": 0,
+        "real_gap": -0.03532562777400017,
+        "hidden_gap": -0.03532562777400017,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03532562777400017,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-02",
+        "new_announcements": 0,
+        "real_gap": -0.050067320466041565,
+        "hidden_gap": -0.050067320466041565,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.050067320466041565,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-03",
+        "new_announcements": 2,
+        "real_gap": -0.05353747308254242,
+        "hidden_gap": -0.05391214042901993,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0539347380399704,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-08",
+        "new_announcements": 5,
+        "real_gap": -0.0596148744225502,
+        "hidden_gap": -0.06012476980686188,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06017434597015381,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-09",
+        "new_announcements": 0,
+        "real_gap": -0.07951685786247253,
+        "hidden_gap": -0.07951685786247253,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07951685786247253,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-10",
+        "new_announcements": 1,
+        "real_gap": -0.08016656339168549,
+        "hidden_gap": -0.0803411602973938,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08035615086555481,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-11",
+        "new_announcements": 1,
+        "real_gap": -0.07985126972198486,
+        "hidden_gap": -0.08001582324504852,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08003604412078857,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-12",
+        "new_announcements": 2,
+        "real_gap": -0.0839034765958786,
+        "hidden_gap": -0.08422286063432693,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08426208794116974,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-15",
+        "new_announcements": 0,
+        "real_gap": -0.07571407407522202,
+        "hidden_gap": -0.07571407407522202,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07571407407522202,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-16",
+        "new_announcements": 1,
+        "real_gap": -0.0572127103805542,
+        "hidden_gap": -0.057349108159542084,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05737359821796417,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-17",
+        "new_announcements": 1,
+        "real_gap": -0.06716856360435486,
+        "hidden_gap": -0.06732065975666046,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06735235452651978,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-18",
+        "new_announcements": 4,
+        "real_gap": -0.0679931715130806,
+        "hidden_gap": -0.06871973723173141,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06890310347080231,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-19",
+        "new_announcements": 1,
+        "real_gap": -0.06567175686359406,
+        "hidden_gap": -0.0658583790063858,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06596575677394867,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-22",
+        "new_announcements": 1,
+        "real_gap": -0.0616864413022995,
+        "hidden_gap": -0.06186822056770325,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06193564459681511,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-23",
+        "new_announcements": 1,
+        "real_gap": -0.06725028157234192,
+        "hidden_gap": -0.06741225719451904,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06748148798942566,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-24",
+        "new_announcements": 2,
+        "real_gap": -0.06745408475399017,
+        "hidden_gap": -0.06777919828891754,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06792649626731873,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-25",
+        "new_announcements": 0,
+        "real_gap": -0.05893290415406227,
+        "hidden_gap": -0.05893290415406227,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05893290415406227,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-26",
+        "new_announcements": 1,
+        "real_gap": -0.07334674894809723,
+        "hidden_gap": -0.07352766394615173,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07359461486339569,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-29",
+        "new_announcements": 0,
+        "real_gap": -0.08456845581531525,
+        "hidden_gap": -0.08456845581531525,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08456845581531525,
+        "restored_action": 0
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "hidden": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "restored": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      }
+    }
+  },
+  {
+    "seed": 100,
+    "phase": "holdout",
+    "stock": "2603",
+    "weights_sha256": "b19a6a41fa2c9c5a74b7c18f6fbc68c5b8907e8613b68c7d51b511c3f6637fbe",
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "new_announcements": 0,
+        "real_gap": -0.3155750036239624,
+        "hidden_gap": -0.3155750036239624,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.3155750036239624,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-02",
+        "new_announcements": 0,
+        "real_gap": -0.2944868206977844,
+        "hidden_gap": -0.2944868206977844,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.2944868206977844,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-03",
+        "new_announcements": 0,
+        "real_gap": -0.26996681094169617,
+        "hidden_gap": -0.26996681094169617,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.26996681094169617,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-08",
+        "new_announcements": 0,
+        "real_gap": -0.19932886958122253,
+        "hidden_gap": -0.19932886958122253,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.19932886958122253,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-09",
+        "new_announcements": 0,
+        "real_gap": -0.14932751655578613,
+        "hidden_gap": -0.14932751655578613,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.14932751655578613,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-10",
+        "new_announcements": 0,
+        "real_gap": -0.13794225454330444,
+        "hidden_gap": -0.13794225454330444,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.13794225454330444,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-11",
+        "new_announcements": 0,
+        "real_gap": -0.1260318160057068,
+        "hidden_gap": -0.1260318160057068,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.1260318160057068,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-12",
+        "new_announcements": 0,
+        "real_gap": -0.10931161046028137,
+        "hidden_gap": -0.10931161046028137,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.10931161046028137,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-15",
+        "new_announcements": 1,
+        "real_gap": -0.11046623438596725,
+        "hidden_gap": -0.10619167238473892,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.10612563788890839,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-16",
+        "new_announcements": 0,
+        "real_gap": -0.12571510672569275,
+        "hidden_gap": -0.12571510672569275,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.12571510672569275,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-17",
+        "new_announcements": 0,
+        "real_gap": -0.11593012511730194,
+        "hidden_gap": -0.11593012511730194,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.11593012511730194,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-18",
+        "new_announcements": 0,
+        "real_gap": -0.12288127839565277,
+        "hidden_gap": -0.12288127839565277,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.12288127839565277,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-19",
+        "new_announcements": 0,
+        "real_gap": -0.06192640960216522,
+        "hidden_gap": -0.06192640960216522,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06192640960216522,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-22",
+        "new_announcements": 0,
+        "real_gap": -0.052414894104003906,
+        "hidden_gap": -0.052414894104003906,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.052414894104003906,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-23",
+        "new_announcements": 1,
+        "real_gap": -0.05429909750819206,
+        "hidden_gap": -0.05248254910111427,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.052428897470235825,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-24",
+        "new_announcements": 0,
+        "real_gap": -0.09196002781391144,
+        "hidden_gap": -0.09196002781391144,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.09196002781391144,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-25",
+        "new_announcements": 0,
+        "real_gap": -0.08774133026599884,
+        "hidden_gap": -0.08774133026599884,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08774133026599884,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-26",
+        "new_announcements": 0,
+        "real_gap": -0.12077147513628006,
+        "hidden_gap": -0.12077147513628006,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.12077147513628006,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-29",
+        "new_announcements": 0,
+        "real_gap": -0.15047335624694824,
+        "hidden_gap": -0.15047335624694824,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.15047335624694824,
+        "restored_action": 0
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "hidden": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "restored": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      }
+    }
+  },
+  {
+    "seed": 100,
+    "phase": "holdout",
+    "stock": "2881",
+    "weights_sha256": "b19a6a41fa2c9c5a74b7c18f6fbc68c5b8907e8613b68c7d51b511c3f6637fbe",
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "new_announcements": 0,
+        "real_gap": -0.07832688093185425,
+        "hidden_gap": -0.07832688093185425,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07832688093185425,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-02",
+        "new_announcements": 1,
+        "real_gap": -0.07773330807685852,
+        "hidden_gap": -0.07709036767482758,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07705838978290558,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-03",
+        "new_announcements": 1,
+        "real_gap": -0.07709018886089325,
+        "hidden_gap": -0.07645821571350098,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07641814649105072,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-08",
+        "new_announcements": 0,
+        "real_gap": -0.07320193946361542,
+        "hidden_gap": -0.07320193946361542,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07320193946361542,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-09",
+        "new_announcements": 1,
+        "real_gap": -0.08247630298137665,
+        "hidden_gap": -0.08172991871833801,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08169262111186981,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-10",
+        "new_announcements": 1,
+        "real_gap": -0.08657778799533844,
+        "hidden_gap": -0.08577032387256622,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08572007715702057,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-11",
+        "new_announcements": 5,
+        "real_gap": -0.09133611619472504,
+        "hidden_gap": -0.08984449505805969,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08964419364929199,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-12",
+        "new_announcements": 2,
+        "real_gap": -0.08739908039569855,
+        "hidden_gap": -0.08719468116760254,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08711719512939453,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-15",
+        "new_announcements": 0,
+        "real_gap": -0.0806245505809784,
+        "hidden_gap": -0.0806245505809784,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0806245505809784,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-16",
+        "new_announcements": 1,
+        "real_gap": -0.06498882174491882,
+        "hidden_gap": -0.06490126252174377,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06488922238349915,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-17",
+        "new_announcements": 0,
+        "real_gap": -0.07009997963905334,
+        "hidden_gap": -0.07009997963905334,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07009997963905334,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-18",
+        "new_announcements": 2,
+        "real_gap": -0.07211951911449432,
+        "hidden_gap": -0.07206495106220245,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07206322252750397,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-19",
+        "new_announcements": 2,
+        "real_gap": -0.06343123316764832,
+        "hidden_gap": -0.06392253935337067,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06397303938865662,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-22",
+        "new_announcements": 5,
+        "real_gap": -0.06475512683391571,
+        "hidden_gap": -0.06628002226352692,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06640742719173431,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-23",
+        "new_announcements": 9,
+        "real_gap": -0.07215917110443115,
+        "hidden_gap": -0.07587772607803345,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07651521265506744,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-24",
+        "new_announcements": 12,
+        "real_gap": -0.07913456857204437,
+        "hidden_gap": -0.0836833119392395,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08628496527671814,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-25",
+        "new_announcements": 12,
+        "real_gap": -0.07968179881572723,
+        "hidden_gap": -0.0864909440279007,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08980993926525116,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-26",
+        "new_announcements": 2,
+        "real_gap": -0.10944753885269165,
+        "hidden_gap": -0.1105470210313797,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.11082269251346588,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-29",
+        "new_announcements": 1,
+        "real_gap": -0.12345312535762787,
+        "hidden_gap": -0.12380754947662354,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.12382639944553375,
+        "restored_action": 0
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "hidden": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "restored": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      }
+    }
+  },
+  {
+    "seed": 2024,
+    "phase": "test",
+    "stock": "2330",
+    "weights_sha256": "a7b2a9c82a07848cd15b085c1720afcfc5e6a5f825e69f9e01d3a8981ddf508f",
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "new_announcements": 0,
+        "real_gap": -0.020147576928138733,
+        "hidden_gap": -0.020147576928138733,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.020147576928138733,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "new_announcements": 1,
+        "real_gap": -0.007278382778167725,
+        "hidden_gap": -0.006358131766319275,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.006343767046928406,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-05",
+        "new_announcements": 2,
+        "real_gap": -0.030239254236221313,
+        "hidden_gap": -0.0278170108795166,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.02776758372783661,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "new_announcements": 17,
+        "real_gap": -0.04688765108585358,
+        "hidden_gap": -0.04571367800235748,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04476003348827362,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "new_announcements": 0,
+        "real_gap": -0.04615902900695801,
+        "hidden_gap": -0.04615902900695801,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04615902900695801,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "new_announcements": 1,
+        "real_gap": -0.043350815773010254,
+        "hidden_gap": -0.041999608278274536,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04196688532829285,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "new_announcements": 0,
+        "real_gap": -0.0407935231924057,
+        "hidden_gap": -0.0407935231924057,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0407935231924057,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "new_announcements": 2,
+        "real_gap": -0.04030813276767731,
+        "hidden_gap": -0.038598671555519104,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.038541316986083984,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-22",
+        "new_announcements": 1,
+        "real_gap": -0.0367758572101593,
+        "hidden_gap": -0.0358140766620636,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03578294813632965,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-23",
+        "new_announcements": 1,
+        "real_gap": -0.03719398379325867,
+        "hidden_gap": -0.03623083233833313,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03619585931301117,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-26",
+        "new_announcements": 0,
+        "real_gap": -0.04575242102146149,
+        "hidden_gap": -0.04575242102146149,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04575242102146149,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-27",
+        "new_announcements": 2,
+        "real_gap": -0.050399720668792725,
+        "hidden_gap": -0.04864130914211273,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.048573050647974014,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-29",
+        "new_announcements": 5,
+        "real_gap": -0.05317386984825134,
+        "hidden_gap": -0.04995302855968475,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.049775391817092896,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-01",
+        "new_announcements": 2,
+        "real_gap": -0.05057184025645256,
+        "hidden_gap": -0.049268871545791626,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04919988289475441,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-04",
+        "new_announcements": 0,
+        "real_gap": -0.05814942717552185,
+        "hidden_gap": -0.05814942717552185,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05814942717552185,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-05",
+        "new_announcements": 1,
+        "real_gap": -0.05885915458202362,
+        "hidden_gap": -0.0571194589138031,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05707636475563049,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-06",
+        "new_announcements": 1,
+        "real_gap": -0.05447222292423248,
+        "hidden_gap": -0.05285021662712097,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05280669033527374,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-07",
+        "new_announcements": 0,
+        "real_gap": -0.043338239192962646,
+        "hidden_gap": -0.043338239192962646,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.043338239192962646,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-08",
+        "new_announcements": 1,
+        "real_gap": -0.03984841704368591,
+        "hidden_gap": -0.03824341297149658,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.038206636905670166,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-11",
+        "new_announcements": 2,
+        "real_gap": -0.03668566048145294,
+        "hidden_gap": -0.03373536467552185,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.033674512058496475,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-12",
+        "new_announcements": 0,
+        "real_gap": -0.03132452070713043,
+        "hidden_gap": -0.03132452070713043,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03132452070713043,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-13",
+        "new_announcements": 0,
+        "real_gap": -0.03214642405509949,
+        "hidden_gap": -0.03214642405509949,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03214642405509949,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-14",
+        "new_announcements": 0,
+        "real_gap": -0.03943929076194763,
+        "hidden_gap": -0.03943929076194763,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03943929076194763,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-15",
+        "new_announcements": 1,
+        "real_gap": -0.04848799109458923,
+        "hidden_gap": -0.04792147874832153,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04788908362388611,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-18",
+        "new_announcements": 0,
+        "real_gap": -0.051445573568344116,
+        "hidden_gap": -0.051445573568344116,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.051445573568344116,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "new_announcements": 0,
+        "real_gap": -0.05302557349205017,
+        "hidden_gap": -0.05302557349205017,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05302557349205017,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-20",
+        "new_announcements": 0,
+        "real_gap": -0.05791270732879639,
+        "hidden_gap": -0.05791270732879639,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05791270732879639,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-21",
+        "new_announcements": 0,
+        "real_gap": -0.06409263610839844,
+        "hidden_gap": -0.06409263610839844,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06409263610839844,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "new_announcements": 2,
+        "real_gap": -0.07106272876262665,
+        "hidden_gap": -0.06973794102668762,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06967814266681671,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "new_announcements": 0,
+        "real_gap": -0.06601549685001373,
+        "hidden_gap": -0.06601549685001373,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06601549685001373,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "new_announcements": 0,
+        "real_gap": -0.06212592124938965,
+        "hidden_gap": -0.06212592124938965,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06212592124938965,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "new_announcements": 1,
+        "real_gap": -0.06007533520460129,
+        "hidden_gap": -0.05939163267612457,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0593782514333725,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "new_announcements": 0,
+        "real_gap": -0.05514580383896828,
+        "hidden_gap": -0.05514580383896828,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05514580383896828,
+        "restored_action": 0
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "hidden": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "restored": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      }
+    }
+  },
+  {
+    "seed": 2024,
+    "phase": "test",
+    "stock": "2603",
+    "weights_sha256": "a7b2a9c82a07848cd15b085c1720afcfc5e6a5f825e69f9e01d3a8981ddf508f",
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "new_announcements": 0,
+        "real_gap": 0.020982548594474792,
+        "hidden_gap": 0.020982548594474792,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.020982548594474792,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-02",
+        "new_announcements": 0,
+        "real_gap": 0.024281322956085205,
+        "hidden_gap": 0.024281322956085205,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.024281322956085205,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-05",
+        "new_announcements": 0,
+        "real_gap": 0.0156545490026474,
+        "hidden_gap": 0.0156545490026474,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.0156545490026474,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-15",
+        "new_announcements": 0,
+        "real_gap": 0.022694095969200134,
+        "hidden_gap": 0.022694095969200134,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.022694095969200134,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-16",
+        "new_announcements": 0,
+        "real_gap": 0.018074825406074524,
+        "hidden_gap": 0.018074825406074524,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.018074825406074524,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-19",
+        "new_announcements": 0,
+        "real_gap": 0.01135098934173584,
+        "hidden_gap": 0.01135098934173584,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.01135098934173584,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-20",
+        "new_announcements": 0,
+        "real_gap": 0.022134587168693542,
+        "hidden_gap": 0.022134587168693542,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.022134587168693542,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-21",
+        "new_announcements": 0,
+        "real_gap": 0.03998929262161255,
+        "hidden_gap": 0.03998929262161255,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.03998929262161255,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-22",
+        "new_announcements": 0,
+        "real_gap": 0.0596880167722702,
+        "hidden_gap": 0.0596880167722702,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.0596880167722702,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-23",
+        "new_announcements": 1,
+        "real_gap": 0.07133601605892181,
+        "hidden_gap": 0.0707167536020279,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.07071679830551147,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-26",
+        "new_announcements": 1,
+        "real_gap": 0.05862259864807129,
+        "hidden_gap": 0.057784318923950195,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.057784304022789,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-27",
+        "new_announcements": 0,
+        "real_gap": 0.05168338119983673,
+        "hidden_gap": 0.05168338119983673,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.05168338119983673,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-02-29",
+        "new_announcements": 0,
+        "real_gap": 0.043644145131111145,
+        "hidden_gap": 0.043644145131111145,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.043644145131111145,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-01",
+        "new_announcements": 1,
+        "real_gap": 0.04842710494995117,
+        "hidden_gap": 0.0473436564207077,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.0473436564207077,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-04",
+        "new_announcements": 0,
+        "real_gap": 0.04748237133026123,
+        "hidden_gap": 0.04748237133026123,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.04748237133026123,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-05",
+        "new_announcements": 0,
+        "real_gap": 0.046878039836883545,
+        "hidden_gap": 0.046878039836883545,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.046878039836883545,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-06",
+        "new_announcements": 3,
+        "real_gap": 0.057437166571617126,
+        "hidden_gap": 0.05546271800994873,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.05548816919326782,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-07",
+        "new_announcements": 0,
+        "real_gap": 0.06928440928459167,
+        "hidden_gap": 0.06928440928459167,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06928440928459167,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-08",
+        "new_announcements": 0,
+        "real_gap": 0.06944477558135986,
+        "hidden_gap": 0.06944477558135986,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06944477558135986,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-11",
+        "new_announcements": 0,
+        "real_gap": 0.06326940655708313,
+        "hidden_gap": 0.06326940655708313,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06326940655708313,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-12",
+        "new_announcements": 0,
+        "real_gap": 0.06153833866119385,
+        "hidden_gap": 0.06153833866119385,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06153833866119385,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-13",
+        "new_announcements": 0,
+        "real_gap": 0.05743156373500824,
+        "hidden_gap": 0.05743156373500824,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.05743156373500824,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-14",
+        "new_announcements": 12,
+        "real_gap": 0.04589185118675232,
+        "hidden_gap": 0.0413203239440918,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.04189009964466095,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-15",
+        "new_announcements": 0,
+        "real_gap": 0.029940754175186157,
+        "hidden_gap": 0.029940754175186157,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.029940754175186157,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-18",
+        "new_announcements": 0,
+        "real_gap": 0.028871595859527588,
+        "hidden_gap": 0.028871595859527588,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.028871595859527588,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-19",
+        "new_announcements": 0,
+        "real_gap": 0.018816307187080383,
+        "hidden_gap": 0.018816307187080383,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.018816307187080383,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-20",
+        "new_announcements": 0,
+        "real_gap": 0.011063233017921448,
+        "hidden_gap": 0.011063233017921448,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.011063233017921448,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-21",
+        "new_announcements": 0,
+        "real_gap": 0.01885199546813965,
+        "hidden_gap": 0.01885199546813965,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.01885199546813965,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-22",
+        "new_announcements": 0,
+        "real_gap": 0.016934797167778015,
+        "hidden_gap": 0.016934797167778015,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.016934797167778015,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-25",
+        "new_announcements": 1,
+        "real_gap": 0.027413204312324524,
+        "hidden_gap": 0.02576032280921936,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.025791913270950317,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-26",
+        "new_announcements": 0,
+        "real_gap": 0.0358038991689682,
+        "hidden_gap": 0.0358038991689682,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.0358038991689682,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-27",
+        "new_announcements": 0,
+        "real_gap": 0.03758552670478821,
+        "hidden_gap": 0.03758552670478821,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.03758552670478821,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-03-28",
+        "new_announcements": 1,
+        "real_gap": 0.05164623260498047,
+        "hidden_gap": 0.05023074150085449,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.05026385188102722,
+        "restored_action": 1
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.11537131193421013,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924339,
+          "tax": 0.0,
+          "slippage": 499.3232035984428
+        }
+      },
+      "hidden": {
+        "net_return": 0.11537131193421013,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924339,
+          "tax": 0.0,
+          "slippage": 499.3232035984428
+        }
+      },
+      "restored": {
+        "net_return": 0.11537131193421013,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924339,
+          "tax": 0.0,
+          "slippage": 499.3232035984428
+        }
+      }
+    }
+  },
+  {
+    "seed": 2024,
+    "phase": "test",
+    "stock": "2881",
+    "weights_sha256": "a7b2a9c82a07848cd15b085c1720afcfc5e6a5f825e69f9e01d3a8981ddf508f",
+    "decisions": [
+      {
+        "date": "2024-02-01",
+        "new_announcements": 0,
+        "real_gap": -0.126906156539917,
+        "hidden_gap": -0.126906156539917,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.126906156539917,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-02",
+        "new_announcements": 0,
+        "real_gap": -0.10483508557081223,
+        "hidden_gap": -0.10483508557081223,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.10483508557081223,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-05",
+        "new_announcements": 0,
+        "real_gap": -0.09367717057466507,
+        "hidden_gap": -0.09367717057466507,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.09367717057466507,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-15",
+        "new_announcements": 3,
+        "real_gap": -0.07235896587371826,
+        "hidden_gap": -0.07309500873088837,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07311011105775833,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-16",
+        "new_announcements": 1,
+        "real_gap": -0.06674403697252274,
+        "hidden_gap": -0.06663164496421814,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06667351722717285,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-19",
+        "new_announcements": 0,
+        "real_gap": -0.0622418075799942,
+        "hidden_gap": -0.0622418075799942,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0622418075799942,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-20",
+        "new_announcements": 1,
+        "real_gap": -0.06975331157445908,
+        "hidden_gap": -0.06949833035469055,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06952177733182907,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-21",
+        "new_announcements": 1,
+        "real_gap": -0.07153290510177612,
+        "hidden_gap": -0.0711730495095253,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07121535390615463,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-22",
+        "new_announcements": 1,
+        "real_gap": -0.06277550756931305,
+        "hidden_gap": -0.06260183453559875,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06266415119171143,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-23",
+        "new_announcements": 0,
+        "real_gap": -0.053157538175582886,
+        "hidden_gap": -0.053157538175582886,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.053157538175582886,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-26",
+        "new_announcements": 0,
+        "real_gap": -0.061878710985183716,
+        "hidden_gap": -0.061878710985183716,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.061878710985183716,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-27",
+        "new_announcements": 2,
+        "real_gap": -0.06399592757225037,
+        "hidden_gap": -0.06413107365369797,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0641859844326973,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-02-29",
+        "new_announcements": 0,
+        "real_gap": -0.08541824668645859,
+        "hidden_gap": -0.08541824668645859,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08541824668645859,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-01",
+        "new_announcements": 0,
+        "real_gap": -0.07671186327934265,
+        "hidden_gap": -0.07671186327934265,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07671186327934265,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-04",
+        "new_announcements": 2,
+        "real_gap": -0.07455643266439438,
+        "hidden_gap": -0.07570646703243256,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07575830817222595,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-05",
+        "new_announcements": 0,
+        "real_gap": -0.06669849902391434,
+        "hidden_gap": -0.06669849902391434,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06669849902391434,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-06",
+        "new_announcements": 3,
+        "real_gap": -0.052707597613334656,
+        "hidden_gap": -0.05409315973520279,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05423315614461899,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-07",
+        "new_announcements": 2,
+        "real_gap": -0.059586554765701294,
+        "hidden_gap": -0.0599009245634079,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06004182994365692,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-08",
+        "new_announcements": 6,
+        "real_gap": -0.08392331004142761,
+        "hidden_gap": -0.08163578063249588,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08211379498243332,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-11",
+        "new_announcements": 1,
+        "real_gap": -0.0757116824388504,
+        "hidden_gap": -0.07553496956825256,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07561561465263367,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-12",
+        "new_announcements": 6,
+        "real_gap": -0.08051866292953491,
+        "hidden_gap": -0.07958546280860901,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08008548617362976,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-13",
+        "new_announcements": 10,
+        "real_gap": -0.09742790460586548,
+        "hidden_gap": -0.09520184993743896,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.09686174988746643,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-14",
+        "new_announcements": 6,
+        "real_gap": -0.12650099396705627,
+        "hidden_gap": -0.1229119598865509,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.12380889803171158,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-15",
+        "new_announcements": 1,
+        "real_gap": -0.14923882484436035,
+        "hidden_gap": -0.14890947937965393,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.14899829030036926,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-18",
+        "new_announcements": 1,
+        "real_gap": -0.14572836458683014,
+        "hidden_gap": -0.14573422074317932,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.145740807056427,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-19",
+        "new_announcements": 1,
+        "real_gap": -0.14774811267852783,
+        "hidden_gap": -0.1477845013141632,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.14778560400009155,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-20",
+        "new_announcements": 0,
+        "real_gap": -0.14345106482505798,
+        "hidden_gap": -0.14345106482505798,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.14345106482505798,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-21",
+        "new_announcements": 3,
+        "real_gap": -0.1398608684539795,
+        "hidden_gap": -0.1400676667690277,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.1400570571422577,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-22",
+        "new_announcements": 0,
+        "real_gap": -0.13492834568023682,
+        "hidden_gap": -0.13492834568023682,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.13492834568023682,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-25",
+        "new_announcements": 0,
+        "real_gap": -0.11450766772031784,
+        "hidden_gap": -0.11450766772031784,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.11450766772031784,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-26",
+        "new_announcements": 0,
+        "real_gap": -0.12173348665237427,
+        "hidden_gap": -0.12173348665237427,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.12173348665237427,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-27",
+        "new_announcements": 1,
+        "real_gap": -0.12226264923810959,
+        "hidden_gap": -0.12222014367580414,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.12222062051296234,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-03-28",
+        "new_announcements": 0,
+        "real_gap": -0.10234899818897247,
+        "hidden_gap": -0.10234899818897247,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.10234899818897247,
+        "restored_action": 0
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "hidden": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "restored": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      }
+    }
+  },
+  {
+    "seed": 2024,
+    "phase": "holdout",
+    "stock": "2330",
+    "weights_sha256": "a7b2a9c82a07848cd15b085c1720afcfc5e6a5f825e69f9e01d3a8981ddf508f",
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "new_announcements": 0,
+        "real_gap": -0.05733815208077431,
+        "hidden_gap": -0.05733815208077431,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05733815208077431,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-02",
+        "new_announcements": 0,
+        "real_gap": -0.059399716556072235,
+        "hidden_gap": -0.059399716556072235,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.059399716556072235,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-03",
+        "new_announcements": 2,
+        "real_gap": -0.055924635380506516,
+        "hidden_gap": -0.05487744137644768,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05485927313566208,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-08",
+        "new_announcements": 5,
+        "real_gap": -0.050978586077690125,
+        "hidden_gap": -0.05017731711268425,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05013945698738098,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-09",
+        "new_announcements": 0,
+        "real_gap": -0.047569625079631805,
+        "hidden_gap": -0.047569625079631805,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.047569625079631805,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-10",
+        "new_announcements": 1,
+        "real_gap": -0.03953932225704193,
+        "hidden_gap": -0.038861051201820374,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03884902596473694,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-11",
+        "new_announcements": 1,
+        "real_gap": -0.04268048703670502,
+        "hidden_gap": -0.04162459075450897,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04160861670970917,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-12",
+        "new_announcements": 2,
+        "real_gap": -0.04579231142997742,
+        "hidden_gap": -0.04464639723300934,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04461720585823059,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-15",
+        "new_announcements": 0,
+        "real_gap": -0.041420310735702515,
+        "hidden_gap": -0.041420310735702515,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.041420310735702515,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-16",
+        "new_announcements": 1,
+        "real_gap": -0.03911575675010681,
+        "hidden_gap": -0.03873857855796814,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.03872179985046387,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-17",
+        "new_announcements": 1,
+        "real_gap": -0.03403443098068237,
+        "hidden_gap": -0.033638522028923035,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.033627867698669434,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-18",
+        "new_announcements": 4,
+        "real_gap": -0.0295870378613472,
+        "hidden_gap": -0.028178006410598755,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0281449556350708,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-19",
+        "new_announcements": 1,
+        "real_gap": -0.031969696283340454,
+        "hidden_gap": -0.031623274087905884,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.031613677740097046,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-22",
+        "new_announcements": 1,
+        "real_gap": -0.04059596359729767,
+        "hidden_gap": -0.040218815207481384,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04020729660987854,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-23",
+        "new_announcements": 1,
+        "real_gap": -0.049835026264190674,
+        "hidden_gap": -0.04928138852119446,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04927164316177368,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-24",
+        "new_announcements": 2,
+        "real_gap": -0.0543668270111084,
+        "hidden_gap": -0.05315794050693512,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05313436686992645,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-25",
+        "new_announcements": 0,
+        "real_gap": -0.06111060082912445,
+        "hidden_gap": -0.06111060082912445,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06111060082912445,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-26",
+        "new_announcements": 1,
+        "real_gap": -0.06869691610336304,
+        "hidden_gap": -0.06806790828704834,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06805270910263062,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-29",
+        "new_announcements": 0,
+        "real_gap": -0.0671539157629013,
+        "hidden_gap": -0.0671539157629013,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0671539157629013,
+        "restored_action": 0
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "hidden": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "restored": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      }
+    }
+  },
+  {
+    "seed": 2024,
+    "phase": "holdout",
+    "stock": "2603",
+    "weights_sha256": "a7b2a9c82a07848cd15b085c1720afcfc5e6a5f825e69f9e01d3a8981ddf508f",
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "new_announcements": 0,
+        "real_gap": 0.06466633081436157,
+        "hidden_gap": 0.06466633081436157,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.06466633081436157,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-02",
+        "new_announcements": 0,
+        "real_gap": 0.04697936773300171,
+        "hidden_gap": 0.04697936773300171,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.04697936773300171,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-03",
+        "new_announcements": 0,
+        "real_gap": 0.04063081741333008,
+        "hidden_gap": 0.04063081741333008,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.04063081741333008,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-08",
+        "new_announcements": 0,
+        "real_gap": 0.03364869952201843,
+        "hidden_gap": 0.03364869952201843,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.03364869952201843,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-09",
+        "new_announcements": 0,
+        "real_gap": 0.03206354379653931,
+        "hidden_gap": 0.03206354379653931,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.03206354379653931,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-10",
+        "new_announcements": 0,
+        "real_gap": 0.039403364062309265,
+        "hidden_gap": 0.039403364062309265,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.039403364062309265,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-11",
+        "new_announcements": 0,
+        "real_gap": 0.03501245379447937,
+        "hidden_gap": 0.03501245379447937,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.03501245379447937,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-12",
+        "new_announcements": 0,
+        "real_gap": 0.04390886425971985,
+        "hidden_gap": 0.04390886425971985,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.04390886425971985,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-15",
+        "new_announcements": 1,
+        "real_gap": 0.05586691200733185,
+        "hidden_gap": 0.05474688112735748,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.054776906967163086,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-16",
+        "new_announcements": 0,
+        "real_gap": 0.04998813569545746,
+        "hidden_gap": 0.04998813569545746,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.04998813569545746,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-17",
+        "new_announcements": 0,
+        "real_gap": 0.05064070224761963,
+        "hidden_gap": 0.05064070224761963,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.05064070224761963,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-18",
+        "new_announcements": 0,
+        "real_gap": 0.050314322113990784,
+        "hidden_gap": 0.050314322113990784,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.050314322113990784,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-19",
+        "new_announcements": 0,
+        "real_gap": 0.0719645619392395,
+        "hidden_gap": 0.0719645619392395,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.0719645619392395,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-22",
+        "new_announcements": 0,
+        "real_gap": 0.07154443860054016,
+        "hidden_gap": 0.07154443860054016,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.07154443860054016,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-23",
+        "new_announcements": 1,
+        "real_gap": 0.05491466820240021,
+        "hidden_gap": 0.05446763336658478,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.054488539695739746,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-24",
+        "new_announcements": 0,
+        "real_gap": 0.03996895253658295,
+        "hidden_gap": 0.03996895253658295,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.03996895253658295,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-25",
+        "new_announcements": 0,
+        "real_gap": 0.028645813465118408,
+        "hidden_gap": 0.028645813465118408,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.028645813465118408,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-26",
+        "new_announcements": 0,
+        "real_gap": 0.026435494422912598,
+        "hidden_gap": 0.026435494422912598,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.026435494422912598,
+        "restored_action": 1
+      },
+      {
+        "date": "2024-04-29",
+        "new_announcements": 0,
+        "real_gap": 0.022434771060943604,
+        "hidden_gap": 0.022434771060943604,
+        "real_action": 1,
+        "hidden_action": 1,
+        "restored_gap": 0.022434771060943604,
+        "restored_action": 1
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.1298119054556077,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924338,
+          "tax": 0.0,
+          "slippage": 499.3232035983393
+        }
+      },
+      "hidden": {
+        "net_return": 0.1298119054556077,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924338,
+          "tax": 0.0,
+          "slippage": 499.3232035983393
+        }
+      },
+      "restored": {
+        "net_return": 0.1298119054556077,
+        "executed_position_changes": 1,
+        "costs": {
+          "commission": 854.2695994924338,
+          "tax": 0.0,
+          "slippage": 499.3232035983393
+        }
+      }
+    }
+  },
+  {
+    "seed": 2024,
+    "phase": "holdout",
+    "stock": "2881",
+    "weights_sha256": "a7b2a9c82a07848cd15b085c1720afcfc5e6a5f825e69f9e01d3a8981ddf508f",
+    "decisions": [
+      {
+        "date": "2024-04-01",
+        "new_announcements": 0,
+        "real_gap": -0.09484034776687622,
+        "hidden_gap": -0.09484034776687622,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.09484034776687622,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-02",
+        "new_announcements": 1,
+        "real_gap": -0.08778958767652512,
+        "hidden_gap": -0.08760854601860046,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08760633319616318,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-03",
+        "new_announcements": 1,
+        "real_gap": -0.073499895632267,
+        "hidden_gap": -0.07335561513900757,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07334946095943451,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-08",
+        "new_announcements": 0,
+        "real_gap": -0.08119428157806396,
+        "hidden_gap": -0.08119428157806396,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.08119428157806396,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-09",
+        "new_announcements": 1,
+        "real_gap": -0.0945565477013588,
+        "hidden_gap": -0.09393969178199768,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.09392767399549484,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-10",
+        "new_announcements": 1,
+        "real_gap": -0.07892867922782898,
+        "hidden_gap": -0.07847383618354797,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.078459233045578,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-11",
+        "new_announcements": 5,
+        "real_gap": -0.0785445049405098,
+        "hidden_gap": -0.07703854888677597,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.07698092609643936,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-12",
+        "new_announcements": 2,
+        "real_gap": -0.06414485722780228,
+        "hidden_gap": -0.06400677561759949,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06400376558303833,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-15",
+        "new_announcements": 0,
+        "real_gap": -0.0510898232460022,
+        "hidden_gap": -0.0510898232460022,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0510898232460022,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-16",
+        "new_announcements": 1,
+        "real_gap": -0.02787017822265625,
+        "hidden_gap": -0.02777816355228424,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.027768045663833618,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-17",
+        "new_announcements": 0,
+        "real_gap": -0.012587860226631165,
+        "hidden_gap": -0.012587860226631165,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.012587860226631165,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-18",
+        "new_announcements": 2,
+        "real_gap": -0.01101943850517273,
+        "hidden_gap": -0.010812163352966309,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.010774582624435425,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-19",
+        "new_announcements": 2,
+        "real_gap": -0.010079830884933472,
+        "hidden_gap": -0.009769462049007416,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.009719841182231903,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-22",
+        "new_announcements": 5,
+        "real_gap": -0.02017488330602646,
+        "hidden_gap": -0.0192277655005455,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.019120067358016968,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-23",
+        "new_announcements": 9,
+        "real_gap": -0.028460286557674408,
+        "hidden_gap": -0.028165005147457123,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.027920864522457123,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-24",
+        "new_announcements": 12,
+        "real_gap": -0.04082884639501572,
+        "hidden_gap": -0.041265249252319336,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.04123159497976303,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-25",
+        "new_announcements": 12,
+        "real_gap": -0.05408715456724167,
+        "hidden_gap": -0.05332536995410919,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.05349549651145935,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-26",
+        "new_announcements": 2,
+        "real_gap": -0.06678682565689087,
+        "hidden_gap": -0.06613453477621078,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.06612256169319153,
+        "restored_action": 0
+      },
+      {
+        "date": "2024-04-29",
+        "new_announcements": 1,
+        "real_gap": -0.08868864923715591,
+        "hidden_gap": -0.08795148879289627,
+        "real_action": 0,
+        "hidden_action": 0,
+        "restored_gap": -0.0879325196146965,
+        "restored_action": 0
+      }
+    ],
+    "strategies": {
+      "real": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "hidden": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      },
+      "restored": {
+        "net_return": 0.0,
+        "executed_position_changes": 0,
+        "costs": {
+          "commission": 0.0,
+          "tax": 0.0,
+          "slippage": 0.0
+        }
+      }
+    }
+  }
+]

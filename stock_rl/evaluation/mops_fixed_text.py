@@ -91,7 +91,7 @@ def strategy_replays(model, sample, actual):
             for label, metrics in outcomes.items()}
 
 
-def run(cache, april, checkpoints=None, probe="text"):
+def prepare_inputs(cache, april, group):
     torch.set_num_threads(1)
     torch.use_deterministic_algorithms(True)
     protocol = json.loads((pilot.ROOT / "configs/v8_22_study.json").read_text())
@@ -106,7 +106,6 @@ def run(cache, april, checkpoints=None, probe="text"):
         raise RuntimeError("Verified BGE weights required")
     ledgers = pilot.build_mops_event_ledgers(pilot.load_mops_disclosures(pilot.MOPS_JSON), engine)
     groups = pilot.build_study_inputs(protocol, manifest, *ledgers)
-    group = {"text": "C", "timing": "B"}[probe]
     factual = groups[group]["inputs"]
     periods = {"test": (factual["test"], groups["D"]["inputs"]["test"])}
     if april:
@@ -114,15 +113,26 @@ def run(cache, april, checkpoints=None, probe="text"):
         inputs = pilot.build_april_holdout_inputs(protocol, {k: g["normalizer"] for k, g in groups.items()},
                                                   *ledgers, april)
         periods["holdout"] = inputs[group], inputs["D"]
+    return protocol, factual, periods
+
+
+def weights_digest(model):
+    digest = hashlib.sha256()
+    for key, value in sorted(model.state_dict().items()):
+        digest.update(key.encode() + b"\0")
+        digest.update(value.detach().contiguous().numpy().tobytes())
+    return digest.hexdigest()
+
+
+def run(cache, april, checkpoints=None, probe="text"):
+    group = {"text": "C", "timing": "B"}[probe]
+    protocol, factual, periods = prepare_inputs(cache, april, group)
     reference = json.loads(pilot.RESULTS_JSON.read_text())["retrained_models"][group]
     result = []
     for seed in protocol["seeds"]:
         agent, epoch, _ = pilot.fit_seed(seed, protocol, factual)
         model = agent.online_model.cpu().eval()
-        digest = hashlib.sha256()
-        for key, value in sorted(model.state_dict().items()):
-            digest.update(key.encode() + b"\0")
-            digest.update(value.detach().contiguous().numpy().tobytes())
+        digest = weights_digest(model)
         if checkpoints:
             checkpoints.mkdir(parents=True, exist_ok=True)
             torch.save(model.state_dict(), checkpoints / f"group-{group.lower()}-seed-{seed}.pt")
@@ -137,7 +147,7 @@ def run(cache, april, checkpoints=None, probe="text"):
                            and actual["session_dates"] == expected["session_dates"]
                            and abs(actual["net_return"] - expected["net_return"]) < 1e-8)
                 result.append(dict(seed=seed, phase=phase, stock=stock, epoch=epoch,
-                                   weights_sha256=digest.hexdigest(), reproduces_v847=matches,
+                                   weights_sha256=digest, reproduces_v847=matches,
                                    decisions=rows))
                 if probe == "timing":
                     result[-1]["strategies"] = strategy_replays(model, real[stock], actual)
