@@ -41,6 +41,7 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+april_source_cache/
 nosetests.xml
 coverage.xml
 *.cover
