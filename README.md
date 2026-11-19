@@ -11,12 +11,15 @@
 | 市場與籌碼 | 2330、2603、2881；2023-06 至 2024-03 共 202 個交易日。含價量、法人、融資融券、產業與總體資料 | [市場資料](data/poc_real_data/)、[法人與融資融券消融實驗](docs/reports/v8_39_flow_margin_ablation.md) |
 | 2024-04 留出期 | 20 個交易日、19 個已實現報酬日。4 月 1 日首次決策，4 月 2–30 日評估凍結模型 | [實驗報告與重現指令](docs/reports/v8_40_april_holdout.md)、[逐股動作與權益](docs/results/v8_40_april_holdout.json)、[22 份來源回應的網址與雜湊](docs/evidence/april_market_sources.json) |
 | 均線與籌碼交互門檻 | 以決策日收盤與 20 日均價分組，分析 52 交易日（2–4 月）之持股與超額報酬 | [交互門檻實驗報告](docs/reports/v8_41_trend_institutional_interaction.md)、[分組結果](docs/results/v8_41_trend_interaction.json) |
+| 趨勢門檻架構實作 | 比較動作硬截斷、進場過濾與特徵動態遮罩三種 Trend Gate 策略架構 | [趨勢門檻實驗報告](docs/reports/v8_42_trend_gated_architecture.md)、[四月留出期結果](docs/results/v8_42_trend_gated_holdout.json) |
 | 官方公告 | 2024 Q1 三檔各一筆 MOPS 樣本，可核對申報時間與來源；台積電熊本案另有 SEC 申報證據。同一事件跨來源核對時須去重 | [MOPS 證據](docs/evidence/mops_three_stock_q1_sample.json)、[SEC 證據](data/official_disclosures/sec_2330_20240206_evidence.json) |
 | 探索性新聞 | 16 筆候選事件，訓練／驗證／測試為 10／3／3。文字實驗使用事後撰寫的摘要，替換成相同句子後，三個種子的測試動作皆相同 | [文字與時間敏感度](docs/reports/v8_37_text_sensitivity.md) |
 
 **重現範圍。** 四月的 GitHub 紀錄提供來源雜湊、模型雜湊、逐股結果與重跑指令。重跑需要取得相符的原始回應，並備妥或依報告重新訓練模型權重。公告申報時間與資料商首次可得時間屬於不同欄位；歷史供應商可得時間憑證仍為 0，正式新聞 PIT 回測尚待補足。
 
 **最新探索性分析。** [均線與籌碼交互門檻分析](docs/reports/v8_41_trend_institutional_interaction.md)：用決策日收盤與過去 20 個交易日均價（含當日）分組，檢驗 52 個評估交易日（二至四月）。結果顯示在「股價站在 20 日均線之上」時，加入法人買賣超在三個種子皆帶來穩定正超額報酬（平均 +4.89 pp）；而在「跌破 20 日均線」時，法人籌碼容易滯後殺跌而拖累報酬（平均 −2.91 pp）。長榮在站上均線後由法人籌碼鎖定主升段，是超額報酬的關鍵來源。
+
+**趨勢門檻架構實作。** [趨勢門檻架構分析](docs/reports/v8_42_trend_gated_architecture.md)：依上述規律實作三種 Gate 機制。實驗證實：動作端硬截斷（Strict Clamping）容易因均線邊界震盪而使手續費激增；而**輸入端特徵動態遮罩（Feature Masking Gate）**在破線時屏蔽恐慌籌碼信號，使種子 100 淨報酬達 +3.51%（全組最高）、種子 2024 自 +1.37% 回升至 +3.05%，是結合籌碼與技術指標的最穩健結構。
 
 ---
 
