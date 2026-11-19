@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PHASES = ("train", "validation", "test")
 
 
-def prepare_inputs(protocol, manifest, timing_events=None, *, include_event_text=False, omit_institutional=False, institutional_only=None):
+def prepare_inputs(protocol, manifest, timing_events=None, *, include_event_text=False, omit_institutional=False, institutional_only=None, trend_gated_flow=False):
     inputs = {phase: {} for phase in PHASES}
     calendar = pd.DatetimeIndex(pd.read_csv(
         Path(DATA_DIR) / "taiex.csv", usecols=["date"], parse_dates=["date"]
@@ -57,6 +57,17 @@ def prepare_inputs(protocol, manifest, timing_events=None, *, include_event_text
                 for batch in batches:
                     batch.institutional[..., omitted].zero_()
                     batch.institutional_missing_mask[..., omitted].fill_(True)
+            elif trend_gated_flow:
+                sma_all = prices.close.rolling(20, min_periods=1).mean()
+                for batch, timestamp in zip(batches, decisions):
+                    c_t = float(prices.close.loc[: timestamp.normalize()].iloc[-1])
+                    ma_t = float(sma_all.loc[: timestamp.normalize()].iloc[-1])
+                    if c_t >= ma_t:
+                        batch.institutional[..., 5:8].zero_()
+                        batch.institutional_missing_mask[..., 5:8].fill_(True)
+                    else:
+                        batch.institutional[..., :].zero_()
+                        batch.institutional_missing_mask[..., :].fill_(True)
             if timing_events is not None:
                 from stock_rl.evaluation.news_input_pilot import mask_event_inputs
                 timing_batches = [mask_event_inputs(batch, "M1") for batch in batches]
@@ -165,6 +176,7 @@ def main():
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--institutional-only", choices=["flow", "margin"])
     group.add_argument("--omit-institutional", action="store_true", help="ablate the entire I01-I08 block before fitting")
+    group.add_argument("--trend-gated-flow", action="store_true", help="dynamically gate flow to above-MA20 sessions during training")
     args = parser.parse_args()
     args.checkpoints.mkdir(parents=True, exist_ok=True)
     protocol = json.loads((ROOT / "configs/v8_22_study.json").read_text())
@@ -184,10 +196,13 @@ def main():
         raw_dataset_content_hash=input_hash,
     )
     inputs, normalizer = prepare_inputs(protocol, manifest, omit_institutional=args.omit_institutional,
-                                        institutional_only=args.institutional_only)
+                                        institutional_only=args.institutional_only,
+                                        trend_gated_flow=args.trend_gated_flow)
     method = "without_institutional" if args.omit_institutional else "m0"
     if args.institutional_only:
         method = f"{args.institutional_only}_only"
+    elif args.trend_gated_flow:
+        method = "trend_gated_flow"
     results = []
     baselines = {
         stock: {
@@ -209,6 +224,7 @@ def main():
             "raw_dataset_content_hash": input_hash,
             **({"institutional_only": args.institutional_only} if args.institutional_only else {}),
             **({"omitted_features": "I01-I08"} if args.omit_institutional else {}),
+            **({"trend_gated_flow": True} if args.trend_gated_flow else {}),
         }, args.checkpoints / f"{method}-seed-{seed}.pt")
         results.append({
             "seed": seed, "selected_epoch": epoch, "training": trace,
@@ -216,8 +232,9 @@ def main():
                      for stock, sample in inputs["test"].items()},
         })
     print(json.dumps({
-        "status": f"{method.upper()}_ESTIMATED_PILOT" if args.institutional_only else (
-            "NO_INSTITUTIONAL_ESTIMATED_PILOT" if args.omit_institutional else "M0_ESTIMATED_MARKET_DATA_PILOT"),
+        "status": "TREND_GATED_FLOW_ESTIMATED_PILOT" if args.trend_gated_flow else (
+            f"{method.upper()}_ESTIMATED_PILOT" if args.institutional_only else (
+                "NO_INSTITUTIONAL_ESTIMATED_PILOT" if args.omit_institutional else "M0_ESTIMATED_MARKET_DATA_PILOT")),
         "protocol": protocol,
         "schema_version": manifest.schema_version,
         "raw_dataset_content_hash": input_hash,
