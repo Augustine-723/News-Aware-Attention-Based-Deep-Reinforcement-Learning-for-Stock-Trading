@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PHASES = ("train", "validation", "test")
 
 
-def prepare_inputs(protocol, manifest, timing_events=None):
+def prepare_inputs(protocol, manifest, timing_events=None, *, include_event_text=False):
     inputs = {phase: {} for phase in PHASES}
     calendar = pd.DatetimeIndex(pd.read_csv(
         Path(DATA_DIR) / "taiex.csv", usecols=["date"], parse_dates=["date"]
@@ -52,7 +52,12 @@ def prepare_inputs(protocol, manifest, timing_events=None):
             batches = [builder.build_snapshot(timestamp) for timestamp in decisions]
             if timing_events is not None:
                 from stock_rl.evaluation.news_input_pilot import mask_event_inputs
-                batches = [mask_event_inputs(batch, "M1") for batch in batches]
+                timing_batches = [mask_event_inputs(batch, "M1") for batch in batches]
+                if include_event_text:
+                    for timing, original in zip(timing_batches, batches):
+                        timing.recent_event_emb.copy_(original.recent_event_emb)
+                        timing.active_event_emb.copy_(original.active_event_emb)
+                batches = timing_batches
             elif any(batch.event_mask.any() for batch in batches):
                 raise RuntimeError("M0 requires empty event slots")
             ohlc = sessions[["open", "high", "low", "close"]].to_numpy()

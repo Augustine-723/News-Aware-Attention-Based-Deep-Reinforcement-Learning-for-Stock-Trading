@@ -1,0 +1,296 @@
+[
+  {
+    "seed": 42,
+    "notes_vs_market": {
+      "first_return_session": "2024-02-02",
+      "last_return_session": "2024-03-29",
+      "matched_return_sessions": 33,
+      "stocks": [
+        "2330",
+        "2603",
+        "2881"
+      ],
+      "control_net_return": 0.03853062142631991,
+      "treatment_net_return": 0.08975343180926632,
+      "delta_net_return": 0.051222810382946404,
+      "control_sharpe": 4.748469767304501,
+      "treatment_sharpe": 4.836044455161943,
+      "delta_sharpe": 0.08757468785744216,
+      "delta_sharpe_ci95": null,
+      "block_length": 5,
+      "bootstrap_seed": 42,
+      "bootstrap_requested": 5000,
+      "bootstrap_defined": 4988,
+      "status": "ci_undefined_in_some_resamples"
+    },
+    "notes_vs_timing": {
+      "first_return_session": "2024-02-02",
+      "last_return_session": "2024-03-29",
+      "matched_return_sessions": 33,
+      "stocks": [
+        "2330",
+        "2603",
+        "2881"
+      ],
+      "control_net_return": 0.08975343180926632,
+      "treatment_net_return": 0.08975343180926632,
+      "delta_net_return": 0.0,
+      "control_sharpe": 4.836044455161943,
+      "treatment_sharpe": 4.836044455161943,
+      "delta_sharpe": 0.0,
+      "delta_sharpe_ci95": [
+        0.0,
+        0.0
+      ],
+      "block_length": 5,
+      "bootstrap_seed": 42,
+      "bootstrap_requested": 5000,
+      "bootstrap_defined": 5000,
+      "status": "descriptive_interval"
+    },
+    "notes_vs_constant": {
+      "first_return_session": "2024-02-02",
+      "last_return_session": "2024-03-29",
+      "matched_return_sessions": 33,
+      "stocks": [
+        "2330",
+        "2603",
+        "2881"
+      ],
+      "control_net_return": 0.08975343180926632,
+      "treatment_net_return": 0.08975343180926632,
+      "delta_net_return": 0.0,
+      "control_sharpe": 4.836044455161943,
+      "treatment_sharpe": 4.836044455161943,
+      "delta_sharpe": 0.0,
+      "delta_sharpe_ci95": [
+        0.0,
+        0.0
+      ],
+      "block_length": 5,
+      "bootstrap_seed": 42,
+      "bootstrap_requested": 5000,
+      "bootstrap_defined": 5000,
+      "status": "descriptive_interval"
+    },
+    "delayed_vs_notes": {
+      "first_return_session": "2024-02-02",
+      "last_return_session": "2024-03-29",
+      "matched_return_sessions": 33,
+      "stocks": [
+        "2330",
+        "2603",
+        "2881"
+      ],
+      "control_net_return": 0.08975343180926632,
+      "treatment_net_return": 0.09369284317515025,
+      "delta_net_return": 0.003939411365883938,
+      "control_sharpe": 4.836044455161943,
+      "treatment_sharpe": 4.571221007060933,
+      "delta_sharpe": -0.26482344810101033,
+      "delta_sharpe_ci95": [
+        -1.8834464560716457,
+        1.430669153406478
+      ],
+      "block_length": 5,
+      "bootstrap_seed": 42,
+      "bootstrap_requested": 5000,
+      "bootstrap_defined": 5000,
+      "status": "descriptive_interval"
+    }
+  },
+  {
+    "seed": 100,
+    "notes_vs_market": {
+      "first_return_session": "2024-02-02",
+      "last_return_session": "2024-03-29",
+      "matched_return_sessions": 33,
+      "stocks": [
+        "2330",
+        "2603",
+        "2881"
+      ],
+      "control_net_return": 0.056973626448042936,
+      "treatment_net_return": 0.0,
+      "delta_net_return": -0.056973626448042936,
+      "control_sharpe": 4.210622296931242,
+      "treatment_sharpe": null,
+      "delta_sharpe": null,
+      "delta_sharpe_ci95": null,
+      "block_length": 5,
+      "bootstrap_seed": 42,
+      "bootstrap_requested": 5000,
+      "bootstrap_defined": 0,
+      "status": "undefined_sharpe_zero_volatility"
+    },
+    "notes_vs_timing": {
+      "first_return_session": "2024-02-02",
+      "last_return_session": "2024-03-29",
+      "matched_return_sessions": 33,
+      "stocks": [
+        "2330",
+        "2603",
+        "2881"
+      ],
+      "control_net_return": 0.033492994988280955,
+      "treatment_net_return": 0.0,
+      "delta_net_return": -0.033492994988280955,
+      "control_sharpe": 1.4538048376450639,
+      "treatment_sharpe": null,
+      "delta_sharpe": null,
+      "delta_sharpe_ci95": null,
+      "block_length": 5,
+      "bootstrap_seed": 42,
+      "bootstrap_requested": 5000,
+      "bootstrap_defined": 0,
+      "status": "undefined_sharpe_zero_volatility"
+    },
+    "notes_vs_constant": {
+      "first_return_session": "2024-02-02",
+      "last_return_session": "2024-03-29",
+      "matched_return_sessions": 33,
+      "stocks": [
+        "2330",
+        "2603",
+        "2881"
+      ],
+      "control_net_return": 0.0,
+      "treatment_net_return": 0.0,
+      "delta_net_return": 0.0,
+      "control_sharpe": null,
+      "treatment_sharpe": null,
+      "delta_sharpe": null,
+      "delta_sharpe_ci95": null,
+      "block_length": 5,
+      "bootstrap_seed": 42,
+      "bootstrap_requested": 5000,
+      "bootstrap_defined": 0,
+      "status": "undefined_sharpe_zero_volatility"
+    },
+    "delayed_vs_notes": {
+      "first_return_session": "2024-02-02",
+      "last_return_session": "2024-03-29",
+      "matched_return_sessions": 33,
+      "stocks": [
+        "2330",
+        "2603",
+        "2881"
+      ],
+      "control_net_return": 0.0,
+      "treatment_net_return": 0.0,
+      "delta_net_return": 0.0,
+      "control_sharpe": null,
+      "treatment_sharpe": null,
+      "delta_sharpe": null,
+      "delta_sharpe_ci95": null,
+      "block_length": 5,
+      "bootstrap_seed": 42,
+      "bootstrap_requested": 5000,
+      "bootstrap_defined": 0,
+      "status": "undefined_sharpe_zero_volatility"
+    }
+  },
+  {
+    "seed": 2024,
+    "notes_vs_market": {
+      "first_return_session": "2024-02-02",
+      "last_return_session": "2024-03-29",
+      "matched_return_sessions": 33,
+      "stocks": [
+        "2330",
+        "2603",
+        "2881"
+      ],
+      "control_net_return": 0.03845710397807034,
+      "treatment_net_return": 0.03845710397807034,
+      "delta_net_return": 0.0,
+      "control_sharpe": 1.6726773610320669,
+      "treatment_sharpe": 1.6726773610320669,
+      "delta_sharpe": 0.0,
+      "delta_sharpe_ci95": [
+        0.0,
+        0.0
+      ],
+      "block_length": 5,
+      "bootstrap_seed": 42,
+      "bootstrap_requested": 5000,
+      "bootstrap_defined": 5000,
+      "status": "descriptive_interval"
+    },
+    "notes_vs_timing": {
+      "first_return_session": "2024-02-02",
+      "last_return_session": "2024-03-29",
+      "matched_return_sessions": 33,
+      "stocks": [
+        "2330",
+        "2603",
+        "2881"
+      ],
+      "control_net_return": 0.06944322900753863,
+      "treatment_net_return": 0.03845710397807034,
+      "delta_net_return": -0.030986125029468292,
+      "control_sharpe": 2.8921421375553176,
+      "treatment_sharpe": 1.6726773610320669,
+      "delta_sharpe": -1.2194647765232507,
+      "delta_sharpe_ci95": [
+        -4.018476274556207,
+        0.027169617252762512
+      ],
+      "block_length": 5,
+      "bootstrap_seed": 42,
+      "bootstrap_requested": 5000,
+      "bootstrap_defined": 5000,
+      "status": "descriptive_interval"
+    },
+    "notes_vs_constant": {
+      "first_return_session": "2024-02-02",
+      "last_return_session": "2024-03-29",
+      "matched_return_sessions": 33,
+      "stocks": [
+        "2330",
+        "2603",
+        "2881"
+      ],
+      "control_net_return": 0.03845710397807034,
+      "treatment_net_return": 0.03845710397807034,
+      "delta_net_return": 0.0,
+      "control_sharpe": 1.6726773610320669,
+      "treatment_sharpe": 1.6726773610320669,
+      "delta_sharpe": 0.0,
+      "delta_sharpe_ci95": [
+        0.0,
+        0.0
+      ],
+      "block_length": 5,
+      "bootstrap_seed": 42,
+      "bootstrap_requested": 5000,
+      "bootstrap_defined": 5000,
+      "status": "descriptive_interval"
+    },
+    "delayed_vs_notes": {
+      "first_return_session": "2024-02-02",
+      "last_return_session": "2024-03-29",
+      "matched_return_sessions": 33,
+      "stocks": [
+        "2330",
+        "2603",
+        "2881"
+      ],
+      "control_net_return": 0.03845710397807034,
+      "treatment_net_return": 0.07460374936128766,
+      "delta_net_return": 0.036146645383217324,
+      "control_sharpe": 1.6726773610320669,
+      "treatment_sharpe": 2.602682843416203,
+      "delta_sharpe": 0.9300054823841359,
+      "delta_sharpe_ci95": [
+        -2.862229946968562,
+        4.948568848514514
+      ],
+      "block_length": 5,
+      "bootstrap_seed": 42,
+      "bootstrap_requested": 5000,
+      "bootstrap_defined": 5000,
+      "status": "descriptive_interval"
+    }
+  }
+]
