@@ -1630,7 +1630,7 @@
       "filing_datetime": "2024-04-03T23:23:25+08:00",
       "headline": "台積公司針對4月3日地震之說明",
       "is_after_20_00": true,
-      "effective_decision_day": "2024-04-03T20:00:00+08:00",
+      "effective_decision_day": "2024-04-08T20:00:00+08:00",
       "split": "holdout",
       "source": "TWSE_MOPS_OFFICIAL"
     },
@@ -1643,7 +1643,7 @@
       "filing_datetime": "2024-04-04T21:05:31+08:00",
       "headline": "台積公司針對4/3地震更新說明",
       "is_after_20_00": true,
-      "effective_decision_day": "2024-04-04T20:00:00+08:00",
+      "effective_decision_day": "2024-04-08T20:00:00+08:00",
       "split": "holdout",
       "source": "TWSE_MOPS_OFFICIAL"
     },
@@ -1656,7 +1656,7 @@
       "filing_datetime": "2024-04-05T21:23:03+08:00",
       "headline": "台積公司針對4/3地震更新說明",
       "is_after_20_00": true,
-      "effective_decision_day": "2024-04-05T20:00:00+08:00",
+      "effective_decision_day": "2024-04-08T20:00:00+08:00",
       "split": "holdout",
       "source": "TWSE_MOPS_OFFICIAL"
     },
@@ -5036,7 +5036,7 @@
       "filing_datetime": "2024-04-23T20:07:36+08:00",
       "headline": "富邦金控代子公司富邦人壽公告董事會通過對 Carter Lane (Guernsey) Limited增資",
       "is_after_20_00": true,
-      "effective_decision_day": "2024-04-23T20:00:00+08:00",
+      "effective_decision_day": "2024-04-24T20:00:00+08:00",
       "split": "holdout",
       "source": "TWSE_MOPS_OFFICIAL"
     },
@@ -5049,7 +5049,7 @@
       "filing_datetime": "2024-04-23T20:09:23+08:00",
       "headline": "富邦金控代子公司富邦人壽公告取得Ardian Infrastructure Fund VI Feeder SCA, SICAV-RAIF",
       "is_after_20_00": true,
-      "effective_decision_day": "2024-04-23T20:00:00+08:00",
+      "effective_decision_day": "2024-04-24T20:00:00+08:00",
       "split": "holdout",
       "source": "TWSE_MOPS_OFFICIAL"
     },

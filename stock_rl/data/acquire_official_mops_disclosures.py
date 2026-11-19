@@ -35,7 +35,19 @@ MONTHS = [
 def load_trading_calendar():
     taiex_csv = DATA_DIR / "taiex.csv"
     df = pd.read_csv(taiex_csv, usecols=["date"], parse_dates=["date"])
-    calendar = pd.DatetimeIndex(df["date"].dt.normalize()).sort_values()
+    dates = list(df["date"].dt.normalize())
+
+    # Include April 2024 dates from april_source_cache if present
+    april_json = ROOT / "april_source_cache" / "taiex.json"
+    if april_json.exists():
+        raw_apr = json.loads(april_json.read_text())
+        apr_dates = [pd.Timestamp(d["date"]).normalize() for d in raw_apr.get("data", [])]
+        dates.extend(apr_dates)
+
+    # Include the next trading session after April (2024-05-02)
+    dates.append(pd.Timestamp("2024-05-02"))
+
+    calendar = pd.DatetimeIndex(sorted(set(dates)))
     return calendar
 
 
@@ -44,6 +56,7 @@ def resolve_effective_decision_day(filing_dt, calendar):
     Resolve the next effective trading decision point (at 20:00 Taipei).
     If filing is before or at 20:00 on a trading day, effective decision day is that day 20:00.
     If filing is after 20:00 or on a non-trading day (weekend/holiday), rollover to next trading day 20:00.
+    If no next trading day exists in the calendar, returns None (unevaluable).
     """
     ts = pd.Timestamp(filing_dt).tz_localize(None)
     filing_date = ts.normalize()
@@ -55,11 +68,41 @@ def resolve_effective_decision_day(filing_dt, calendar):
     else:
         valid_days = calendar[calendar > filing_date]
         if len(valid_days) == 0:
-            effective_day = filing_date
-        else:
-            effective_day = valid_days[0]
+            return None
+        effective_day = valid_days[0]
 
-    return effective_day.strftime("%Y-%m-%d") + "T20:00:00+08:00"
+    eff_str = effective_day.strftime("%Y-%m-%d") + "T20:00:00+08:00"
+    eff_ts = pd.Timestamp(eff_str)
+    if eff_ts < filing_dt:
+        raise ValueError(
+            f"Strict Causality Violation: effective decision {eff_str} is earlier than filing {filing_dt.isoformat()}"
+        )
+
+    return eff_str
+
+
+def resolve_split_from_effective_day(effective_day_str):
+    """
+    Assign split partition strictly based on effective decision day:
+    - Train: through 2023-12-29 20:00:00
+    - Validation: 2024-01-02 20:00:00 to 2024-01-31 20:00:00
+    - Test: 2024-02-01 20:00:00 to 2024-03-29 20:00:00
+    - Holdout: 2024-04-01 20:00:00 to 2024-04-30 20:00:00
+    - Unevaluable: beyond 2024-04-30 or None
+    """
+    if effective_day_str is None:
+        return "unevaluable"
+    day = effective_day_str[:10]
+    if day <= "2023-12-29":
+        return "train"
+    elif "2024-01-02" <= day <= "2024-01-31":
+        return "validation"
+    elif "2024-02-01" <= day <= "2024-03-29":
+        return "test"
+    elif "2024-04-01" <= day <= "2024-04-30":
+        return "holdout"
+    else:
+        return "unevaluable"
 
 
 def fetch_monthly_disclosures(stock, year_roc, month, split, calendar):
@@ -111,6 +154,7 @@ def fetch_monthly_disclosures(stock, year_roc, month, split, calendar):
         filing_dt = datetime.fromisoformat(f"{date_iso}T{spoke_time}").replace(tzinfo=ZoneInfo("Asia/Taipei"))
 
         effective_decision = resolve_effective_decision_day(filing_dt, calendar)
+        effective_split = resolve_split_from_effective_day(effective_decision)
 
         disclosures.append({
             "stock_id": stock,
@@ -122,20 +166,49 @@ def fetch_monthly_disclosures(stock, year_roc, month, split, calendar):
             "headline": headline,
             "is_after_20_00": (filing_dt.hour >= 20 and not (filing_dt.hour == 20 and filing_dt.minute == 0 and filing_dt.second == 0)),
             "effective_decision_day": effective_decision,
-            "split": split,
+            "split": effective_split,
             "source": "TWSE_MOPS_OFFICIAL",
         })
 
     return disclosures, hashlib.sha256(raw).hexdigest()
 
 
+def realign_existing_dataset(path: Path, calendar) -> int:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    disclosures = data["disclosures"]
+    earlier_count = 0
+    for d in disclosures:
+        f_dt = datetime.fromisoformat(d["filing_datetime"])
+        eff = resolve_effective_decision_day(f_dt, calendar)
+        split = resolve_split_from_effective_day(eff)
+        d["effective_decision_day"] = eff
+        d["split"] = split
+        if eff is not None and pd.Timestamp(eff) < f_dt:
+            earlier_count += 1
+
+    path.write_text(json.dumps(data, indent=2, ensure_ascii=False))
+    print(f"Realigned {len(disclosures)} disclosures in {path}")
+    print(f"Sanity Check: Earlier than filing count = {earlier_count}")
+    df_res = pd.DataFrame(disclosures)
+    print("\n" + "=" * 65)
+    print("Realigned Summary by Stock and Split:")
+    print(pd.crosstab(df_res["stock_id"], df_res["split"], margins=True))
+    print("=" * 65)
+    return earlier_count
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT_DIR / "mops_official_disclosures_2023_2024.json")
+    parser.add_argument("--realign", action="store_true", help="Realign existing output file without network queries")
     args = parser.parse_args()
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     calendar = load_trading_calendar()
+
+    if args.realign:
+        realign_existing_dataset(args.output, calendar)
+        return
 
     all_disclosures = []
     receipts = []

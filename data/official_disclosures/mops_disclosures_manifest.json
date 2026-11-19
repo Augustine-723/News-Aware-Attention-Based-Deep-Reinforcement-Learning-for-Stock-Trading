@@ -1,10 +1,10 @@
 {
-  "manifest_id": "MANIFEST-TWSE-MOPS-2023-2024-OFFICIAL",
-  "created_at": "2026-11-19T07:22:07.113614+00:00",
+  "manifest_id": "MANIFEST-TWSE-MOPS-2023-2024-OFFICIAL-V2",
+  "updated_at": "2026-11-19T07:42:31.915529+00:00",
   "provenance_notes": "Official statutory material disclosures acquired directly from TWSE MOPS (mopsov.twse.com.tw) for stocks 2330, 2603, and 2881 covering 2023-09 through 2024-04 (Train, Validation, Test, and April Holdout).",
   "compliance_notes": "Zero-bypass, polite rate-limited statutory public disclosures under Taiwan Securities and Exchange Act Art. 36 and TWSE Listed Company Material Information Verification and Disclosure Procedures. Strictly compliant with cybersecurity and platform terms of service.",
   "dataset_file": "mops_official_disclosures_2023_2024.json",
-  "dataset_sha256": "b3ea32bec09b5eb3ca64f97a9cc49ac377ba3a8331ebe1f15fad1d4f579f708e",
+  "dataset_sha256": "4061dff8c06e259eb3efcfef2e70a0159cb930f8970a8c329e9cb4f58cab6c83",
   "file_size_bytes": 190601,
   "total_disclosures": 404,
   "query_receipts_count": 24,
@@ -50,14 +50,53 @@
   "timing_audit": {
     "cutoff_time": "20:00:00+08:00",
     "after_20_00_count": 20,
-    "calendar_deferred_count": 24,
-    "non_trading_day_or_holiday_deferrals": 4
+    "calendar_deferred_count": 29,
+    "non_trading_day_or_holiday_deferrals": 9,
+    "earlier_than_filing_count_before_fix": 5,
+    "earlier_than_filing_count_after_fix": 0,
+    "fixed_target_cases": [
+      {
+        "stock_id": "2330",
+        "spoke_date": "2024-04-03",
+        "spoke_time": "23:23:25",
+        "effective_decision_day": "2024-04-08T20:00:00+08:00",
+        "reason": "Hualien Earthquake after 20:00 rolled over past Qingming holidays to 2024-04-08"
+      },
+      {
+        "stock_id": "2330",
+        "spoke_date": "2024-04-04",
+        "spoke_time": "21:05:31",
+        "effective_decision_day": "2024-04-08T20:00:00+08:00",
+        "reason": "Qingming holiday rolled over to 2024-04-08"
+      },
+      {
+        "stock_id": "2330",
+        "spoke_date": "2024-04-05",
+        "spoke_time": "21:23:03",
+        "effective_decision_day": "2024-04-08T20:00:00+08:00",
+        "reason": "Qingming holiday rolled over to 2024-04-08"
+      },
+      {
+        "stock_id": "2881",
+        "spoke_date": "2024-04-23",
+        "spoke_time": "20:07:36",
+        "effective_decision_day": "2024-04-24T20:00:00+08:00",
+        "reason": "Post-20:00 filing rolled over to next trading day 2024-04-24"
+      },
+      {
+        "stock_id": "2881",
+        "spoke_date": "2024-04-23",
+        "spoke_time": "20:09:23",
+        "effective_decision_day": "2024-04-24T20:00:00+08:00",
+        "reason": "Post-20:00 filing rolled over to next trading day 2024-04-24"
+      }
+    ]
   },
   "pit_backtest_audit_status": {
     "official_mops_disclosures_acquired": 404,
     "second_level_timestamp_verified": true,
     "commercial_vendor_terminal_first_available_logs": 0,
     "formal_news_pit_backtest_verdict": "STRICTLY_NO_GO",
-    "rationale": "While statutory filing times (spoke_time) are 100% verified to the second, zero historical provider receipt/dissemination timestamps exist to prove when external traders or terminals first ingested the payloads. Exploratory modeling permitted under v8.0-original schema."
+    "exploratory_news_aware_experiment_status": "APPROVED_EXPLORATORY_ONLY"
   }
 }
