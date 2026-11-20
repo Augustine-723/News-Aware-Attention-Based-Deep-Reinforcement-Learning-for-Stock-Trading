@@ -2,7 +2,7 @@
 
 目前的研究問題是：在相同價量資訊、交易成本與執行規則下，加入法人買賣超，會如何改變模型的持股決策與淨報酬？V8.45 彙整了三檔台股的籌碼與趨勢門檻實驗。V8.46 新增 404 筆官方重大訊息主旨與申報時間；V8.47 完成四月時序修正與首輪四組 News-Aware 對照實驗。
 
-## 研究進度與資料索引（截至 V8.52）
+## 研究進度與資料索引（截至 V8.53）
 
 目前可執行三檔台股的歷史市場與籌碼實驗。每日台北時間 20:00 決策，下一交易日開盤執行，各股獨立選擇持股或現金。
 
@@ -17,6 +17,7 @@
 | 籌碼與趨勢交互門檻完結 | 彙整 52 天雙體制動力學、多尺度均線頻譜、端到端 DRL 與遲滯帶全期基準評分表 | [完結總結報告](docs/reports/v8_45_institutional_trend_interaction_master_report.md)、[綜合基準結果](docs/results/v8_45_master_benchmark.json) |
 | 官方重大訊息資料集 | 2023-09 至 2024-04 涵蓋三檔標的（2330、2603、2881）共 404 筆真實法定重大訊息，含秒級申報時戳、20:00 截斷與休市遞延欄位 | [404 筆法定訊息資料](data/official_disclosures/mops_official_disclosures_2023_2024.json)、[審計清冊](data/official_disclosures/mops_disclosures_manifest.json)、[建置與時序報告](docs/reports/v8_46_compliant_historical_disclosure_dataset.md) |
 | MOPS 重大訊息對照實驗 | 固定法人籌碼基準，比較無公告(A)、公告時間時效(B)、真實主旨BGE(C)與固定安慰劑(D)四組對照 | [404 筆法定訊息](data/official_disclosures/mops_official_disclosures_2023_2024.json)、[實驗結果](docs/results/v8_47_mops_news_aware_experiment.json)、[對照報告](docs/reports/v8_47_mops_news_aware_experiment.md) |
+| 私有前瞻快照 (V8.53) | 兩次觀察確認 6 個公告版本；兩次行情均落後一天，尚無可推論的完整決策。 | [資料覆蓋與執行指令](docs/reports/v8_53_prospective_snapshots.md) |
 | 當期新公告主旨 (V8.52) | 凍結 C 組模型，只替換本次新增主旨。2–3 月有新公告的 129 次配對皆改變 Q 值差，動作翻轉 0 次。 | [介入實驗](docs/reports/v8_52_arrival_text.md)、[逐筆結果](docs/results/v8_52_arrival_text.json) |
 | 凍結 B 組模型重測 (V8.51) | 使用與 V8.50 雜湊一致的權重。一月選模驗證期 0／42 次翻轉，訓練期 2／297 次。 | [評估報告](docs/reports/v8_51_unexamined_period_evaluation.md)、[逐筆決策](docs/results/v8_51_unexamined_evaluation.json) |
 | 探索性新聞 | 16 筆候選事件，訓練／驗證／測試為 10／3／3。文字實驗使用事後撰寫的摘要，替換成相同句子後，三個種子的測試動作皆相同 | [文字與時間敏感度](docs/reports/v8_37_text_sensitivity.md) |
