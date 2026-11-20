@@ -1,0 +1,30 @@
+{
+  "cutoff": "2026-11-20T20:00:00+08:00",
+  "calendar_end": "2026-11-20",
+  "stocks": {
+    "2330": {
+      "last_price": "2026-11-20",
+      "last_flow": "2026-11-19",
+      "complete_sessions": 96,
+      "warmup_start": "2026-08-21",
+      "warmup_end": "2026-11-19",
+      "decision_window_complete": false
+    },
+    "2603": {
+      "last_price": "2026-11-20",
+      "last_flow": "2026-11-19",
+      "complete_sessions": 96,
+      "warmup_start": "2026-08-21",
+      "warmup_end": "2026-11-19",
+      "decision_window_complete": false
+    },
+    "2881": {
+      "last_price": "2026-11-20",
+      "last_flow": "2026-11-19",
+      "complete_sessions": 96,
+      "warmup_start": "2026-08-21",
+      "warmup_end": "2026-11-19",
+      "decision_window_complete": false
+    }
+  }
+}
