@@ -79,6 +79,8 @@ def run(cache, april, checkpoints, phases=("validation", "train")):
         "holdout": "test",
     }
 
+    reference = json.loads((pilot.ROOT / "docs/results/v8_50_new_arrivals.json").read_text())
+    expected = {(row["seed"], row["weights_sha256"]) for row in reference}
     results = []
     for seed in protocol["seeds"]:
         model = pilot.StockRLFullModel().eval()
@@ -87,6 +89,8 @@ def run(cache, april, checkpoints, phases=("validation", "train")):
             raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
         model.load_state_dict(torch.load(ckpt_path, weights_only=True, map_location="cpu"))
         digest = weights_digest(model)
+        if (seed, digest) not in expected:
+            raise ValueError(f"Group B checkpoint differs from V8.50 for seed {seed}: {digest}")
 
         for phase in phases:
             for stock in protocol["stocks"]:
@@ -152,7 +156,7 @@ def run(cache, april, checkpoints, phases=("validation", "train")):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bge-cache")
-    parser.add_argument("--april-cache", required=True, type=Path)
+    parser.add_argument("--april-cache", type=Path)
     parser.add_argument("--checkpoints", required=True, type=Path)
     parser.add_argument("--phases", default="validation,train", help="Comma-separated phases to evaluate")
     parser.add_argument("--output", required=True, type=Path)
