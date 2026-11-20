@@ -1,0 +1,2984 @@
+{
+  "phase": "test",
+  "summary": {
+    "decisions": 297,
+    "exposed_pairs": 129,
+    "exposed_stock_days": 43,
+    "flips": 0,
+    "changed_q_gaps": 129,
+    "median_abs_change": 0.00029352307319641113,
+    "max_abs_change": 0.0024610906839370728
+  },
+  "decisions": [
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-02-01",
+      "arrivals": 0,
+      "gap": 0.11628063023090363,
+      "replaced_gap": 0.11628063023090363,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-02-02",
+      "arrivals": 1,
+      "gap": 0.12404690682888031,
+      "replaced_gap": 0.12353353202342987,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-02-05",
+      "arrivals": 2,
+      "gap": 0.12633955478668213,
+      "replaced_gap": 0.12575754523277283,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-02-15",
+      "arrivals": 17,
+      "gap": 0.13621854782104492,
+      "replaced_gap": 0.13616588711738586,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-02-16",
+      "arrivals": 0,
+      "gap": 0.13638463616371155,
+      "replaced_gap": 0.13638463616371155,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-02-19",
+      "arrivals": 1,
+      "gap": 0.13202384114265442,
+      "replaced_gap": 0.1316172480583191,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-02-20",
+      "arrivals": 0,
+      "gap": 0.1296379566192627,
+      "replaced_gap": 0.1296379566192627,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-02-21",
+      "arrivals": 2,
+      "gap": 0.12203267216682434,
+      "replaced_gap": 0.1216827780008316,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-02-22",
+      "arrivals": 1,
+      "gap": 0.11406753957271576,
+      "replaced_gap": 0.11386516690254211,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-02-23",
+      "arrivals": 1,
+      "gap": 0.11369790136814117,
+      "replaced_gap": 0.11349686235189438,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-02-26",
+      "arrivals": 0,
+      "gap": 0.11627427488565445,
+      "replaced_gap": 0.11627427488565445,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-02-27",
+      "arrivals": 2,
+      "gap": 0.11554010957479477,
+      "replaced_gap": 0.11514349281787872,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-02-29",
+      "arrivals": 5,
+      "gap": 0.11361698806285858,
+      "replaced_gap": 0.11379577219486237,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-01",
+      "arrivals": 2,
+      "gap": 0.10474978387355804,
+      "replaced_gap": 0.10478657484054565,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-04",
+      "arrivals": 0,
+      "gap": 0.11878107488155365,
+      "replaced_gap": 0.11878107488155365,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-05",
+      "arrivals": 1,
+      "gap": 0.12160775065422058,
+      "replaced_gap": 0.12119835615158081,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-06",
+      "arrivals": 1,
+      "gap": 0.12184659391641617,
+      "replaced_gap": 0.12212702631950378,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-07",
+      "arrivals": 0,
+      "gap": 0.12310938537120819,
+      "replaced_gap": 0.12310938537120819,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-08",
+      "arrivals": 1,
+      "gap": 0.13180677592754364,
+      "replaced_gap": 0.13208873569965363,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-11",
+      "arrivals": 2,
+      "gap": 0.1274903565645218,
+      "replaced_gap": 0.1270374208688736,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-12",
+      "arrivals": 0,
+      "gap": 0.1224590390920639,
+      "replaced_gap": 0.1224590390920639,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-13",
+      "arrivals": 0,
+      "gap": 0.11773693561553955,
+      "replaced_gap": 0.11773693561553955,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-14",
+      "arrivals": 0,
+      "gap": 0.11624442040920258,
+      "replaced_gap": 0.11624442040920258,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-15",
+      "arrivals": 1,
+      "gap": 0.09462613612413406,
+      "replaced_gap": 0.09435155242681503,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-18",
+      "arrivals": 0,
+      "gap": 0.08174240589141846,
+      "replaced_gap": 0.08174240589141846,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-19",
+      "arrivals": 0,
+      "gap": 0.07206380367279053,
+      "replaced_gap": 0.07206380367279053,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-20",
+      "arrivals": 0,
+      "gap": 0.06269150972366333,
+      "replaced_gap": 0.06269150972366333,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-21",
+      "arrivals": 0,
+      "gap": 0.06902788579463959,
+      "replaced_gap": 0.06902788579463959,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-22",
+      "arrivals": 2,
+      "gap": 0.07964809238910675,
+      "replaced_gap": 0.07953257858753204,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-25",
+      "arrivals": 0,
+      "gap": 0.07824777066707611,
+      "replaced_gap": 0.07824777066707611,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-26",
+      "arrivals": 0,
+      "gap": 0.07464858889579773,
+      "replaced_gap": 0.07464858889579773,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-27",
+      "arrivals": 1,
+      "gap": 0.0737811028957367,
+      "replaced_gap": 0.07348757982254028,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 42,
+      "date": "2024-03-28",
+      "arrivals": 0,
+      "gap": 0.06436170637607574,
+      "replaced_gap": 0.06436170637607574,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-02-01",
+      "arrivals": 0,
+      "gap": -0.008213460445404053,
+      "replaced_gap": -0.008213460445404053,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-02-02",
+      "arrivals": 0,
+      "gap": -0.01091475784778595,
+      "replaced_gap": -0.01091475784778595,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-02-05",
+      "arrivals": 0,
+      "gap": -0.01702296733856201,
+      "replaced_gap": -0.01702296733856201,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-02-15",
+      "arrivals": 0,
+      "gap": -0.01956614851951599,
+      "replaced_gap": -0.01956614851951599,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-02-16",
+      "arrivals": 0,
+      "gap": -0.01592382788658142,
+      "replaced_gap": -0.01592382788658142,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-02-19",
+      "arrivals": 0,
+      "gap": -0.01940588653087616,
+      "replaced_gap": -0.01940588653087616,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-02-20",
+      "arrivals": 0,
+      "gap": -0.015255346894264221,
+      "replaced_gap": -0.015255346894264221,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-02-21",
+      "arrivals": 0,
+      "gap": -0.006889045238494873,
+      "replaced_gap": -0.006889045238494873,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-02-22",
+      "arrivals": 0,
+      "gap": 0.015853136777877808,
+      "replaced_gap": 0.015853136777877808,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-02-23",
+      "arrivals": 1,
+      "gap": 0.045357596129179,
+      "replaced_gap": 0.04518226906657219,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-02-26",
+      "arrivals": 1,
+      "gap": 0.043747227638959885,
+      "replaced_gap": 0.043898727744817734,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-02-27",
+      "arrivals": 0,
+      "gap": 0.03975946828722954,
+      "replaced_gap": 0.03975946828722954,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-02-29",
+      "arrivals": 0,
+      "gap": 0.04275026544928551,
+      "replaced_gap": 0.04275026544928551,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-01",
+      "arrivals": 1,
+      "gap": 0.03845750913023949,
+      "replaced_gap": 0.03847959265112877,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-04",
+      "arrivals": 0,
+      "gap": 0.0651509016752243,
+      "replaced_gap": 0.0651509016752243,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-05",
+      "arrivals": 0,
+      "gap": 0.07174484431743622,
+      "replaced_gap": 0.07174484431743622,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-06",
+      "arrivals": 3,
+      "gap": 0.06391647458076477,
+      "replaced_gap": 0.06275787949562073,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-07",
+      "arrivals": 0,
+      "gap": 0.05525578185915947,
+      "replaced_gap": 0.05525578185915947,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-08",
+      "arrivals": 0,
+      "gap": 0.049515824764966965,
+      "replaced_gap": 0.049515824764966965,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-11",
+      "arrivals": 0,
+      "gap": 0.03449906408786774,
+      "replaced_gap": 0.03449906408786774,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-12",
+      "arrivals": 0,
+      "gap": 0.03086008131504059,
+      "replaced_gap": 0.03086008131504059,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-13",
+      "arrivals": 0,
+      "gap": 0.024482280015945435,
+      "replaced_gap": 0.024482280015945435,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-14",
+      "arrivals": 12,
+      "gap": 0.013100624084472656,
+      "replaced_gap": 0.01362641155719757,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-15",
+      "arrivals": 0,
+      "gap": 0.0006949491798877716,
+      "replaced_gap": 0.0006949491798877716,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-18",
+      "arrivals": 0,
+      "gap": -0.021438080817461014,
+      "replaced_gap": -0.021438080817461014,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-19",
+      "arrivals": 0,
+      "gap": -0.016318753361701965,
+      "replaced_gap": -0.016318753361701965,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-20",
+      "arrivals": 0,
+      "gap": -0.017742037773132324,
+      "replaced_gap": -0.017742037773132324,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-21",
+      "arrivals": 0,
+      "gap": -0.030107468366622925,
+      "replaced_gap": -0.030107468366622925,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-22",
+      "arrivals": 0,
+      "gap": -0.03395976126194,
+      "replaced_gap": -0.03395976126194,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-25",
+      "arrivals": 1,
+      "gap": -0.03484185039997101,
+      "replaced_gap": -0.034779518842697144,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-26",
+      "arrivals": 0,
+      "gap": -0.030263245105743408,
+      "replaced_gap": -0.030263245105743408,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-27",
+      "arrivals": 0,
+      "gap": -0.030277639627456665,
+      "replaced_gap": -0.030277639627456665,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 42,
+      "date": "2024-03-28",
+      "arrivals": 1,
+      "gap": -0.018803536891937256,
+      "replaced_gap": -0.018869653344154358,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-02-01",
+      "arrivals": 0,
+      "gap": -0.07780896127223969,
+      "replaced_gap": -0.07780896127223969,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-02-02",
+      "arrivals": 0,
+      "gap": -0.07939241826534271,
+      "replaced_gap": -0.07939241826534271,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-02-05",
+      "arrivals": 0,
+      "gap": -0.07936529815196991,
+      "replaced_gap": -0.07936529815196991,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-02-15",
+      "arrivals": 3,
+      "gap": -0.060532648116350174,
+      "replaced_gap": -0.06054617092013359,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-02-16",
+      "arrivals": 1,
+      "gap": -0.054796963930130005,
+      "replaced_gap": -0.05450904369354248,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-02-19",
+      "arrivals": 0,
+      "gap": -0.052495747804641724,
+      "replaced_gap": -0.052495747804641724,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-02-20",
+      "arrivals": 1,
+      "gap": -0.04941995441913605,
+      "replaced_gap": -0.04913921654224396,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-02-21",
+      "arrivals": 1,
+      "gap": -0.05974109470844269,
+      "replaced_gap": -0.05972649157047272,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-02-22",
+      "arrivals": 1,
+      "gap": -0.06584718823432922,
+      "replaced_gap": -0.06543338298797607,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-02-23",
+      "arrivals": 0,
+      "gap": -0.06097620725631714,
+      "replaced_gap": -0.06097620725631714,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-02-26",
+      "arrivals": 0,
+      "gap": -0.06950868666172028,
+      "replaced_gap": -0.06950868666172028,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-02-27",
+      "arrivals": 2,
+      "gap": -0.0711178183555603,
+      "replaced_gap": -0.07038813829421997,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-02-29",
+      "arrivals": 0,
+      "gap": -0.0661235898733139,
+      "replaced_gap": -0.0661235898733139,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-01",
+      "arrivals": 0,
+      "gap": -0.07279409468173981,
+      "replaced_gap": -0.07279409468173981,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-04",
+      "arrivals": 2,
+      "gap": -0.08137653768062592,
+      "replaced_gap": -0.08098326623439789,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-05",
+      "arrivals": 0,
+      "gap": -0.07326026260852814,
+      "replaced_gap": -0.07326026260852814,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-06",
+      "arrivals": 3,
+      "gap": -0.06149173900485039,
+      "replaced_gap": -0.06118134781718254,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-07",
+      "arrivals": 2,
+      "gap": -0.061966028064489365,
+      "replaced_gap": -0.061865393072366714,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-08",
+      "arrivals": 6,
+      "gap": -0.073261559009552,
+      "replaced_gap": -0.07177920639514923,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-11",
+      "arrivals": 1,
+      "gap": -0.08125098049640656,
+      "replaced_gap": -0.08108898997306824,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-12",
+      "arrivals": 6,
+      "gap": -0.08439287543296814,
+      "replaced_gap": -0.08366358280181885,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-13",
+      "arrivals": 10,
+      "gap": -0.08811548352241516,
+      "replaced_gap": -0.08594900369644165,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-14",
+      "arrivals": 6,
+      "gap": -0.09257276356220245,
+      "replaced_gap": -0.0913020670413971,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-15",
+      "arrivals": 1,
+      "gap": -0.08898822963237762,
+      "replaced_gap": -0.08890525996685028,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-18",
+      "arrivals": 1,
+      "gap": -0.09303756058216095,
+      "replaced_gap": -0.09277588129043579,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-19",
+      "arrivals": 1,
+      "gap": -0.09747354686260223,
+      "replaced_gap": -0.09733635187149048,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-20",
+      "arrivals": 0,
+      "gap": -0.10364827513694763,
+      "replaced_gap": -0.10364827513694763,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-21",
+      "arrivals": 3,
+      "gap": -0.09556280076503754,
+      "replaced_gap": -0.09472274780273438,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-22",
+      "arrivals": 0,
+      "gap": -0.09670184552669525,
+      "replaced_gap": -0.09670184552669525,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-25",
+      "arrivals": 0,
+      "gap": -0.09770242869853973,
+      "replaced_gap": -0.09770242869853973,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-26",
+      "arrivals": 0,
+      "gap": -0.0924907773733139,
+      "replaced_gap": -0.0924907773733139,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-27",
+      "arrivals": 1,
+      "gap": -0.0891069620847702,
+      "replaced_gap": -0.08872886002063751,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 42,
+      "date": "2024-03-28",
+      "arrivals": 0,
+      "gap": -0.09401072561740875,
+      "replaced_gap": -0.09401072561740875,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-02-01",
+      "arrivals": 0,
+      "gap": -0.012702330946922302,
+      "replaced_gap": -0.012702330946922302,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-02-02",
+      "arrivals": 1,
+      "gap": -0.017489701509475708,
+      "replaced_gap": -0.01734982058405876,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-02-05",
+      "arrivals": 2,
+      "gap": -0.01978326588869095,
+      "replaced_gap": -0.019467510282993317,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-02-15",
+      "arrivals": 17,
+      "gap": -0.06448116898536682,
+      "replaced_gap": -0.06398029625415802,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-02-16",
+      "arrivals": 0,
+      "gap": -0.0696377232670784,
+      "replaced_gap": -0.0696377232670784,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-02-19",
+      "arrivals": 1,
+      "gap": -0.06274576485157013,
+      "replaced_gap": -0.06259872764348984,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-02-20",
+      "arrivals": 0,
+      "gap": -0.05718546360731125,
+      "replaced_gap": -0.05718546360731125,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-02-21",
+      "arrivals": 2,
+      "gap": -0.0502416267991066,
+      "replaced_gap": -0.0499449223279953,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-02-22",
+      "arrivals": 1,
+      "gap": -0.04731760174036026,
+      "replaced_gap": -0.0471935048699379,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-02-23",
+      "arrivals": 1,
+      "gap": -0.05154639482498169,
+      "replaced_gap": -0.051418110728263855,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-02-26",
+      "arrivals": 0,
+      "gap": -0.046234212815761566,
+      "replaced_gap": -0.046234212815761566,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-02-27",
+      "arrivals": 2,
+      "gap": -0.03870625048875809,
+      "replaced_gap": -0.03838574141263962,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-02-29",
+      "arrivals": 5,
+      "gap": -0.0334719680249691,
+      "replaced_gap": -0.03267718106508255,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-01",
+      "arrivals": 2,
+      "gap": -0.02508896216750145,
+      "replaced_gap": -0.024884182959794998,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-04",
+      "arrivals": 0,
+      "gap": -0.05579005181789398,
+      "replaced_gap": -0.05579005181789398,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-05",
+      "arrivals": 1,
+      "gap": -0.06325508654117584,
+      "replaced_gap": -0.06312347948551178,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-06",
+      "arrivals": 1,
+      "gap": -0.05774211883544922,
+      "replaced_gap": -0.05765832960605621,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-07",
+      "arrivals": 0,
+      "gap": -0.06384801864624023,
+      "replaced_gap": -0.06384801864624023,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-08",
+      "arrivals": 1,
+      "gap": -0.06649596989154816,
+      "replaced_gap": -0.06633925437927246,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-11",
+      "arrivals": 2,
+      "gap": -0.05268174409866333,
+      "replaced_gap": -0.05232376605272293,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-12",
+      "arrivals": 0,
+      "gap": -0.044249698519706726,
+      "replaced_gap": -0.044249698519706726,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-13",
+      "arrivals": 0,
+      "gap": -0.043173231184482574,
+      "replaced_gap": -0.043173231184482574,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-14",
+      "arrivals": 0,
+      "gap": -0.040355123579502106,
+      "replaced_gap": -0.040355123579502106,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-15",
+      "arrivals": 1,
+      "gap": -0.030384927988052368,
+      "replaced_gap": -0.030282143503427505,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-18",
+      "arrivals": 0,
+      "gap": -0.03662841022014618,
+      "replaced_gap": -0.03662841022014618,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-19",
+      "arrivals": 0,
+      "gap": -0.037248991429805756,
+      "replaced_gap": -0.037248991429805756,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-20",
+      "arrivals": 0,
+      "gap": -0.0318424329161644,
+      "replaced_gap": -0.0318424329161644,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-21",
+      "arrivals": 0,
+      "gap": -0.03672008216381073,
+      "replaced_gap": -0.03672008216381073,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-22",
+      "arrivals": 2,
+      "gap": -0.040829338133335114,
+      "replaced_gap": -0.04063204675912857,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-25",
+      "arrivals": 0,
+      "gap": -0.03939983248710632,
+      "replaced_gap": -0.03939983248710632,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-26",
+      "arrivals": 0,
+      "gap": -0.04280710965394974,
+      "replaced_gap": -0.04280710965394974,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-27",
+      "arrivals": 1,
+      "gap": -0.04360446333885193,
+      "replaced_gap": -0.04351475089788437,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 100,
+      "date": "2024-03-28",
+      "arrivals": 0,
+      "gap": -0.03255145251750946,
+      "replaced_gap": -0.03255145251750946,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-02-01",
+      "arrivals": 0,
+      "gap": -0.06453964859247208,
+      "replaced_gap": -0.06453964859247208,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-02-02",
+      "arrivals": 0,
+      "gap": -0.05040888488292694,
+      "replaced_gap": -0.05040888488292694,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-02-05",
+      "arrivals": 0,
+      "gap": -0.07460759580135345,
+      "replaced_gap": -0.07460759580135345,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-02-15",
+      "arrivals": 0,
+      "gap": -0.08418165147304535,
+      "replaced_gap": -0.08418165147304535,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-02-16",
+      "arrivals": 0,
+      "gap": -0.08495663106441498,
+      "replaced_gap": -0.08495663106441498,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-02-19",
+      "arrivals": 0,
+      "gap": -0.07126559317111969,
+      "replaced_gap": -0.07126559317111969,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-02-20",
+      "arrivals": 0,
+      "gap": -0.06331630051136017,
+      "replaced_gap": -0.06331630051136017,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-02-21",
+      "arrivals": 0,
+      "gap": -0.06249634176492691,
+      "replaced_gap": -0.06249634176492691,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-02-22",
+      "arrivals": 0,
+      "gap": -0.07395030558109283,
+      "replaced_gap": -0.07395030558109283,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-02-23",
+      "arrivals": 1,
+      "gap": -0.08250750601291656,
+      "replaced_gap": -0.0828757956624031,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-02-26",
+      "arrivals": 1,
+      "gap": -0.11215268820524216,
+      "replaced_gap": -0.11224862188100815,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-02-27",
+      "arrivals": 0,
+      "gap": -0.12545543909072876,
+      "replaced_gap": -0.12545543909072876,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-02-29",
+      "arrivals": 0,
+      "gap": -0.13733890652656555,
+      "replaced_gap": -0.13733890652656555,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-01",
+      "arrivals": 1,
+      "gap": -0.1337854117155075,
+      "replaced_gap": -0.13400867581367493,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-04",
+      "arrivals": 0,
+      "gap": -0.2351735234260559,
+      "replaced_gap": -0.2351735234260559,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-05",
+      "arrivals": 0,
+      "gap": -0.25288325548171997,
+      "replaced_gap": -0.25288325548171997,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-06",
+      "arrivals": 3,
+      "gap": -0.24325841665267944,
+      "replaced_gap": -0.24370355904102325,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-07",
+      "arrivals": 0,
+      "gap": -0.20423036813735962,
+      "replaced_gap": -0.20423036813735962,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-08",
+      "arrivals": 0,
+      "gap": -0.2275547981262207,
+      "replaced_gap": -0.2275547981262207,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-11",
+      "arrivals": 0,
+      "gap": -0.21300417184829712,
+      "replaced_gap": -0.21300417184829712,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-12",
+      "arrivals": 0,
+      "gap": -0.19160397350788116,
+      "replaced_gap": -0.19160397350788116,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-13",
+      "arrivals": 0,
+      "gap": -0.16429534554481506,
+      "replaced_gap": -0.16429534554481506,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-14",
+      "arrivals": 12,
+      "gap": -0.23204877972602844,
+      "replaced_gap": -0.2330055832862854,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-15",
+      "arrivals": 0,
+      "gap": -0.22681085765361786,
+      "replaced_gap": -0.22681085765361786,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-18",
+      "arrivals": 0,
+      "gap": -0.20054081082344055,
+      "replaced_gap": -0.20054081082344055,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-19",
+      "arrivals": 0,
+      "gap": -0.20593994855880737,
+      "replaced_gap": -0.20593994855880737,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-20",
+      "arrivals": 0,
+      "gap": -0.23784935474395752,
+      "replaced_gap": -0.23784935474395752,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-21",
+      "arrivals": 0,
+      "gap": -0.23994824290275574,
+      "replaced_gap": -0.23994824290275574,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-22",
+      "arrivals": 0,
+      "gap": -0.2673088312149048,
+      "replaced_gap": -0.2673088312149048,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-25",
+      "arrivals": 1,
+      "gap": -0.2664170265197754,
+      "replaced_gap": -0.2665456533432007,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-26",
+      "arrivals": 0,
+      "gap": -0.2582552134990692,
+      "replaced_gap": -0.2582552134990692,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-27",
+      "arrivals": 0,
+      "gap": -0.21646547317504883,
+      "replaced_gap": -0.21646547317504883,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 100,
+      "date": "2024-03-28",
+      "arrivals": 1,
+      "gap": -0.2527918815612793,
+      "replaced_gap": -0.25262686610221863,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-02-01",
+      "arrivals": 0,
+      "gap": -0.08483797311782837,
+      "replaced_gap": -0.08483797311782837,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-02-02",
+      "arrivals": 0,
+      "gap": -0.09253901243209839,
+      "replaced_gap": -0.09253901243209839,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-02-05",
+      "arrivals": 0,
+      "gap": -0.09963472187519073,
+      "replaced_gap": -0.09963472187519073,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-02-15",
+      "arrivals": 3,
+      "gap": -0.10432623326778412,
+      "replaced_gap": -0.10335033386945724,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-02-16",
+      "arrivals": 1,
+      "gap": -0.10966479033231735,
+      "replaced_gap": -0.10934511572122574,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-02-19",
+      "arrivals": 0,
+      "gap": -0.09542013704776764,
+      "replaced_gap": -0.09542013704776764,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-02-20",
+      "arrivals": 1,
+      "gap": -0.0879327803850174,
+      "replaced_gap": -0.0874430388212204,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-02-21",
+      "arrivals": 1,
+      "gap": -0.08059871196746826,
+      "replaced_gap": -0.07951784133911133,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-02-22",
+      "arrivals": 1,
+      "gap": -0.07638652622699738,
+      "replaced_gap": -0.07595314085483551,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-02-23",
+      "arrivals": 0,
+      "gap": -0.07189606130123138,
+      "replaced_gap": -0.07189606130123138,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-02-26",
+      "arrivals": 0,
+      "gap": -0.08853696286678314,
+      "replaced_gap": -0.08853696286678314,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-02-27",
+      "arrivals": 2,
+      "gap": -0.0944112241268158,
+      "replaced_gap": -0.09362977743148804,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-02-29",
+      "arrivals": 0,
+      "gap": -0.0773468166589737,
+      "replaced_gap": -0.0773468166589737,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-01",
+      "arrivals": 0,
+      "gap": -0.058793455362319946,
+      "replaced_gap": -0.058793455362319946,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-04",
+      "arrivals": 2,
+      "gap": -0.07556001842021942,
+      "replaced_gap": -0.07468169927597046,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-05",
+      "arrivals": 0,
+      "gap": -0.0843377560377121,
+      "replaced_gap": -0.0843377560377121,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-06",
+      "arrivals": 3,
+      "gap": -0.0961526408791542,
+      "replaced_gap": -0.09547917544841766,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-07",
+      "arrivals": 2,
+      "gap": -0.09352324157953262,
+      "replaced_gap": -0.09307209402322769,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-08",
+      "arrivals": 6,
+      "gap": -0.08773992955684662,
+      "replaced_gap": -0.08564771711826324,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-11",
+      "arrivals": 1,
+      "gap": -0.0691317468881607,
+      "replaced_gap": -0.06877483427524567,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-12",
+      "arrivals": 6,
+      "gap": -0.07136772572994232,
+      "replaced_gap": -0.06938377022743225,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-13",
+      "arrivals": 10,
+      "gap": -0.07354676723480225,
+      "replaced_gap": -0.07108567655086517,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-14",
+      "arrivals": 6,
+      "gap": -0.07476508617401123,
+      "replaced_gap": -0.07364121079444885,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-15",
+      "arrivals": 1,
+      "gap": -0.05902516096830368,
+      "replaced_gap": -0.05880019813776016,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-18",
+      "arrivals": 1,
+      "gap": -0.05586040019989014,
+      "replaced_gap": -0.0555899441242218,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-19",
+      "arrivals": 1,
+      "gap": -0.07157325744628906,
+      "replaced_gap": -0.07124454528093338,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-20",
+      "arrivals": 0,
+      "gap": -0.06760338693857193,
+      "replaced_gap": -0.06760338693857193,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-21",
+      "arrivals": 3,
+      "gap": -0.07011792808771133,
+      "replaced_gap": -0.06906597316265106,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-22",
+      "arrivals": 0,
+      "gap": -0.05767463892698288,
+      "replaced_gap": -0.05767463892698288,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-25",
+      "arrivals": 0,
+      "gap": -0.05847284942865372,
+      "replaced_gap": -0.05847284942865372,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-26",
+      "arrivals": 0,
+      "gap": -0.0685892179608345,
+      "replaced_gap": -0.0685892179608345,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-27",
+      "arrivals": 1,
+      "gap": -0.08426445722579956,
+      "replaced_gap": -0.08374053239822388,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 100,
+      "date": "2024-03-28",
+      "arrivals": 0,
+      "gap": -0.08555901050567627,
+      "replaced_gap": -0.08555901050567627,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-02-01",
+      "arrivals": 0,
+      "gap": -0.007974475622177124,
+      "replaced_gap": -0.007974475622177124,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-02-02",
+      "arrivals": 1,
+      "gap": 0.006670713424682617,
+      "replaced_gap": 0.00683419406414032,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-02-05",
+      "arrivals": 2,
+      "gap": -0.03736254572868347,
+      "replaced_gap": -0.03695964813232422,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-02-15",
+      "arrivals": 17,
+      "gap": -0.040236711502075195,
+      "replaced_gap": -0.03977090120315552,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-02-16",
+      "arrivals": 0,
+      "gap": -0.04135671257972717,
+      "replaced_gap": -0.04135671257972717,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-02-19",
+      "arrivals": 1,
+      "gap": -0.03669184446334839,
+      "replaced_gap": -0.03663922846317291,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-02-20",
+      "arrivals": 0,
+      "gap": -0.034977078437805176,
+      "replaced_gap": -0.034977078437805176,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-02-21",
+      "arrivals": 2,
+      "gap": -0.0325591117143631,
+      "replaced_gap": -0.032358214259147644,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-02-22",
+      "arrivals": 1,
+      "gap": -0.02955472841858864,
+      "replaced_gap": -0.029484208673238754,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-02-23",
+      "arrivals": 1,
+      "gap": -0.03144651651382446,
+      "replaced_gap": -0.03138357400894165,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-02-26",
+      "arrivals": 0,
+      "gap": -0.040287796407938004,
+      "replaced_gap": -0.040287796407938004,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-02-27",
+      "arrivals": 2,
+      "gap": -0.04297186806797981,
+      "replaced_gap": -0.04264792799949646,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-02-29",
+      "arrivals": 5,
+      "gap": -0.04410857334733009,
+      "replaced_gap": -0.0436633862555027,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-01",
+      "arrivals": 2,
+      "gap": -0.042188167572021484,
+      "replaced_gap": -0.0420498251914978,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-04",
+      "arrivals": 0,
+      "gap": -0.05217708647251129,
+      "replaced_gap": -0.05217708647251129,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-05",
+      "arrivals": 1,
+      "gap": -0.051628172397613525,
+      "replaced_gap": -0.05156064033508301,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-06",
+      "arrivals": 1,
+      "gap": -0.047349944710731506,
+      "replaced_gap": -0.04713277518749237,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-07",
+      "arrivals": 0,
+      "gap": -0.03788173198699951,
+      "replaced_gap": -0.03788173198699951,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-08",
+      "arrivals": 1,
+      "gap": -0.033805862069129944,
+      "replaced_gap": -0.03319266438484192,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-11",
+      "arrivals": 2,
+      "gap": -0.02797722816467285,
+      "replaced_gap": -0.027476739138364792,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-12",
+      "arrivals": 0,
+      "gap": -0.02397714927792549,
+      "replaced_gap": -0.02397714927792549,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-13",
+      "arrivals": 0,
+      "gap": -0.02515431120991707,
+      "replaced_gap": -0.02515431120991707,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-14",
+      "arrivals": 0,
+      "gap": -0.03218793869018555,
+      "replaced_gap": -0.03218793869018555,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-15",
+      "arrivals": 1,
+      "gap": -0.039737045764923096,
+      "replaced_gap": -0.03962615132331848,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-18",
+      "arrivals": 0,
+      "gap": -0.0436585396528244,
+      "replaced_gap": -0.0436585396528244,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-19",
+      "arrivals": 0,
+      "gap": -0.045283496379852295,
+      "replaced_gap": -0.045283496379852295,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-20",
+      "arrivals": 0,
+      "gap": -0.050345778465270996,
+      "replaced_gap": -0.050345778465270996,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-21",
+      "arrivals": 0,
+      "gap": -0.05779581516981125,
+      "replaced_gap": -0.05779581516981125,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-22",
+      "arrivals": 2,
+      "gap": -0.06476479768753052,
+      "replaced_gap": -0.06443697214126587,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-25",
+      "arrivals": 0,
+      "gap": -0.05923549830913544,
+      "replaced_gap": -0.05923549830913544,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-26",
+      "arrivals": 0,
+      "gap": -0.05491151288151741,
+      "replaced_gap": -0.05491151288151741,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-27",
+      "arrivals": 1,
+      "gap": -0.05218086019158363,
+      "replaced_gap": -0.0521320104598999,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2330",
+      "seed": 2024,
+      "date": "2024-03-28",
+      "arrivals": 0,
+      "gap": -0.04640556871891022,
+      "replaced_gap": -0.04640556871891022,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-02-01",
+      "arrivals": 0,
+      "gap": 0.02352645993232727,
+      "replaced_gap": 0.02352645993232727,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-02-02",
+      "arrivals": 0,
+      "gap": 0.02975761890411377,
+      "replaced_gap": 0.02975761890411377,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-02-05",
+      "arrivals": 0,
+      "gap": 0.02200286090373993,
+      "replaced_gap": 0.02200286090373993,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-02-15",
+      "arrivals": 0,
+      "gap": 0.029133588075637817,
+      "replaced_gap": 0.029133588075637817,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-02-16",
+      "arrivals": 0,
+      "gap": 0.023784294724464417,
+      "replaced_gap": 0.023784294724464417,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-02-19",
+      "arrivals": 0,
+      "gap": 0.01557043194770813,
+      "replaced_gap": 0.01557043194770813,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-02-20",
+      "arrivals": 0,
+      "gap": 0.022473931312561035,
+      "replaced_gap": 0.022473931312561035,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-02-21",
+      "arrivals": 0,
+      "gap": 0.03732529282569885,
+      "replaced_gap": 0.03732529282569885,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-02-22",
+      "arrivals": 0,
+      "gap": 0.05179116129875183,
+      "replaced_gap": 0.05179116129875183,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-02-23",
+      "arrivals": 1,
+      "gap": 0.06290727853775024,
+      "replaced_gap": 0.06276595592498779,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-02-26",
+      "arrivals": 1,
+      "gap": 0.05232091248035431,
+      "replaced_gap": 0.052558451890945435,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-02-27",
+      "arrivals": 0,
+      "gap": 0.04846265912055969,
+      "replaced_gap": 0.04846265912055969,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-02-29",
+      "arrivals": 0,
+      "gap": 0.03911386430263519,
+      "replaced_gap": 0.03911386430263519,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-01",
+      "arrivals": 1,
+      "gap": 0.04431895911693573,
+      "replaced_gap": 0.04450325667858124,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-04",
+      "arrivals": 0,
+      "gap": 0.04060852527618408,
+      "replaced_gap": 0.04060852527618408,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-05",
+      "arrivals": 0,
+      "gap": 0.03984937071800232,
+      "replaced_gap": 0.03984937071800232,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-06",
+      "arrivals": 3,
+      "gap": 0.05288572609424591,
+      "replaced_gap": 0.053319647908210754,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-07",
+      "arrivals": 0,
+      "gap": 0.06334167718887329,
+      "replaced_gap": 0.06334167718887329,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-08",
+      "arrivals": 0,
+      "gap": 0.06340630352497101,
+      "replaced_gap": 0.06340630352497101,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-11",
+      "arrivals": 0,
+      "gap": 0.05773565173149109,
+      "replaced_gap": 0.05773565173149109,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-12",
+      "arrivals": 0,
+      "gap": 0.05449700355529785,
+      "replaced_gap": 0.05449700355529785,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-13",
+      "arrivals": 0,
+      "gap": 0.05060255527496338,
+      "replaced_gap": 0.05060255527496338,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-14",
+      "arrivals": 12,
+      "gap": 0.044302478432655334,
+      "replaced_gap": 0.04477998614311218,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-15",
+      "arrivals": 0,
+      "gap": 0.02831515669822693,
+      "replaced_gap": 0.02831515669822693,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-18",
+      "arrivals": 0,
+      "gap": 0.030087530612945557,
+      "replaced_gap": 0.030087530612945557,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-19",
+      "arrivals": 0,
+      "gap": 0.016521230340003967,
+      "replaced_gap": 0.016521230340003967,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-20",
+      "arrivals": 0,
+      "gap": 0.007559254765510559,
+      "replaced_gap": 0.007559254765510559,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-21",
+      "arrivals": 0,
+      "gap": 0.016585499048233032,
+      "replaced_gap": 0.016585499048233032,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-22",
+      "arrivals": 0,
+      "gap": 0.015712708234786987,
+      "replaced_gap": 0.015712708234786987,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-25",
+      "arrivals": 1,
+      "gap": 0.026531502604484558,
+      "replaced_gap": 0.026564136147499084,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-26",
+      "arrivals": 0,
+      "gap": 0.03584964573383331,
+      "replaced_gap": 0.03584964573383331,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-27",
+      "arrivals": 0,
+      "gap": 0.03691631555557251,
+      "replaced_gap": 0.03691631555557251,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2603",
+      "seed": 2024,
+      "date": "2024-03-28",
+      "arrivals": 1,
+      "gap": 0.050579994916915894,
+      "replaced_gap": 0.050902143120765686,
+      "action": 1,
+      "replaced_action": 1
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-02-01",
+      "arrivals": 0,
+      "gap": -0.12533411383628845,
+      "replaced_gap": -0.12533411383628845,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-02-02",
+      "arrivals": 0,
+      "gap": -0.10622449964284897,
+      "replaced_gap": -0.10622449964284897,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-02-05",
+      "arrivals": 0,
+      "gap": -0.09189449995756149,
+      "replaced_gap": -0.09189449995756149,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-02-15",
+      "arrivals": 3,
+      "gap": -0.0725804939866066,
+      "replaced_gap": -0.07278447598218918,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-02-16",
+      "arrivals": 1,
+      "gap": -0.06862752139568329,
+      "replaced_gap": -0.06853140890598297,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-02-19",
+      "arrivals": 0,
+      "gap": -0.06525280326604843,
+      "replaced_gap": -0.06525280326604843,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-02-20",
+      "arrivals": 1,
+      "gap": -0.07148277759552002,
+      "replaced_gap": -0.07190218567848206,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-02-21",
+      "arrivals": 1,
+      "gap": -0.07012194395065308,
+      "replaced_gap": -0.07132744789123535,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-02-22",
+      "arrivals": 1,
+      "gap": -0.060991376638412476,
+      "replaced_gap": -0.0610416978597641,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-02-23",
+      "arrivals": 0,
+      "gap": -0.05200374126434326,
+      "replaced_gap": -0.05200374126434326,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-02-26",
+      "arrivals": 0,
+      "gap": -0.06054788827896118,
+      "replaced_gap": -0.06054788827896118,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-02-27",
+      "arrivals": 2,
+      "gap": -0.059891849756240845,
+      "replaced_gap": -0.05990225076675415,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-02-29",
+      "arrivals": 0,
+      "gap": -0.08667221665382385,
+      "replaced_gap": -0.08667221665382385,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-01",
+      "arrivals": 0,
+      "gap": -0.07557937502861023,
+      "replaced_gap": -0.07557937502861023,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-04",
+      "arrivals": 2,
+      "gap": -0.0693376213312149,
+      "replaced_gap": -0.06997547298669815,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-05",
+      "arrivals": 0,
+      "gap": -0.06133781373500824,
+      "replaced_gap": -0.06133781373500824,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-06",
+      "arrivals": 3,
+      "gap": -0.04444386065006256,
+      "replaced_gap": -0.044486403465270996,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-07",
+      "arrivals": 2,
+      "gap": -0.053690582513809204,
+      "replaced_gap": -0.05372278392314911,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-08",
+      "arrivals": 6,
+      "gap": -0.07625898718833923,
+      "replaced_gap": -0.07713547348976135,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-11",
+      "arrivals": 1,
+      "gap": -0.07011270523071289,
+      "replaced_gap": -0.07035265862941742,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-12",
+      "arrivals": 6,
+      "gap": -0.06812997162342072,
+      "replaced_gap": -0.06994552910327911,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-13",
+      "arrivals": 10,
+      "gap": -0.08314736187458038,
+      "replaced_gap": -0.08514022827148438,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-14",
+      "arrivals": 6,
+      "gap": -0.11883024126291275,
+      "replaced_gap": -0.11944038420915604,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-15",
+      "arrivals": 1,
+      "gap": -0.14412938058376312,
+      "replaced_gap": -0.1442861258983612,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-18",
+      "arrivals": 1,
+      "gap": -0.14320512115955353,
+      "replaced_gap": -0.14279085397720337,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-19",
+      "arrivals": 1,
+      "gap": -0.14656072854995728,
+      "replaced_gap": -0.14678999781608582,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-20",
+      "arrivals": 0,
+      "gap": -0.1407996118068695,
+      "replaced_gap": -0.1407996118068695,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-21",
+      "arrivals": 3,
+      "gap": -0.13627725839614868,
+      "replaced_gap": -0.1370270550251007,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-22",
+      "arrivals": 0,
+      "gap": -0.12861821055412292,
+      "replaced_gap": -0.12861821055412292,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-25",
+      "arrivals": 0,
+      "gap": -0.10522717237472534,
+      "replaced_gap": -0.10522717237472534,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-26",
+      "arrivals": 0,
+      "gap": -0.11324174702167511,
+      "replaced_gap": -0.11324174702167511,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-27",
+      "arrivals": 1,
+      "gap": -0.11572901159524918,
+      "replaced_gap": -0.11578738689422607,
+      "action": 0,
+      "replaced_action": 0
+    },
+    {
+      "stock": "2881",
+      "seed": 2024,
+      "date": "2024-03-28",
+      "arrivals": 0,
+      "gap": -0.09607525914907455,
+      "replaced_gap": -0.09607525914907455,
+      "action": 0,
+      "replaced_action": 0
+    }
+  ]
+}
