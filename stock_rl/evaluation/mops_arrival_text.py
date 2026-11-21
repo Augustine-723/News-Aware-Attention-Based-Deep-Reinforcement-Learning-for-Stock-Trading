@@ -12,12 +12,19 @@ from . import mops_news_aware_pilot as pilot
 from .mops_fixed_text import prepare_inputs, weights_digest
 
 
-def replace_new_text(obs, constant, days, expected_count):
-    if days <= 0 or not torch.equal(obs.event_mask, constant.event_mask):
-        raise ValueError("Invalid interval or unaligned event slots")
+def new_slot_mask(obs, days, expected_count):
+    if days <= 0:
+        raise ValueError("Invalid interval")
     new = obs.event_mask & (obs.event_metadata[..., get_event_age_index(obs.schema_version)] < days)
     if int(new.sum()) != expected_count:
         raise ValueError("New slot count differs from the disclosure ledger")
+    return new
+
+
+def replace_new_text(obs, constant, days, expected_count):
+    if not torch.equal(obs.event_mask, constant.event_mask):
+        raise ValueError("Unaligned event slots")
+    new = new_slot_mask(obs, days, expected_count)
     other = obs.clone()
     recent, active = new.split([obs.recent_event_emb.size(1), obs.active_event_emb.size(1)], dim=1)
     other.recent_event_emb[recent] = constant.recent_event_emb[recent]
